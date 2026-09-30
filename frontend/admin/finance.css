@@ -1,0 +1,393 @@
+/*
+ * Svarg admin — the finance board
+ *
+ * Dark, on the site's own tokens, NOT behind prefers-color-scheme: the app is
+ * dark whatever the operating system thinks, exactly as sales.css says of
+ * itself. This file first shipped light-first with a dark-mode media query,
+ * which rendered near-white text on near-white table rows — most of the board
+ * was invisible and the plan table looked empty. A screenshot caught it; the
+ * DOM assertions could not, because every element was present and correct.
+ *
+ * Panels follow the established treatment: translucent white fill, soft green
+ * border, --text-primary on --text-secondary.
+ *
+ * ── The one thing this stylesheet has to carry ─────────────────────────────
+ *
+ * A reader must be able to see, without reading a heading, how much of a total
+ * is judgement. Measured figures are plain white; figures somebody typed are
+ * amber. Amber rather than green because it is a caution, and green is already
+ * the accent — an entered cost is not an achievement.
+ */
+
+:root {
+  --fi-line:       rgba(92, 197, 167, 0.2);
+  --fi-line-soft:  rgba(255, 255, 255, 0.08);
+  --fi-panel:      rgba(255, 255, 255, 0.05);
+  --fi-raise:      rgba(255, 255, 255, 0.08);
+  /* Entered, not measured. */
+  --fi-assumed:    #e0a94a;
+  --fi-assumed-bg: rgba(224, 169, 74, 0.08);
+  --fi-assumed-br: rgba(224, 169, 74, 0.35);
+  --fi-pos:        #5CC5A7;
+  --fi-neg:        #ef8b80;
+}
+
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+
+.fi-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.fi-topbar__title { max-width: 62ch; }
+.fi-topbar h1 { margin: 0 0 6px; color: var(--text-primary, #fff); }
+.fi-topbar .header-subtitle { color: var(--text-secondary, #ccc); font-size: .92rem; line-height: 1.6; margin: 0; }
+
+.fi-controls { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+
+.fi-period { display: flex; flex-direction: column; gap: 5px; font-size: .78rem; }
+.fi-period > span { color: var(--text-secondary, #ccc); letter-spacing: .06em; text-transform: uppercase; }
+
+.fi-period select {
+  padding: 8px 10px;
+  border: 1px solid var(--fi-line);
+  border-radius: 8px;
+  background: var(--fi-panel);
+  color: var(--text-primary, #fff);
+  font: inherit;
+  min-width: 9rem;
+}
+
+.fi-loading { color: var(--text-secondary, #ccc); font-size: .9rem; }
+.fi-error { color: var(--fi-neg); font-size: .9rem; }
+
+/* ── What the page admits, above everything it claims ─────────────────────── */
+
+.fi-caveats {
+  border: 1px solid var(--fi-assumed-br);
+  border-left: 3px solid var(--fi-assumed);
+  background: var(--fi-assumed-bg);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+}
+
+.fi-caveats__h {
+  margin: 0 0 8px;
+  font-size: .74rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--fi-assumed);
+}
+
+.fi-caveats ul { margin: 0; padding-left: 18px; }
+.fi-caveats li { margin: 5px 0; font-size: .88rem; line-height: 1.55; color: #f0dcb8; }
+
+/* ── The month in four figures ────────────────────────────────────────────── */
+
+.fi-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.fi-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px 18px;
+  border: 1px solid var(--fi-line);
+  border-radius: 12px;
+  background: var(--fi-panel);
+}
+
+.fi-tile__k {
+  font-size: .72rem;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #ccc);
+}
+
+.fi-tile__v {
+  font-size: 1.55rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #fff);
+  line-height: 1.2;
+}
+
+.fi-tile__n { font-size: .77rem; color: var(--text-secondary, #ccc); line-height: 1.45; }
+
+/* ── Blocks ───────────────────────────────────────────────────────────────── */
+
+.fi-block { margin-bottom: 34px; }
+.fi-block__head { margin-bottom: 12px; }
+.fi-block__head h2 { margin: 0 0 5px; font-size: 1.1rem; color: var(--text-primary, #fff); }
+
+.fi-block__sub {
+  margin: 0;
+  font-size: .85rem;
+  color: var(--text-secondary, #ccc);
+  max-width: 88ch;
+  line-height: 1.55;
+}
+
+/* A wide table scrolls in its own box, so the page never scrolls sideways. */
+.fi-tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--fi-line);
+  border-radius: 12px;
+  background: var(--fi-panel);
+}
+
+.fi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+  color: var(--text-primary, #fff);
+}
+
+.fi-table th {
+  text-align: left;
+  padding: 11px 13px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--fi-line);
+  font-size: .71rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #ccc);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.fi-table td {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--fi-line-soft);
+  vertical-align: top;
+  color: var(--text-primary, #fff);
+}
+
+.fi-table tbody tr:last-child td { border-bottom: 0; }
+
+.fi-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fi-empty { color: var(--text-secondary, #ccc); text-align: center; padding: 24px 12px; }
+
+/* ── Account rows ─────────────────────────────────────────────────────────── */
+
+.fi-acc { cursor: pointer; transition: background .12s; }
+.fi-acc:hover { background: var(--fi-raise); }
+.fi-acc:focus-visible { outline: 2px solid var(--accent-green, #5CC5A7); outline-offset: -2px; }
+.fi-acc--open { background: var(--fi-raise); }
+
+.fi-caret { color: var(--text-secondary, #ccc); font-size: .66rem; margin-right: 7px; }
+.fi-acc__name { font-weight: 600; }
+.fi-acc__mail { display: block; font-size: .77rem; color: var(--text-secondary, #ccc); margin-left: 19px; }
+
+/* A plan nobody chose, so "everyone is Hobby" does not read as news. */
+.fi-default {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--fi-line-soft);
+  font-size: .64rem;
+  color: var(--text-secondary, #ccc);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  vertical-align: 1px;
+}
+
+/*
+ * Entered rather than measured, wherever it appears.
+ *
+ * Written as `.fi-table td.fi-assumed` and not `.fi-assumed`, because these
+ * land on the cell itself and `.fi-table td` above already sets a colour — at
+ * equal-or-higher specificity it wins, and the entered column silently went
+ * back to plain white. The modifier has to outrank the element rule it is
+ * modifying.
+ */
+.fi-table td.fi-assumed { color: var(--fi-assumed); }
+.fi-table td.fi-cost { font-weight: 700; }
+
+/* These sit on spans inside a cell, so a plain class is enough. */
+.fi-pos { color: var(--fi-pos); }
+.fi-neg { color: var(--fi-neg); }
+.fi-na { color: var(--text-secondary, #ccc); font-style: italic; }
+
+/* ── The breakdown: which layer of the product spent it ───────────────────── */
+
+.fi-sub > td { background: rgba(0, 0, 0, 0.22); }
+
+.fi-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 8px 16px;
+}
+
+.fi-stage {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 7px 11px;
+  border-radius: 8px;
+  background: var(--fi-panel);
+  border: 1px solid var(--fi-line-soft);
+}
+
+.fi-stage__n { font-weight: 600; text-transform: capitalize; color: var(--text-primary, #fff); }
+.fi-stage__c { font-size: .77rem; color: var(--text-secondary, #ccc); font-variant-numeric: tabular-nums; }
+.fi-stage__v { font-variant-numeric: tabular-nums; color: var(--text-primary, #fff); }
+
+.fi-sub__note { margin: 11px 0 0; font-size: .8rem; color: var(--text-secondary, #ccc); line-height: 1.55; }
+.fi-note { margin: 12px 0 0; font-size: .84rem; color: var(--text-secondary, #ccc); line-height: 1.6; max-width: 92ch; }
+.fi-note strong { color: var(--text-primary, #fff); }
+.fi-how { color: var(--text-secondary, #ccc); font-size: .81rem; }
+
+/* ── The assumptions form ─────────────────────────────────────────────────── */
+
+.fi-form {
+  border: 1px solid var(--fi-line);
+  border-radius: 12px;
+  background: var(--fi-panel);
+  padding: 4px 20px 20px;
+}
+
+.fi-fs {
+  border: 0;
+  border-top: 1px solid var(--fi-line-soft);
+  margin: 0;
+  padding: 16px 0;
+}
+
+.fi-fs:first-of-type { border-top: 0; }
+
+.fi-fs legend {
+  padding: 0 8px 0 0;
+  font-size: .73rem;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--accent-green, #5CC5A7);
+}
+
+.fi-fs__hint { margin: 0 0 12px; font-size: .82rem; color: var(--text-secondary, #ccc); max-width: 86ch; line-height: 1.55; }
+
+.fi-row { display: flex; flex-wrap: wrap; gap: 14px 16px; align-items: flex-start; }
+
+.fi-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 170px; }
+.fi-f--wide { flex: 2 1 280px; }
+.fi-f > span { font-size: .82rem; color: var(--text-primary, #fff); }
+
+.fi-f input {
+  padding: 9px 11px;
+  border: 1px solid var(--fi-line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: .9rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #fff);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fi-f input::placeholder { color: rgba(255, 255, 255, 0.34); }
+.fi-f input:focus-visible {
+  outline: none;
+  border-color: var(--accent-green, #5CC5A7);
+  background: rgba(92, 197, 167, 0.1);
+}
+
+.fi-f input[type="number"] { text-align: right; font-variant-numeric: tabular-nums; }
+.fi-f small { font-size: .75rem; color: var(--text-secondary, #ccc); line-height: 1.5; }
+
+.fi-int {
+  padding: 12px;
+  border: 1px solid var(--fi-line-soft);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 10px;
+  align-items: flex-end;
+}
+
+.fi-int__x {
+  border: 1px solid var(--fi-line-soft);
+  background: transparent;
+  color: var(--text-secondary, #ccc);
+  border-radius: 8px;
+  padding: 9px 13px;
+  font: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fi-int__x:hover { color: var(--fi-neg); border-color: rgba(239, 139, 128, 0.45); }
+
+.fi-add { margin-top: 2px; }
+
+.fi-save {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--fi-line-soft);
+  padding-top: 18px;
+  margin-top: 4px;
+}
+
+.fi-save__said { font-size: .84rem; color: var(--text-secondary, #ccc); }
+
+/* ── Phone ────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 540px) {
+  .fi-tile__v { font-size: 1.3rem; }
+  .fi-form { padding: 4px 13px 16px; }
+  .fi-f { flex: 1 1 100%; }
+  .fi-topbar { gap: 12px; }
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+/*
+ * Defined here rather than borrowed.
+ *
+ * The save button first shipped as `.btn-primary`, which is not defined in any
+ * stylesheet this page loads — admin.css has `.btn-secondary` and nothing
+ * else. It rendered as a bare browser button: small, white, square, beside
+ * three properly styled controls. A screenshot caught it; nothing else could,
+ * because the class was on the element exactly as intended.
+ */
+.fi-btn {
+  border: 1px solid var(--fi-line);
+  background: var(--fi-panel);
+  color: var(--text-primary, #fff);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+
+.fi-btn:hover { background: rgba(92, 197, 167, 0.12); border-color: rgba(92, 197, 167, 0.5); }
+.fi-btn:focus-visible { outline: 2px solid var(--accent-green, #5CC5A7); outline-offset: 2px; }
+
+/* The one action on the page that changes something. */
+.fi-btn--go {
+  background: var(--accent-green, #5CC5A7);
+  border-color: var(--accent-green, #5CC5A7);
+  color: #07231c;
+  font-weight: 600;
+}
+
+.fi-btn--go:hover { background: var(--accent-hover, #4AB393); border-color: var(--accent-hover, #4AB393); }
+.fi-btn--go:disabled { opacity: .55; cursor: default; }

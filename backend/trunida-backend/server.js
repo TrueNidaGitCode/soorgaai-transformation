@@ -22,6 +22,7 @@ import companyResearchLibraryRoutes from "./routes/companyResearchLibraryRoutes.
 import industryVerticalKnowledgeRoutes from "./routes/industryVerticalKnowledgeRoutes.js";
 import industryCapabilityKnowledgeRoutes from "./routes/industryCapabilityKnowledgeRoutes.js";
 import salesSignalsRoutes from "./routes/salesSignalsRoutes.js";
+import financeRoutes from "./routes/financeRoutes.js";
 import capitalRoutes from "./routes/capitalRoutes.js";
 import outreachPublicRoutes from "./routes/outreachPublicRoutes.js";
 import { runOutreachSweep } from "./services/outreachService.js";
@@ -194,6 +195,8 @@ app.use("/api/admin/company-library", companyResearchLibraryRoutes);
 app.use("/api/admin/industry-verticals", industryVerticalKnowledgeRoutes);
 app.use("/api/admin/industry-kb", industryCapabilityKnowledgeRoutes);
 app.use("/api/admin/sales-signals", salesSignalsRoutes);
+// What each account consumes against the plan it is on, for pricing.
+app.use("/api/admin/finance", financeRoutes);
 app.use("/api/admin/capital", capitalRoutes);
 // Public on purpose — the unsubscribe link is clicked by non-users.
 app.use("/api/outreach", outreachPublicRoutes);

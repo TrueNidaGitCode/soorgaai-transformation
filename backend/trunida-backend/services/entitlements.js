@@ -80,9 +80,38 @@ const UNLIMITED = null;
  * live objective, because "every opportunity inside one objective" is what it
  * sells. Ultra removes both.
  */
+/*
+ * ── What each tier costs the customer ──────────────────────────────────────
+ *
+ * Added because the price existed in exactly one place — two data attributes
+ * in frontend/pricing/pricing.html — so nothing on the server could say what
+ * an account was worth. The finance page needs that to put a cost beside a
+ * price, and "what does this account earn us" is not a question the marketing
+ * page should be the only answer to.
+ *
+ * Rupees, as integers, because that is the currency the page quotes and a
+ * price is never a fraction of one. Model spend is metered in dollars, so the
+ * finance page converts — at a rate held in CostAssumption rather than here,
+ * because an exchange rate moves and a constant nobody updates is a wrong
+ * number with a comment claiming otherwise.
+ *
+ * This is a SECOND copy of a number, which this codebase otherwise refuses —
+ * see AccountPlan on why the limits are not copied here. It is allowed only
+ * because __tests__/priceIsOnePrice.test.js reads the pricing page and fails
+ * if the two ever disagree. A copy a test cannot check is the thing to avoid;
+ * a copy it checks on every run is a cache.
+ *
+ * NEGOTIATED means there is no list price: Hobby is free and Enterprise is
+ * whatever the contract says, and neither is 0 — 0 would be a real price
+ * meaning "we charge nothing", which is true of Hobby and false of Enterprise.
+ */
+const NEGOTIATED = null;
+
 export const PLANS = {
   hobby: {
     label: 'Hobby',
+    priceInrMonthly:       0,
+    priceInrYearly:        0,
     // Monitor a small part of your business.
     businessCategories:    2,
     dataConnections:       2,
@@ -95,6 +124,8 @@ export const PLANS = {
   },
   pro: {
     label: 'Pro',
+    priceInrMonthly:       2999,
+    priceInrYearly:        28999,
     // Keep the core operations of your business under continuous watch.
     businessCategories:    3,
     dataConnections:       5,
@@ -119,6 +150,8 @@ export const PLANS = {
   },
   ultra: {
     label: 'Ultra',
+    priceInrMonthly:       16999,
+    priceInrYearly:        163999,
     // Monitor your business end to end.
     businessCategories:    UNLIMITED,
     dataConnections:       10,
@@ -129,6 +162,8 @@ export const PLANS = {
   },
   enterprise: {
     label: 'Enterprise',
+    priceInrMonthly:       NEGOTIATED,
+    priceInrYearly:        NEGOTIATED,
     // Continuous operational intelligence across the organisation. Every
     // coverage limit is negotiated, so every one of them is unlimited here
     // and narrowed per account on the AccountPlan row when a contract says

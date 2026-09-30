@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance - Svarg Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="finance.css?v=1">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="fi-topbar">
+            <div class="fi-topbar__title">
+                <h1>Finance</h1>
+                <p class="header-subtitle">
+                    What each account consumes, itemised by the part of the product that spent it,
+                    against the plan it is on. Model spend is measured. Everything else on this page
+                    is a figure somebody entered, and is shown as one.
+                </p>
+            </div>
+
+            <div class="fi-controls">
+                <label class="fi-period">
+                    <span>Month</span>
+                    <select id="fi-period"></select>
+                </label>
+                <button type="button" id="fi-refresh" class="fi-btn">Refresh</button>
+            </div>
+        </div>
+
+        <p class="fi-loading" id="fi-loading">Reading the ledgers&hellip;</p>
+        <p class="fi-error" id="fi-error" hidden></p>
+
+        <!--
+          What the page is prepared to admit, before any number it shows.
+
+          Every caveat here is computed by the server from the state of the
+          data — an absent exchange rate, no fixed costs entered, containers
+          being counted as free. They are first because a reader who scrolls
+          past the totals has already formed a view.
+        -->
+        <section class="fi-caveats" id="fi-caveats" hidden>
+            <h2 class="fi-caveats__h">Read this first</h2>
+            <ul id="fi-caveats-list"></ul>
+        </section>
+
+        <!-- The month in one line. -->
+        <section class="fi-summary" id="fi-summary" hidden>
+            <div class="fi-tile">
+                <span class="fi-tile__k">Measured model spend</span>
+                <strong class="fi-tile__v" id="fi-sum-metered">&mdash;</strong>
+                <span class="fi-tile__n" id="fi-sum-metered-n"></span>
+            </div>
+            <div class="fi-tile">
+                <span class="fi-tile__k">Entered costs</span>
+                <strong class="fi-tile__v" id="fi-sum-assumed">&mdash;</strong>
+                <span class="fi-tile__n" id="fi-sum-assumed-n"></span>
+            </div>
+            <div class="fi-tile">
+                <span class="fi-tile__k">Total cost</span>
+                <strong class="fi-tile__v" id="fi-sum-cost">&mdash;</strong>
+                <span class="fi-tile__n" id="fi-sum-cost-n"></span>
+            </div>
+            <div class="fi-tile">
+                <span class="fi-tile__k">Revenue at list price</span>
+                <strong class="fi-tile__v" id="fi-sum-revenue">&mdash;</strong>
+                <span class="fi-tile__n" id="fi-sum-revenue-n"></span>
+            </div>
+        </section>
+
+        <!--
+          The bill of materials.
+
+          One row per account, expandable into the layers that spent the money:
+          Cob, Aria, Arth, Eame, Yusu. That breakdown is the reason this page
+          exists — a total per account says an account is expensive, and the
+          breakdown says which part of the product made it so.
+        -->
+        <section class="fi-block">
+            <header class="fi-block__head">
+                <h2>Consumption by account</h2>
+                <p class="fi-block__sub" id="fi-accounts-sub"></p>
+            </header>
+            <div class="fi-tablewrap">
+                <table class="fi-table" id="fi-accounts">
+                    <thead>
+                        <tr>
+                            <th scope="col">Account</th>
+                            <th scope="col">Plan</th>
+                            <th scope="col" class="fi-num">Svarg calls</th>
+                            <th scope="col" class="fi-num">Model spend</th>
+                            <th scope="col" class="fi-num">App spend</th>
+                            <th scope="col" class="fi-num">Entered</th>
+                            <th scope="col" class="fi-num">Cost</th>
+                            <th scope="col" class="fi-num">Price</th>
+                            <th scope="col" class="fi-num">Margin</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fi-accounts-body"></tbody>
+                </table>
+            </div>
+            <p class="fi-note" id="fi-guest"></p>
+        </section>
+
+        <!-- The baseline each account is measured against. -->
+        <section class="fi-block">
+            <header class="fi-block__head">
+                <h2>Plan baseline</h2>
+                <p class="fi-block__sub">What each tier sells and charges. The price here is the
+                   server's copy of the pricing page, kept honest by a test rather than by
+                   remembering.</p>
+            </header>
+            <div class="fi-tablewrap">
+                <table class="fi-table" id="fi-plans">
+                    <thead>
+                        <tr>
+                            <th scope="col">Plan</th>
+                            <th scope="col" class="fi-num">Accounts</th>
+                            <th scope="col" class="fi-num">Monthly</th>
+                            <th scope="col" class="fi-num">Yearly</th>
+                            <th scope="col" class="fi-num">Areas</th>
+                            <th scope="col" class="fi-num">Connections</th>
+                            <th scope="col">Checks</th>
+                            <th scope="col" class="fi-num">Seats</th>
+                            <th scope="col" class="fi-num">Spend cap</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fi-plans-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!--
+          The costs nothing meters.
+
+          Editable, because they are judgements and the whole point of the page
+          is to try them: change the amortisation and watch cost per account
+          move. Each carries a note so the next person can tell a decision from
+          a placeholder.
+        -->
+        <section class="fi-block">
+            <header class="fi-block__head">
+                <h2>Cost assumptions</h2>
+                <p class="fi-block__sub" id="fi-assum-sub">Figures this system cannot measure. They
+                   are yours to set, and the margins above are only as good as they are.</p>
+            </header>
+
+            <form id="fi-assum" class="fi-form">
+                <fieldset class="fi-fs">
+                    <legend>Conversion</legend>
+                    <label class="fi-f">
+                        <span>Rupees per US dollar</span>
+                        <input type="number" id="fa-rate" min="0" step="0.01" inputmode="decimal">
+                        <small>Model spend is billed in dollars and plans are priced in rupees.
+                               Nothing on this page can be compared without it.</small>
+                    </label>
+                </fieldset>
+
+                <fieldset class="fi-fs">
+                    <legend>Platform development</legend>
+                    <div class="fi-row">
+                        <label class="fi-f">
+                            <span>Total spent (&#8377;)</span>
+                            <input type="number" id="fa-dev-total" min="0" step="1" inputmode="numeric">
+                        </label>
+                        <label class="fi-f">
+                            <span>Spread over (months)</span>
+                            <input type="number" id="fa-dev-months" min="0" step="1" inputmode="numeric">
+                            <small>0 charges all of it to this month.</small>
+                        </label>
+                        <label class="fi-f fi-f--wide">
+                            <span>Note</span>
+                            <input type="text" id="fa-dev-note" maxlength="300"
+                                   placeholder="What this covers, and who decided the period">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fi-fs">
+                    <legend>Integrations</legend>
+                    <p class="fi-fs__hint">One line each, because they did not cost the same and a
+                       single total hides which connector is worth keeping.</p>
+                    <div id="fa-integrations"></div>
+                    <button type="button" id="fa-add-integration" class="fi-btn fi-add">
+                        Add an integration
+                    </button>
+                </fieldset>
+
+                <fieldset class="fi-fs">
+                    <legend>Recurring, every month (&#8377;)</legend>
+                    <div class="fi-row">
+                        <label class="fi-f">
+                            <span>Atlas cluster</span>
+                            <input type="number" id="fa-atlas" min="0" step="1" inputmode="numeric">
+                            <small>Shared by every tenant, so it cannot be metered per account.</small>
+                        </label>
+                        <label class="fi-f">
+                            <span>Control plane hosting</span>
+                            <input type="number" id="fa-control" min="0" step="1" inputmode="numeric">
+                        </label>
+                        <label class="fi-f">
+                            <span>Brevo</span>
+                            <input type="number" id="fa-brevo" min="0" step="1" inputmode="numeric">
+                        </label>
+                        <label class="fi-f">
+                            <span>Other</span>
+                            <input type="number" id="fa-other" min="0" step="1" inputmode="numeric">
+                        </label>
+                        <label class="fi-f fi-f--wide">
+                            <span>What &ldquo;other&rdquo; is</span>
+                            <input type="text" id="fa-other-note" maxlength="120"
+                                   placeholder="Domains, certificates, anything else recurring">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fi-fs">
+                    <legend>Per delivered application</legend>
+                    <div class="fi-row">
+                        <label class="fi-f">
+                            <span>Hosting, per month (&#8377;)</span>
+                            <input type="number" id="fa-hosting" min="0" step="1" inputmode="numeric">
+                            <small>Each delivered application is its own container, so this is
+                                   charged once per application rather than per account.</small>
+                        </label>
+                        <label class="fi-f fi-f--wide">
+                            <span>Note</span>
+                            <input type="text" id="fa-hosting-note" maxlength="300"
+                                   placeholder="Where this figure came from">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fi-fs">
+                    <legend>Per unit (&#8377;)</legend>
+                    <p class="fi-fs__hint">Recorded so they are not forgotten. Nothing counts these
+                       per account yet, so they do not enter the totals above.</p>
+                    <div class="fi-row">
+                        <label class="fi-f">
+                            <span>Transcribing one call</span>
+                            <input type="number" id="fa-transcribe" min="0" step="0.01" inputmode="decimal">
+                        </label>
+                        <label class="fi-f">
+                            <span>One email</span>
+                            <input type="number" id="fa-email" min="0" step="0.01" inputmode="decimal">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="fi-save">
+                    <button type="submit" id="fa-save" class="fi-btn fi-btn--go">Save and recalculate</button>
+                    <span class="fi-save__said" id="fa-said"></span>
+                </div>
+            </form>
+        </section>
+
+        <!-- Where the fixed cost went, and on what basis it was divided. -->
+        <section class="fi-block" id="fi-fixed-block" hidden>
+            <header class="fi-block__head">
+                <h2>Fixed cost this month</h2>
+                <p class="fi-block__sub" id="fi-fixed-sub"></p>
+            </header>
+            <div class="fi-tablewrap">
+                <table class="fi-table" id="fi-fixed">
+                    <thead>
+                        <tr>
+                            <th scope="col">Line</th>
+                            <th scope="col" class="fi-num">Per month</th>
+                            <th scope="col">How it was worked out</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fi-fixed-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="finance.js?v=1"></script>
+</body>
+</html>

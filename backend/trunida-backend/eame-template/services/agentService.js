@@ -1008,6 +1008,47 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
  * when nothing happened at all. Cleared rather than resolved, so the count
  * starts again from what is true.
  */
+/*
+ * Compared the way it is STORED, not the way it is built.
+ *
+ * createAgent trims a question and cuts it at 600 characters, and a binding at
+ * 120. Comparing the catalogue's raw string against the stored one therefore
+ * finds a difference that no change caused — and because a rebind writes the
+ * raw string while creation writes the cut one, a question longer than the
+ * limit would differ on every single tick, for ever, deleting the watcher's
+ * findings every five minutes. Both sides go through the same door.
+ */
+const asStored = {
+  question: (q) => String(q || '').trim().slice(0, 600),
+  binding: (b) => String(b || '').slice(0, 120),
+};
+
+/**
+ * Watchers that have MOVED — onto a different dataset than they were watching.
+ *
+ * ── Why this asks about the binding and not the wording ────────────────────
+ *
+ * It used to compare question text, on the reasoning that a catalogue
+ * watcher's question IS its binding. That is true of what the question means
+ * and false of how it is written, and the difference cost a customer their
+ * board twice in one hour.
+ *
+ * Measured on Vesoma. A phone call was read, a promise found, and a Promise
+ * Not Kept finding written at 07:48:59. At 07:50:05 the watcher was "rebound"
+ * and the finding deleted. It had not moved: it was watching
+ * "Calls (Exotel) + Contacts (Zoho CRM)" before and after. What changed was
+ * the sentence, because the connector had grown two columns on its 07:28 sync
+ * and then declared them internal when new code booted — so businessColumns
+ * offered a different column for a role, and the question came out worded
+ * differently about exactly the same rows.
+ *
+ * A connector growing its shape is routine. Deleting a customer's findings
+ * every time one does is not, so a move is now what it says: the data being
+ * watched is different.
+ *
+ * A record with no binding stored is from before boundTo existed; there the
+ * wording is the only evidence there is, so it is used.
+ */
 export function watchersToRebind(live = [], catalogue = []) {
   const byId = new Map(
     (catalogue || []).filter((c) => c?.ready && c.question).map((c) => [c.id, c]),
@@ -1018,7 +1059,43 @@ export function watchersToRebind(live = [], catalogue = []) {
     // started from the catalogue is one the catalogue may move.
     if (!a?.watcherId) return false;
     const c = byId.get(a.watcherId);
-    return !!c && !!c.question && c.question !== a.question;
+    if (!c || !c.question) return false;
+
+    const was = asStored.binding(a.boundTo);
+    if (!was) return asStored.question(c.question) !== asStored.question(a.question);
+    return asStored.binding(c.using) !== was;
+  });
+}
+
+/**
+ * Watchers watching the same data, described differently.
+ *
+ * The record should say what is actually being asked, so the wording is
+ * brought up to date — and nothing else is. No reboundAt, no clearing of
+ * lastRunAt, and above all no deleting of findings: the watcher is looking at
+ * the same rows it was looking at a minute ago, and what it found there is
+ * still true.
+ *
+ * The pinned plan does go, because it was compiled against the old sentence
+ * and the next run should compile one for the new. That costs one planning
+ * call at the watcher's normal hour and changes nothing a reader sees.
+ */
+export function watchersToReword(live = [], catalogue = []) {
+  const byId = new Map(
+    (catalogue || []).filter((c) => c?.ready && c.question).map((c) => [c.id, c]),
+  );
+  if (!byId.size) return [];
+  return (live || []).filter((a) => {
+    if (!a?.watcherId) return false;
+    const c = byId.get(a.watcherId);
+    if (!c || !c.question) return false;
+
+    const was = asStored.binding(a.boundTo);
+    // No binding stored: watchersToRebind is already treating wording as the
+    // binding, and one watcher must not be in both lists.
+    if (!was) return false;
+    if (asStored.binding(c.using) !== was) return false;
+    return asStored.question(c.question) !== asStored.question(a.question);
   });
 }
 
@@ -1037,9 +1114,9 @@ export async function rebindWatchers(catalogue) {
         { _id: a._id },
         {
           $set: {
-            question: c.question,
+            question: asStored.question(c.question),
             reboundAt: new Date(),
-            boundTo: c.using || '',
+            boundTo: asStored.binding(c.using),
             /*
              * And it is due again.
              *
@@ -1071,6 +1148,28 @@ export async function rebindWatchers(catalogue) {
   }
 
   /*
+   * And the ones that only changed their wording.
+   *
+   * Brought up to date in place: the record says what is being asked, the
+   * findings stay, the schedule stays, and nobody watching the board sees
+   * anything happen — which is the correct amount of drama for a connector
+   * having grown a column.
+   */
+  const reworded = [];
+  for (const a of watchersToReword(live, catalogue)) {
+    const c = byId.get(a.watcherId);
+    try {
+      await agentsCollection().updateOne(
+        { _id: a._id },
+        { $set: { question: asStored.question(c.question) }, $unset: { plan: '' } },
+      );
+      reworded.push(a.watcherId);
+    } catch (err) {
+      console.warn(`[agents] could not reword "${a.watcherId}":`, err.message);
+    }
+  }
+
+  /*
    * And any watcher that moved but has not looked since.
    *
    * The rule is the same one, stated over the record rather than over this
@@ -1088,10 +1187,16 @@ export async function rebindWatchers(catalogue) {
   if (rebound.length) {
     console.log(`[agents] followed the data: ${rebound.map((r) => r.watcherId).join(', ')}`);
   }
+  if (reworded.length) {
+    // Said separately from a move, because the two have very different
+    // consequences and a log that calls both "followed the data" is how a
+    // fortnight of deleted findings went unnoticed.
+    console.log(`[agents] same data, new wording: ${reworded.join(', ')}`);
+  }
   if (waiting.length) {
     console.log(`[agents] due again after moving: ${waiting.map((a) => a.watcherId).join(', ')}`);
   }
-  return { rebound, due: waiting.map((a) => a.watcherId) };
+  return { rebound, reworded, due: waiting.map((a) => a.watcherId) };
 }
 
 /**

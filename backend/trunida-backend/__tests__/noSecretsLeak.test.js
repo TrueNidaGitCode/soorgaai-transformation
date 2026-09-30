@@ -48,6 +48,16 @@ describe('what a customer receives', () => {
    */
   const PLACEHOLDER = /(example|placeholder|replace|your[-_]?|<[^>]+>|xxx+|user:password|USERNAME|PASSWORD|changeme|dummy|sample)/i;
 
+  /*
+   * Given the time it actually needs.
+   *
+   * This walks every line of every delivered file against seven patterns —
+   * seconds of real work, and slower again when the rest of the suite is
+   * running beside it. On the default five it began failing the moment the
+   * suite grew, reported as a bare STACK_TRACE_ERROR with no assertion behind
+   * it. A security check that goes red for want of a second is a check people
+   * learn to wave through, which is worse than not having one.
+   */
   it('ships no credential of any shape', () => {
     // These bytes are pushed to the customer's own GitHub repository.
     for (const f of files) {
@@ -58,7 +68,7 @@ describe('what a customer receives', () => {
         }
       }
     }
-  });
+  }, 60000);
 
   it('ships no .env, only a template of one', () => {
     const paths = files.map(f => f.path);

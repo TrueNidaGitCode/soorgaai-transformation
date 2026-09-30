@@ -178,7 +178,13 @@ describe('a watcher says which records it reads', () => {
   });
 
   it('is carried by one somebody starts from the board', () => {
-    expect(ctl).toContain("boundTo: match.dataset || ''");
+    /*
+     * From the catalogue's own binding now, not from a separate match. The
+     * handler used to run its own single-dataset matcher, which could never
+     * bind a watcher that reads two — and those carry both, joined, so that
+     * either side can wake them. See newSourceOffersWatchers.test.js.
+     */
+    expect(ctl).toContain("boundTo: bound.using || ''");
   });
 
   it('is still rewritten when the catalogue moves it somewhere better', () => {

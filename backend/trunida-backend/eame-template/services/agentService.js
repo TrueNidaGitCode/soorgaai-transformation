@@ -1141,13 +1141,35 @@ export const WAKE_FLOOR_MS = 60 * 60 * 1000;
  * DUE; dueAgents still decides, so a change at three in the morning is picked
  * up at seven with everything else.
  */
+/**
+ * Does this watcher read that dataset?
+ *
+ * A watcher reading one names it. A watcher reading two carries both, joined
+ * the way matchPair writes them — "Calls (Exotel) + Tasks (Zoho CRM)" — so
+ * membership is the question, not equality.
+ */
+export function readsDataset(boundTo, datasetName) {
+  const name = String(datasetName || '').trim();
+  if (!name) return false;
+  return String(boundTo || '').split(' + ').map((s) => s.trim()).includes(name);
+}
+
 export function watchersToWake(live = [], datasetName = '', now = Date.now()) {
   const name = String(datasetName || '').trim();
   if (!name) return [];
   return (live || []).filter((a) => {
     if (!a || a.enabled === false) return false;
     if (a.status === 'degraded' || a.status === 'paused') return false;
-    if (String(a.boundTo || '') !== name) return false;
+    /*
+     * Either side, for a watcher that reads two.
+     *
+     * matchPair records both as "Left + Right", so an exact comparison never
+     * matched one of them and the most valuable watchers in the catalogue —
+     * the ones joining a call to a CRM, an order to a delivery — would never
+     * have woken when either side changed. They would have run on the
+     * schedule and no sooner, which is the slow version of not working.
+     */
+    if (!readsDataset(a.boundTo, name)) return false;
     // Never run, or already waiting: it is due without any help from here.
     if (!a.lastRunAt) return false;
     return now - new Date(a.lastRunAt).getTime() >= WAKE_FLOOR_MS;
@@ -1157,8 +1179,17 @@ export function watchersToWake(live = [], datasetName = '', now = Date.now()) {
 /** The records behind these watchers moved, so they are due again. */
 export async function wakeWatchersFor(datasetName, { now = Date.now() } = {}) {
   if (mongoose.connection.readyState !== 1) return { woken: [] };
+  /*
+   * Read back everything bound to anything, and let readsDataset decide.
+   *
+   * The query used to ask for an exact boundTo, which cannot find a watcher
+   * that reads two datasets — those are stored as "Left + Right". Filtering
+   * in the database would mean teaching a query that format; a board holds
+   * tens of watchers, not thousands, so it is read and filtered here where
+   * one function owns the rule.
+   */
   const live = await agentsCollection()
-    .find({ boundTo: String(datasetName || '') }).toArray().catch(() => []);
+    .find({ boundTo: { $nin: ['', null] } }).toArray().catch(() => []);
   const wake = watchersToWake(live, datasetName, now);
   for (const a of wake) {
     await agentsCollection().updateOne({ _id: a._id }, { $set: { lastRunAt: null } }).catch(() => {});

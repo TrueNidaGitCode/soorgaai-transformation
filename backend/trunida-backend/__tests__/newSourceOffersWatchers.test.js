@@ -190,3 +190,81 @@ describe('an application that has never recorded what it could run', () => {
     expect(src).toContain("...seen.map((id) => ({ kind: 'seen', key: id })),");
   });
 });
+
+/**
+ * And the button has to be able to start what the board offered.
+ *
+ * ── Found the moment the first one was clicked ─────────────────────────────
+ *
+ * Promise Not Kept was listed with a Start watching button, on an application
+ * holding a transcribed call and a CRM side by side, and refused it:
+ * "Nothing here holds the records this needs yet."
+ *
+ * The handler walked the datasets calling matchDataset, which matches ONE.
+ * Four watchers in the catalogue read two at once — a promise on a call
+ * against the follow-up that never came, an order against the delivery — and
+ * those are the findings worth the most, because they are the ones nobody can
+ * see by looking in one system. Every one of them could be listed and none
+ * could be started.
+ *
+ * The listing, auto-start at boot, and this button now all ask catalogueFor.
+ * One binding, three callers, and a button that cannot offer what it refuses.
+ */
+describe('starting a watcher that reads two datasets', () => {
+  const ctl = read('../eame-template/controllers/agentsController.js');
+  const start = ctl.slice(ctl.indexOf('export async function startFromCatalogueHandler'));
+
+  it('binds the way the board bound it when it drew the button', () => {
+    expect(start).toContain('catalogueFor(readIndex(), plan())');
+    expect(start).toContain("find((c) => c.id === entry.id && c.ready && c.question)");
+  });
+
+  it('no longer asks a single-dataset matcher a two-dataset question', () => {
+    expect(start).not.toContain('matchDataset(entry, d)');
+  });
+
+  it('takes the question and the binding from that one answer', () => {
+    expect(start).toContain('question: bound.question');
+    expect(start).toContain('boundTo: bound.using');
+  });
+
+  it('still refuses when the records genuinely are not there', () => {
+    expect(start).toContain('Nothing here holds the records this needs yet.');
+  });
+});
+
+/**
+ * A watcher reading two datasets is woken by either of them.
+ *
+ * matchPair records both as "Left + Right", so the exact comparison that
+ * woke a single-dataset watcher never matched one of a pair. They would have
+ * run on the schedule and no sooner, which is the slow version of not
+ * working — and they are the watchers that matter most.
+ */
+describe('waking a watcher that reads two datasets', () => {
+  it('matches either side', async () => {
+    const { readsDataset } = await import('../eame-template/services/agentService.js');
+    expect(readsDataset('Calls (Exotel) + Tasks (Zoho CRM)', 'Calls (Exotel)')).toBe(true);
+    expect(readsDataset('Calls (Exotel) + Tasks (Zoho CRM)', 'Tasks (Zoho CRM)')).toBe(true);
+  });
+
+  it('still matches a watcher that reads one', async () => {
+    const { readsDataset } = await import('../eame-template/services/agentService.js');
+    expect(readsDataset('Meetings (Zoho CRM)', 'Meetings (Zoho CRM)')).toBe(true);
+  });
+
+  it('matches nothing else', async () => {
+    const { readsDataset } = await import('../eame-template/services/agentService.js');
+    expect(readsDataset('Calls (Exotel) + Tasks (Zoho CRM)', 'Meetings (Zoho CRM)')).toBe(false);
+    expect(readsDataset('', 'Calls (Exotel)')).toBe(false);
+    expect(readsDataset('Calls (Exotel)', '')).toBe(false);
+  });
+
+  it('is what the wake actually uses', () => {
+    const src = read('../eame-template/services/agentService.js');
+    expect(src).toContain('if (!readsDataset(a.boundTo, name)) return false;');
+    // And the query can no longer ask for an exact boundTo, or a pair would
+    // never be read back to be filtered.
+    expect(src).toContain("find({ boundTo: { $nin: ['', null] } })");
+  });
+});

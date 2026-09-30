@@ -508,15 +508,33 @@ export async function startFromCatalogueHandler(req, res) {
       });
     }
 
-    let match = null;
-    for (const d of readIndex()) { match = matchDataset(entry, d); if (match) break; }
-    if (!match) {
+    /*
+     * Bound the same way the board bound it when it offered the button.
+     *
+     * This used to walk the datasets calling matchDataset, which only ever
+     * matches ONE. Four watchers in the catalogue read two datasets at once —
+     * a promise on a call against the follow-up that never came, an order
+     * against the delivery — and those are the findings worth the most,
+     * because they are the ones nobody can see by looking in one system.
+     *
+     * Every one of them was listed with a Start watching button and refused
+     * it: "Nothing here holds the records this needs yet", on an application
+     * that held them both. Measured on the live physiotherapy application,
+     * against a transcribed call and a CRM sitting side by side.
+     *
+     * So it asks catalogueFor, which is what the listing above already calls
+     * and what auto-start calls at boot. One binding, three callers, and a
+     * button that cannot offer what it will then refuse.
+     */
+    const bound = catalogueFor(readIndex(), plan())
+      .find((c) => c.id === entry.id && c.ready && c.question);
+    if (!bound) {
       return res.status(400).json({ error: `Nothing here holds the records this needs yet.` });
     }
 
     const agent = await createAgent({
       name: entry.name,
-      question: fillQuestion(entry, match),
+      question: bound.question,
       schedule: allowedSchedule(req.body?.schedule || 'weekdays'),
       atHour: Number.isInteger(req.body?.atHour) ? req.body.atHour : 7,
       tz: req.body?.tz || 'UTC',
@@ -526,8 +544,9 @@ export async function startFromCatalogueHandler(req, res) {
       watcherId: entry.id,
       severity: severityFor(entry.id),
       // The dataset it was matched to, so a change in those records can find
-      // its way back to this watcher.
-      boundTo: match.dataset || '',
+      // its way back to this watcher. A watcher reading two carries both,
+      // and wakeWatchersFor reads either of them.
+      boundTo: bound.using || '',
     });
     // Which watcher, never what it watches.
     sendSignal('watcher_started', { watcherId: entry.id });

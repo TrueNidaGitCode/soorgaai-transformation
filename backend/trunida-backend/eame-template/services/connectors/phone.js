@@ -135,8 +135,36 @@ const historyDays = (config) => {
 export const provides = [
   'date', 'time', 'name', 'phone', 'direction', 'duration_seconds', 'agent',
   'status', 'transcript', 'transcript_status', 'call_id', 'received_at',
+  // Both numbers, kept. `phone` is whichever of them is the customer; these
+  // two are what the provider actually reported, so a row can be checked.
+  'called_from', 'called_to',
   ...SIGNAL_FIELDS,
 ];
+
+/**
+ * Who the call was WITH, which is not always who it was from.
+ *
+ * ── Measured on the first outbound call ───────────────────────────────────
+ *
+ * A clinic rang a patient back about a package. Exotel reported From
+ * 07349250500 — the clinic's own line — and To 7349250983, the patient. This
+ * connector took `from` for both the name and the phone, so the finding was
+ * titled with the clinic's own number and the patient's appeared nowhere in
+ * the application at all. The owner went looking for it and could not find
+ * it, because it had been fetched, parsed, and then dropped.
+ *
+ * Half of a clinic's calls are outbound: the reminder, the result, the call
+ * back somebody promised. On every one of them the customer is `to`.
+ *
+ * Where the direction is unknown — a provider that does not report it, a
+ * payload that omits it — `from` is used, because an unknown call is far more
+ * often one that came in.
+ */
+export function otherParty(call = {}) {
+  const from = String(call.from || '').trim();
+  const to = String(call.to || '').trim();
+  return call.direction === 'out' ? (to || from) : (from || to);
+}
 
 /**
  * The dataset this fills, worked out rather than asked about.
@@ -163,7 +191,14 @@ export function describeShape(config = {}) {
      * about the call — both matter to a person reading a row and neither is
      * a column a watcher should ever bind itself to.
      */
-    internal: ['transcript_status', 'received_at', 'call_id'],
+    /*
+     * Bookkeeping, not business. transcript_status says how far to trust
+     * the transcript beside it, received_at is when this application heard
+     * about the call, and called_from/called_to are the provider's own two
+     * numbers — kept so a row can be checked, but never the column a watcher
+     * should bind 'who' to.  is the one that means the customer.
+     */
+    internal: ['transcript_status', 'received_at', 'call_id', 'called_from', 'called_to'],
   };
 }
 
@@ -473,8 +508,13 @@ export async function pull(config, { maxRows = 50000 } = {}) {
       // The phone number is the name until something else resolves it. A
       // clinic's diary is keyed on a person, so matching happens downstream
       // against whatever the customer's own records call them.
-      name: c.name || c.from || '',
-      phone: c.from || '',
+      // The customer, not whichever end happened to dial. See otherParty.
+      name: c.name || otherParty(c),
+      phone: otherParty(c),
+      // And both numbers as reported, so the row can be checked against the
+      // provider's own record of it.
+      called_from: c.from || '',
+      called_to: c.to || '',
       direction: c.direction || '',
       duration_seconds: String(c.durationSec || 0),
       agent: c.agent || '',

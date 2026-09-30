@@ -1015,9 +1015,41 @@ export async function syncConnector(id, { by = 'owner' } = {}) {
   running.add(String(doc._id));
   try {
     const kind = kindOf(doc.kind);
-    const dataset = findDataset(doc.datasetName);
+    let dataset = findDataset(doc.datasetName);
     if (!dataset) throw new Error('The dataset this source feeds is no longer in this application.');
     await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'syncing', lastError: '' } });
+
+    /*
+     * A source that has learned to report more fills more columns.
+     *
+     * The shape is settled when a connection is made, and the product moves
+     * afterwards. Measured: the phone connector was reading both ends of a
+     * call and landing only one, so on an outbound call — a clinic ringing a
+     * patient back — the number in the application was the clinic's own and
+     * the patient's was nowhere. Fixing the connector fixed nothing, because
+     * the dataset had no column for it to land in.
+     *
+     * Columns are only ADDED. Removing one would drop rows somebody has, and
+     * a source that stops reporting something is not a reason to throw away
+     * what it reported before. mapOntoColumns falls back to the column's own
+     * name, so a new column needs no change to the mapping the owner may
+     * have adjusted.
+     */
+    if (typeof kind.describeShape === 'function') {
+      const shape = await kind.describeShape(openConfig(kind, doc.config));
+      const missing = (shape.columns || []).filter((c) => !(dataset.columns || []).includes(c));
+      if (missing.length) {
+        await defineDataset({
+          name: dataset.name,
+          columns: [...(dataset.columns || []).filter((c) => c !== '_source'), ...missing],
+          key: shape.key || dataset.key || '',
+          from: dataset.definedBy || kind.kind,
+          internal: [...new Set([...(dataset.internal || []), ...(shape.internal || [])])],
+        });
+        dataset = findDataset(doc.datasetName);
+        console.log(`[connectors] ${dataset.name} gained ${missing.join(', ')}`);
+      }
+    }
 
     const objects = await kind.pull(openConfig(kind, doc.config), { maxRows: MAX_ROWS });
     /*

@@ -723,14 +723,41 @@ export async function runAgent(agent, ask) {
  * about it are separate jobs, and only one of them can be tested without a
  * database.
  *
- * Returns the catalogue entries to create and the category names being
- * filled, so the caller can record both.
+ * Returns the catalogue entries to create, the category names being filled,
+ * and every entry the data could support at all, so the caller can record all
+ * three.
+ *
+ * ── Connecting a source has to do something ────────────────────────────────
+ *
+ * A category is recorded as worked through once something under it starts,
+ * and was then never revisited. That is right for a watcher the owner was
+ * shown and did not want, and wrong for one they were never shown.
+ *
+ * Measured on the live physiotherapy application. A Zoho CRM was connected on
+ * day one and fourteen watchers started, filling all five categories. A phone
+ * system was connected months later, a patient's call was transcribed, the
+ * promise a member of staff made was read out of it correctly — and nothing
+ * happened, because Promise Not Kept belongs to Growth and Growth had been
+ * filled by the CRM before a phone system existed. The owner's words were
+ * "there is no evidence of Exotel recording", and they were right: connecting
+ * a whole new system had silently changed nothing.
+ *
+ * So what is remembered is not "this category has been done" but "this
+ * watcher was possible, and offered". A watcher that could not run then,
+ * because the records it needs had not arrived, was never offered — and gets
+ * offered when they do.
  */
 export function watchersToStart({ catalogue = [], categories = [], live = [], seeds = [], covered = null } = {}) {
   const running = new Set(live.map((a) => a.watcherId).filter(Boolean));
   const takenNames = new Set(live.map((a) => a.name));
   const seededWatchers = new Set(seeds.filter((s) => s.kind === 'watcher').map((s) => s.key));
   const seededCategories = new Set(seeds.filter((s) => s.kind === 'category').map((s) => s.key));
+  /*
+   * Everything this application could have run before now, whether it did or
+   * not. Absent on an application delivered before this existed, which is
+   * what the backfill in autoStartWatchers is for.
+   */
+  const seenWatchers = new Set(seeds.filter((s) => s.kind === 'seen').map((s) => s.key));
 
   /*
    * Coverage first, and it is a filter on CATEGORIES, never on how many
@@ -773,9 +800,16 @@ export function watchersToStart({ catalogue = [], categories = [], live = [], se
     .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 1) - (SEVERITY_RANK[b.severity] ?? 1));
   for (const c of rest) {
     const name = categoryNameOf(categories, c.id);
-    // A category the owner has already emptied stays empty: they have seen
-    // everything under it once and said no.
-    if (name && seededCategories.has(name)) continue;
+    /*
+     * A category the owner has worked through stays worked through — for the
+     * watchers that were in it at the time.
+     *
+     * The second half is the whole point. One that has never been possible
+     * has never been offered, so there is nothing for the owner to have said
+     * no to, and a category filled before its records existed must not bury
+     * it for ever.
+     */
+    if (name && seededCategories.has(name) && seenWatchers.has(c.id)) continue;
     add(c);
   }
   for (const c of wanted) {
@@ -783,7 +817,14 @@ export function watchersToStart({ catalogue = [], categories = [], live = [], se
     if (name && !filled.includes(name) && !seededCategories.has(name)) filled.push(name);
   }
 
-  return { wanted, filled };
+  /*
+   * Everything the data supports today, recorded whether or not it started.
+   *
+   * This is what makes "never offered" a fact rather than an inference: a
+   * watcher absent from here on a later run is one that became possible in
+   * between, which is precisely the one worth offering.
+   */
+  return { wanted, filled, seen: ready.map((c) => c.id) };
 }
 
 /** Which category claims a watcher, by the industry's own table. */
@@ -860,8 +901,35 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
 
   const live = await agentsCollection().find({}, { projection: { watcherId: 1, name: 1 } }).toArray();
   const seeds = await seedsCollection().find({}).toArray().catch(() => []);
-  const { wanted, filled } = watchersToStart({ catalogue, categories, live, seeds, covered });
-  if (!wanted.length) return { started: [], skipped: 'nothing new to start' };
+
+  /*
+   * An application delivered before 'seen' existed has none of it, and every
+   * watcher it ever passed over would look newly possible.
+   *
+   * So the first run under this rule records what the data supports today and
+   * starts nothing extra. Everything it could run now is something it could
+   * have run before — this rule is new, the data is not — and a customer
+   * whose board grew by nine watchers overnight because their supplier
+   * shipped a change would be right to be alarmed.
+   *
+   * From the next run on, 'seen' means what it says: a watcher missing from
+   * it became possible in between.
+   */
+  const first = !seeds.some((s) => s.kind === 'seen');
+  const { wanted, filled, seen } = watchersToStart({ catalogue, categories, live, seeds, covered });
+
+  if (first) {
+    await rememberSeeds(seen.map((id) => ({ kind: 'seen', key: id })));
+    console.log(`[agents] recorded ${seen.length} watchers this application could already run`);
+    return { started: [], skipped: 'recorded what was already possible' };
+  }
+
+  if (!wanted.length) {
+    // Recorded even on a quiet run, so a watcher that becomes possible and is
+    // then switched off does not come back on the run after.
+    await rememberSeeds(seen.map((id) => ({ kind: 'seen', key: id })));
+    return { started: [], skipped: 'nothing new to start' };
+  }
 
   const started = [];
   for (const c of wanted) {
@@ -894,6 +962,9 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
   await rememberSeeds([
     ...wanted.map((c) => ({ kind: 'watcher', key: c.id })),
     ...filled.map((name) => ({ kind: 'category', key: name })),
+    // And everything the data supports, so what is possible today cannot be
+    // mistaken for newly possible tomorrow.
+    ...seen.map((id) => ({ kind: 'seen', key: id })),
   ]);
 
   if (started.length) console.log(`[agents] watching from delivery: ${started.join(', ')}`);

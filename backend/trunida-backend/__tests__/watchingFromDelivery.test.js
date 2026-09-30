@@ -403,14 +403,45 @@ describe('choosing what starts, on an application that already has some', () => 
      * seeded at all. Once somebody has seen what a category offers and
      * cleared it out, filling it with the next watcher along would be the
      * same resurrection wearing another name.
+     *
+     * "What a category offers" is now the watchers that were POSSIBLE at the
+     * time, recorded as seen — which is what this test now supplies. A
+     * category seed on its own no longer buries a watcher, because a watcher
+     * the data could not support was never part of what the owner cleared
+     * out. See newSourceOffersWatchers.test.js for why: a phone system was
+     * connected to a live application and every watcher it enabled was
+     * silently suppressed by a category filled before it existed.
      */
-    const seeds = [{ kind: 'category', key: 'Growth' }];
+    const seeds = [
+      { kind: 'category', key: 'Growth' },
+      { kind: 'seen', key: 'enquiry' },
+      { kind: 'seen', key: 'referral' },
+    ];
     const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
     expect(ids(wanted)).not.toContain('enquiry');
     expect(ids(wanted)).not.toContain('referral');
     expect(filled).not.toContain('Growth');
     // And only that category: the rest are untouched.
     expect(wanted).toHaveLength(7);
+  });
+
+  it('but offers one in that category the data could not support before', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    /*
+     * The other half of the same rule, and the bug it was written for. The
+     * owner cleared out Growth when it held enquiry and referral. A source
+     * connected since has made a third one possible, and they have never
+     * been shown it, so there is nothing for them to have said no to.
+     */
+    const seeds = [
+      { kind: 'category', key: 'Growth' },
+      { kind: 'seen', key: 'enquiry' },
+      // referral is NOT seen: it became possible after the category was
+      // cleared, because the records it needs arrived since.
+    ];
+    const { wanted } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
+    expect(ids(wanted)).toContain('referral');
+    expect(ids(wanted)).not.toContain('enquiry');
   });
 
   it('switches nothing back on for an owner who switched it all off', async () => {

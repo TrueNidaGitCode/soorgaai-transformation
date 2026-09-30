@@ -55,6 +55,8 @@
     rule: document.getElementById('fd-rule'),
     facts: document.getElementById('fd-facts'),
     rows: document.getElementById('fd-rows'),
+    said: document.getElementById('fd-said'),
+    saidbody: document.getElementById('fd-saidbody'),
     table: document.getElementById('fd-table'),
     rowsnote: document.getElementById('fd-rowsnote'),
     draft: document.getElementById('fd-draft'),
@@ -558,6 +560,90 @@
 
   // ── One finding, and why we believe it ────────────────────────────────────
 
+  /*
+   * Columns that hold sentences rather than values.
+   *
+   * ── Why a finding needed this ──────────────────────────────────────────
+   *
+   * The first finding built on a phone call read "Promise made with no task
+   * logged afterwards" and then showed a table whose ninth column held eight
+   * hundred characters of transcript. The sentence that caused the finding —
+   * "I will just check with the team and get back to you" — was in there, in
+   * the same size type as the call duration and the same width as a column
+   * called received_at. The owner's words were that anybody would find it
+   * difficult to understand what promise was not kept, and they would.
+   *
+   * Two ways a column earns this: it is named like a quote, or its contents
+   * are longer than anything belongs in a cell. The second matters because a
+   * customer's own column could be called anything at all.
+   */
+  var PROSE_NAME = /quote|transcript|note|descript|comment|message|summary|reason|remark|detail/i;
+  var PROSE_LENGTH = 90;
+  /*
+   * A named column still has to hold a sentence.
+   *
+   * transcript_status matches "transcript" and holds the word "read". Lifted
+   * out as something somebody said, it became a quotation of the word "read"
+   * sitting under the conversation it describes — which is the sort of thing
+   * that makes a careful screen look careless. So a name is a hint and the
+   * content decides, at a length no status word reaches.
+   */
+  var NAMED_MIN = 25;
+
+  function proseColumns(columns, rows) {
+    var out = [];
+    (columns || []).forEach(function (c, i) {
+      var longest = 0;
+      (rows || []).forEach(function (r) {
+        var v = String((r || [])[i] == null ? '' : (r || [])[i]);
+        if (v.length > longest) longest = v.length;
+      });
+      if (longest > PROSE_LENGTH || (PROSE_NAME.test(c) && longest > NAMED_MIN)) out.push(i);
+    });
+    return out;
+  }
+
+  /** promise_quote -> "Promise quote". The customer's own column names. */
+  function humanise(name) {
+    var s = String(name || '').replace(/[_-]+/g, ' ').trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  }
+
+  /**
+   * The sentences out of a finding's rows, quoted rather than tabulated.
+   *
+   * A quote column leads, because on a promise finding that IS the finding.
+   * The transcript follows it, because it is the proof rather than the point
+   * — and a reader who wants it can have it without wading through it first.
+   */
+  function saidBlocks(sides) {
+    var blocks = [];
+    sides.forEach(function (s) {
+      var idx = proseColumns(s.columns, s.rows);
+      if (!idx.length) return;
+      idx.sort(function (a, b) {
+        var qa = /quote/i.test(s.columns[a]) ? 0 : 1;
+        var qb = /quote/i.test(s.columns[b]) ? 0 : 1;
+        return qa - qb || a - b;
+      });
+      idx.forEach(function (i) {
+        (s.rows || []).forEach(function (r) {
+          var v = String((r || [])[i] == null ? '' : (r || [])[i]).trim();
+          if (!v) return;
+          var quote = /quote/i.test(s.columns[i]);
+          blocks.push(
+            '<div class="fd-said__item' + (quote ? ' fd-said__item--quote' : '') + '">'
+            + '<p class="fd-said__label">' + esc(humanise(s.columns[i]))
+            + (s.dataset ? ' <span>' + esc(s.dataset) + '</span>' : '') + '</p>'
+            + '<blockquote class="fd-said__text">' + esc(v) + '</blockquote>'
+            + '</div>'
+          );
+        });
+      });
+    });
+    return blocks.join('');
+  }
+
   function facts(ev) {
     var rows = [];
     // Named "systems" when there are two: a finding that compares a diary
@@ -601,6 +687,10 @@
 
       var lines = ev.lines || [];
       d.rows.hidden = lines.length === 0;
+      // Cleared before every open: a finding with no sentences in it must not
+      // show the last one's.
+      d.said.hidden = true;
+      d.saidbody.innerHTML = '';
       if (lines.length) {
         /*
          * One table per system.
@@ -620,6 +710,33 @@
             { dataset: ev.sides[1].dataset, columns: ev.sides[1].columns, rows: lines.slice(ev.leftCount) },
           ].filter(function (s) { return s.rows.length; })
           : [{ dataset: '', columns: ev.columns || [], rows: lines }];
+
+        /*
+         * The sentences come out first, and out of the table with them.
+         *
+         * Leaving them in as well would mean reading the same eight hundred
+         * characters twice, once unreadably. What is left is the columns a
+         * table is good at — a date, a duration, a number — and those now fit
+         * on a screen.
+         */
+        d.saidbody.innerHTML = saidBlocks(split);
+        d.said.hidden = !d.saidbody.innerHTML;
+
+        split = split.map(function (s) {
+          var drop = proseColumns(s.columns, s.rows);
+          if (!drop.length) return s;
+          var keep = (s.columns || []).map(function (_, i) { return i; })
+            .filter(function (i) { return drop.indexOf(i) < 0; });
+          return {
+            dataset: s.dataset,
+            columns: keep.map(function (i) { return s.columns[i]; }),
+            rows: (s.rows || []).map(function (r) {
+              return keep.map(function (i) { return (r || [])[i]; });
+            }),
+          };
+        }).filter(function (s) { return s.columns.length; });
+
+        d.rows.hidden = !split.length;
 
         d.table.innerHTML = split.map(function (s) {
           var head = (s.columns && s.columns.length)

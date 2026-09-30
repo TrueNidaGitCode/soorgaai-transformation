@@ -2141,6 +2141,42 @@ body {
 .fd__facts dt { margin: 0; font-size: 13px; color: var(--ch-faint); }
 .fd__facts dd { margin: 0; font-size: 13.5px; color: var(--ch-text); word-break: break-word; }
 
+/* What was actually said, above the table of what was recorded.
+
+   A finding built on a phone call carries the whole conversation in one
+   cell. A table with eight hundred characters in its ninth column is a table
+   nobody reads, and the sentence that caused the finding is in there at the
+   same size as the call duration. So the sentences are read as sentences.
+
+   The quote is the one that matters: on a promise finding it IS the finding,
+   so it carries the accent and the transcript below it does not. */
+.fd__said { margin-bottom: 24px; }
+.fd-said__item {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-left: 2px solid var(--ch-line-hi);
+  background: var(--ch-panel);
+  border-radius: 0 8px 8px 0;
+}
+.fd-said__item--quote { border-left-color: var(--ch-accent); }
+.fd-said__label {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+}
+.fd-said__label span { text-transform: none; letter-spacing: 0; opacity: .7; }
+.fd-said__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ch-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.fd-said__item--quote .fd-said__text { font-size: 15px; }
+
 /* The customer's own rows. Wide tables scroll inside their own box rather
    than pushing the page sideways. */
 .fd__tablewrap { overflow-x: auto; border: 1px solid var(--ch-line); border-radius: 8px; }

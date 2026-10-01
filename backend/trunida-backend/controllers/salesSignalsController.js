@@ -183,11 +183,11 @@ export async function patchLead(req, res) {
   try {
     const {
       status, note, name, company, industry, markContacted, motion, via, nextStep, nextStepAt,
-      phone, relationship, location,
+      phone, relationship, location, email, role,
     } = req.body || {};
     const lead = await updateLead(req.params.id, {
       status, note, name, company, industry, markContacted, motion, via, nextStep, nextStepAt,
-      phone, relationship, location,
+      phone, relationship, location, email, role,
     });
     return res.json({ lead });
   } catch (err) {

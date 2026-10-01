@@ -495,7 +495,7 @@ function motionRow(r) {
     <td>${locationCell(r)}</td>
     <td class="sg-note">${routeInCell(r)}</td>
     <td class="sg-note sg-editable" data-log="${esc(r.id)}"
-        title="Click to record the route in, what happens next, and where they are">${nextStepLabel(r)}</td>
+        title="Click to edit the contact, the route in, and what happens next">${nextStepLabel(r)}</td>
     <td class="sg-rowactions">
       ${r.inviteLink
         ? `<button type="button" class="sg-btn" data-copylink="${esc(r.inviteLink)}"
@@ -506,6 +506,26 @@ function motionRow(r) {
     </td>
   </tr>
   <tr class="sg-composer" id="log-${esc(r.id)}" hidden><td colspan="7">
+    <!--
+      Who they are, editable.
+
+      A warm introduction is usually added from a phone number and nothing
+      else — the motion declares phone and not email for exactly that reason —
+      so the address, the name and the company all arrive later, after the
+      person has replied. Until this existed the only way to correct any of
+      them was to delete the lead and add it again, which threw away the
+      status, the route in and the date it was first recorded.
+    -->
+    <div class="sg-l-who">
+      <label>Name <input type="text" class="sg-l-name" value="${esc(r.name || '')}" placeholder="Who they are"></label>
+      <label>Phone <input type="tel" class="sg-l-phone" value="${esc(r.phone || '')}" placeholder="Their number"></label>
+      <label>Email <input type="email" class="sg-l-email" value="${esc(r.email || '')}" placeholder="Once you have one"></label>
+      <label>Company <input type="text" class="sg-l-company" value="${esc(r.company || '')}" placeholder="Where they work"></label>
+      <label>Role <input type="text" class="sg-l-role" value="${esc(r.role || '')}" placeholder="What they do"></label>
+      <label>How you know them
+        <input type="text" class="sg-l-rel" value="${esc(r.relationship || '')}" placeholder="Former colleague, friend&hellip;">
+      </label>
+    </div>
     <input type="text" class="sg-l-via" placeholder="${esc(motionByKey(r.motion)?.viaLabel || 'Route in')}" value="${esc(r.via || '')}">
     <input type="text" class="sg-l-next" placeholder="What has to happen next" value="${esc(r.nextStep || '')}">
     <input type="text" class="sg-l-industry" list="sg-industries" placeholder="Industry"
@@ -1312,6 +1332,16 @@ function wireOutreach() {
         await api(`/leads/${id}`, {
           method: 'PATCH',
           body: JSON.stringify({
+            // Who they are. Sent on every save rather than only when changed:
+            // the server writes a field only when it is defined, and working
+            // out what moved in the browser is a second opinion about the
+            // record that can disagree with the first.
+            name:         box.querySelector('.sg-l-name').value.trim(),
+            phone:        box.querySelector('.sg-l-phone').value.trim(),
+            email:        box.querySelector('.sg-l-email').value.trim(),
+            company:      box.querySelector('.sg-l-company').value.trim(),
+            role:         box.querySelector('.sg-l-role').value.trim(),
+            relationship: box.querySelector('.sg-l-rel').value.trim(),
             via:      box.querySelector('.sg-l-via').value.trim(),
             nextStep: box.querySelector('.sg-l-next').value.trim(),
             // An empty date clears the deadline rather than leaving a stale one.

@@ -3381,3 +3381,51 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
    “Clinics & Wellness 0” is the most useful thing on this screen. */
 .sg-ind--focus { border-style: dashed; border-color: rgba(92, 197, 167, 0.45); color: rgba(92, 197, 167, 0.8); }
 .sg-ind--focus.sg-ind--on { border-style: solid; border-color: #5CC5A7; color: #5CC5A7; }
+
+/* ── Who they are, editable ────────────────────────────────────────────────
+   A warm introduction is usually added from a phone number and nothing else,
+   so the name, the company and above all the address arrive later. Until this
+   block existed the only way to correct any of them was to delete the lead and
+   add it again, which threw away the status, the route in and the date it was
+   first recorded.
+
+   It sits at the top of the Log panel because it is what somebody opens the
+   panel to do once the introduction has actually happened. */
+
+.sg-l-who {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.6rem 0.9rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(92, 197, 167, 0.18);
+}
+
+.sg-l-who label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #CCCCCC);
+  min-width: 0;
+}
+
+.sg-l-who input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(92, 197, 167, 0.2);
+  border-radius: 10px;
+  color: var(--text-primary, #FFFFFF);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+.sg-l-who input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.sg-l-who input:focus {
+  outline: none;
+  border-color: var(--accent-green, #5CC5A7);
+  background: rgba(92, 197, 167, 0.1);
+}

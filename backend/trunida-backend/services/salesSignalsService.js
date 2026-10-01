@@ -1054,9 +1054,10 @@ export async function addLead({
 
 export async function updateLead(id, {
   status, note, name, company, industry, markContacted, motion, via, nextStep, nextStepAt,
-  phone, relationship, location,
+  phone, relationship, location, email, role,
 }) {
   const set = {};
+  const unset = {};
   if (motion !== undefined) {
     // Re-filing a lead under another motion is legitimate — an intro that goes
     // nowhere becomes a cold email, a cold reply becomes a workshop — so this
@@ -1081,11 +1082,56 @@ export async function updateLead(id, {
   if (name    !== undefined) set.name    = String(name).trim();
   if (company !== undefined) set.company = String(company).trim();
   if (industry !== undefined) set.industry = String(industry).trim().slice(0, 80);
+  if (role     !== undefined) set.role     = String(role).trim().slice(0, 80);
   if (markContacted) set.lastContactedAt = new Date();
 
-  if (!Object.keys(set).length) throw new Error('Nothing to update.');
+  /*
+   * ── The address, which is the one field with consequences ────────────────
+   *
+   * A warm introduction is usually added from a phone number — the motion
+   * says so — and the address arrives later, after the person has replied.
+   * So it has to be editable, and it is the field most often got wrong first.
+   *
+   * Two things make it unlike every field above.
+   *
+   * Clearing it UNSETS rather than writing an empty string. The unique index
+   * on email is partial on `{ $type: 'string' }`, so '' is a value as far as
+   * Mongo is concerned and the second lead cleared this way would collide with
+   * the first — which is precisely the bug the model's own comment describes
+   * having been fixed once already.
+   *
+   * And it is lowercased, because that index is what matches a lead against
+   * the User who later signs up. An address stored with capitals is a lead
+   * that silently never attributes.
+   */
+  if (email !== undefined) {
+    const clean = String(email ?? '').trim().toLowerCase();
+    if (clean && !clean.includes('@')) throw new Error('That is not a valid email address.');
+    if (clean) set.email = clean; else unset.email = '';
+  }
 
-  const doc = await ColdLead.findByIdAndUpdate(id, { $set: set }, { new: true }).lean();
+  if (!Object.keys(set).length && !Object.keys(unset).length) throw new Error('Nothing to update.');
+
+  const change = {};
+  if (Object.keys(set).length) change.$set = set;
+  if (Object.keys(unset).length) change.$unset = unset;
+
+  let doc;
+  try {
+    doc = await ColdLead.findByIdAndUpdate(id, change, { new: true }).lean();
+  } catch (err) {
+    /*
+     * The duplicate is a real answer, not a crash.
+     *
+     * Typing an address already on another lead is an ordinary mistake, and
+     * "E11000 duplicate key error collection" is not something to put in front
+     * of whoever is updating a contact.
+     */
+    if (err?.code === 11000) {
+      throw new Error('Another lead already has that email address.');
+    }
+    throw err;
+  }
   if (!doc) throw new Error('Lead not found.');
   return doc;
 }

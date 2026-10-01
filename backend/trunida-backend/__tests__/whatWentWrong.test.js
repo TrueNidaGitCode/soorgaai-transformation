@@ -316,3 +316,28 @@ describe('the chart', () => {
     expect(css).not.toContain('.rp-table');
   });
 });
+
+describe('it is laid out like the rest of the application', () => {
+  const css = read('../eame-template/frontend/app.css');
+  const block = (sel) => {
+    const at = css.indexOf(sel + ' {');
+    return at < 0 ? '' : css.slice(at, css.indexOf('}', at));
+  };
+
+  it('fills the screen, as the board does', () => {
+    /*
+     * It shipped as a centred 1000px column copied from the Watchers page,
+     * which put it in the middle of the screen beside a Home page that fills
+     * it. Two screens about the same findings, aligned differently, reads as a
+     * mistake before anybody works out which one it is.
+     */
+    expect(block('.rp')).toContain('max-width: none');
+    expect(block('.rp')).not.toContain('margin: 0 auto');
+  });
+
+  it('uses the same gutter as the board', () => {
+    const gutter = 'padding: 34px clamp(16px, 4vw, 48px) 72px;';
+    expect(block('.rp')).toContain(gutter);
+    expect(block('.fn')).toContain(gutter);
+  });
+});

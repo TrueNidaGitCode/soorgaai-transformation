@@ -2760,8 +2760,12 @@ body {
 
 .rp {
   padding: 34px clamp(16px, 4vw, 48px) 72px;
-  max-width: 1000px;
-  margin: 0 auto;
+  /* Laid out like the board, because it IS the board over time. This was a
+     centred 1000px column copied from the Watchers page, which put it in the
+     middle of the screen beside a Home page that fills it — two screens about
+     the same findings, aligned differently, which reads as a mistake before
+     anybody works out which one it is. */
+  max-width: none;
 }
 
 .rp__h { margin: 0 0 4px; font-size: 22px; color: var(--ch-text); }

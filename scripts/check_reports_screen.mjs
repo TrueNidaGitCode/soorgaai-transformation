@@ -242,6 +242,38 @@ setTimeout(async function () {
       if (r < 4.5) bad(s[0] + ' has contrast ' + r.toFixed(2) + ':1 — it cannot be read');
     });
 
+    // ── Aligned like the board, which is the page it is about ───────────
+    //
+    // It was a centred 1000px block copied from the Watchers page, sitting
+    // in the middle of the screen beside a Home page that fills it. Two
+    // screens about the same findings, aligned differently, reads as a
+    // mistake before anybody works out which one it is. So this does not
+    // check an absolute position — there is a sidebar — it checks that the
+    // two panels occupy the same column.
+    var home = document.querySelector("[data-side='home']");
+    if (home) {
+      home.click();
+      await wait(250);
+      var fnEl = document.getElementById("ch-findings");
+      var fn = fnEl ? fnEl.getBoundingClientRect() : null;
+      link.click();
+      await wait(250);
+      var rp = panel.getBoundingClientRect();
+      out.board = fn ? Math.round(fn.left) + "+" + Math.round(fn.width) : "(none)";
+      out.report = Math.round(rp.left) + "+" + Math.round(rp.width);
+      if (fn && fn.width > 0) {
+        if (Math.abs(fn.left - rp.left) > 1) bad("Reports starts at " + Math.round(rp.left) + ", the board at " + Math.round(fn.left));
+        if (Math.abs(fn.width - rp.width) > 1) bad("Reports is " + Math.round(rp.width) + "px, the board " + Math.round(fn.width) + "px");
+      }
+    }
+
+    // And its own content shares one left edge.
+    var lefts = [".rp__h", ".rp-head__line", ".rp-tiles", ".rp-chart"].map(function (sel) {
+      var el = panel.querySelector(sel);
+      return el ? Math.round(el.getBoundingClientRect().left) : -1;
+    });
+    out.lefts = lefts.join(",");
+    if (Math.max.apply(null, lefts) - Math.min.apply(null, lefts) > 1) bad("content does not share a left edge: " + out.lefts);
     out.scrollW = document.documentElement.scrollWidth;
     out.clientW = document.documentElement.clientWidth;
     if (out.scrollW > out.clientW + 2) bad('the page scrolls sideways');
@@ -309,6 +341,7 @@ console.log(`      tiles: ${r.tiles ?? '?'}`);
 console.log(`      bars : ${r.rows ?? '?'} · widths ${r.widths ?? '?'} in ${r.chartW ?? '?'}px · top "${r.first ?? '?'}" (${r.segments ?? '?'} segments)`);
 console.log(`      month: ${r.month ?? '?'}  (carried ${r.carried ?? '?'})`);
 console.log(`      note : ${r.note ?? '?'}`);
+console.log(`      layout: board ${r.board ?? '?'} · report ${r.report ?? '?'} · edges ${r.lefts ?? '?'}`);
 console.log(`      contrast: ${(r.contrast || []).join(' · ')} · width ${r.scrollW ?? '?'}/${r.clientW ?? '?'}`);
 (r.fail || []).forEach((f) => console.log(`        ↳ ${f}`));
 console.log('\nScreenshot: scripts/.screens/reports.png');

@@ -3159,7 +3159,6 @@ const VERTICALS = [
   {
     id: 'clinics',
     name: 'Clinics &amp; Wellness',
-    met: 2,
     hypothesis: 'Reality does not reach the business system. Something happens &mdash; a patient is '
       + 'treated, a customer calls &mdash; a signal of it exists somewhere, and the record says '
       + 'otherwise. Revenue leakage is one consequence of that gap, and was mistaken for the '
@@ -3179,7 +3178,6 @@ const VERTICALS = [
   {
     id: 'automotive',
     name: 'Automotive',
-    met: 0,
     hypothesis: 'Untested, and now specific: a project slips, and the signals were in the plan '
       + 'before anybody saw them &mdash; work sitting blocked, tasks nobody owns, activity that '
       + 'stopped moving while the milestone date kept coming.',
@@ -3380,6 +3378,68 @@ function renderAudience() {
       bucket: ['open', 'They raised it unprompted and stressed it, which is a signal. Frequency, '
         + 'cost and urgency were not asked, so it is not yet Acute on the evidence'],
     },
+    /*
+     * Three problems named, none of them counted.
+     *
+     * The most useful column so far on breadth and the weakest on evidence: he
+     * opened with three distinct pains rather than one, and not one of them
+     * came with a number. So every condition that asks "how often" or "what
+     * does it cost" is left blank, and the amber cells below are the next
+     * conversation rather than a gap in the writing-up.
+     *
+     * ── The one that repeats ──────────────────────────────────────────────
+     *
+     * "He is not aware how the team is communicating with customers" is the
+     * third sighting of the same gap: Vesoma's call that leaves nothing to
+     * read, The Wellness Co.'s call that the CRM does not know happened, and
+     * now a founder who cannot see his own team's conversations. Three
+     * companies, unprompted, in one vertical. That is the strongest signal in
+     * this table and it is why `same` is marked rather than left open.
+     *
+     * The other two are new and neither has been seen elsewhere yet: a
+     * cancellation that arrives too late to refill the slot, and work handed
+     * between Physio and Nutrition with nothing joining them up.
+     *
+     * ── Why the custom CRM matters more than it sounds ────────────────────
+     *
+     * They built their own. There is no vendor to ask for an API and no
+     * export to schedule — but a custom system is one they control, which
+     * usually means a database they can grant read access to. The database
+     * connector already ships. Of the clinics seen so far this is the only
+     * one we could connect to properly today rather than by file.
+     */
+    {
+      id: 'C', name: 'iSPAN', met: 'Not recorded', when: 'Interviewed',
+      signals: ['open', 'A CRM they built themselves. Whether it already records a cancellation, '
+        + 'a lead call or a handover between teams was not asked'],
+      spread: ['yes', 'A custom CRM, and alongside it however the team actually talks to '
+        + 'customers &mdash; which he cannot see. The conversation and the record are in '
+        + 'different places'],
+      manual: ['open', 'Coordination between Physio, Nutrition and the other teams is done by '
+        + 'people and he says it is hard. Who does it, and how often it is missed, was not asked'],
+      late: ['yes', 'A cancellation arrives at the last minute with no intimation &mdash; by '
+        + 'definition too late to refill the slot'],
+      cost: ['open', 'An empty slot has a price and he did not give one. Nothing here is counted '
+        + 'yet, so the condition is unmet rather than failed'],
+      action: ['open', 'Not asked. What he would do with an early warning is the question that '
+        + 'decides whether any of this is worth building'],
+
+      same: ['yes', 'One of the three repeats, and it is the one that keeps repeating: the team '
+        + 'talks to customers and the owner cannot see it. Third company in this vertical to say '
+        + 'so unprompted'],
+      workflow: ['yes', 'Lead &rarr; call &rarr; conversion, and booking &rarr; cancellation, and '
+        + 'a handover between Physio and Nutrition'],
+      simsignals: ['yes', 'Lead and call activity, bookings and cancellations, and whatever '
+        + 'crosses between teams &mdash; against a CRM that may hold none of it'],
+
+      icpline: ['open', 'Multi-discipline wellness centre &middot; lead &rarr; call &rarr; '
+        + 'conversion &middot; the owner cannot see how his team talks to customers &middot; the '
+        + 'cost and the action were not asked'],
+      bucket: ['open', 'Three problems raised unprompted, which is strong. None of them counted, '
+        + 'which is why it is not yet Acute &mdash; the test is evidence, not enthusiasm'],
+      reverse: ['open', 'Three workflows named and none of them watched. Which of the three '
+        + 'actually breaks, and where, is unknown'],
+    },
     ],
   };
 
@@ -3465,18 +3525,30 @@ function renderAudience() {
         ${COMPANIES.map((c) => cell(c, s.key)).join('')}</tr>`;
   };
 
+  /**
+   * How many have actually been interviewed, counted from the table.
+   *
+   * This used to be a number on the vertical. Adding iSPAN made the header
+   * say "2 of 5" above three filled columns — a count that disagrees with
+   * the thing it is counting, on the one screen whose whole argument is
+   * that the evidence is real. Derived now, so adding an interview is
+   * adding one object and nothing else, exactly as the blanks below already
+   * promise.
+   */
+  const metCount = (vertId) => (INTERVIEWED[vertId] || []).length;
+
   el.innerHTML = `
     <section class="sg-ta">
       <div class="sg-seg" role="tablist" aria-label="Vertical">
         ${VERTICALS.map((v) => `
           <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
                   data-vert="${v.id}" aria-selected="${v.id === audienceVertical}">
-            ${v.name}<span>${v.met} of 5 interviewed</span>
+            ${v.name}<span>${metCount(v.id)} of 5 interviewed</span>
           </button>`).join('')}
       </div>
 
       <div class="sg-ta__lead">
-        <p class="sg-ta__seg">${SEGMENT}<span>${V.met} of 5 interviewed</span>
+        <p class="sg-ta__seg">${SEGMENT}<span>${metCount(audienceVertical)} of 5 interviewed</span>
           <em class="sg-ta__kb">knowledge base overlay</em></p>
         <p class="sg-ta__hyp">${V.hypothesis}</p>
         <p class="sg-ta__note">${V.note}</p>

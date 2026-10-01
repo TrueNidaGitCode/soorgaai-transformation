@@ -54,11 +54,11 @@ const BOARD = {
       period: 'week', label: 'This week', since: 'Since Monday, 2026-09-28',
       previousLabel: 'last week',
       problems: [
-        { problem: 'Unstaffed Session', severity: 'high', appeared: 6, resolved: 6, open: 0, carried: 0 },
-        { problem: 'Empty Slot', severity: 'medium', appeared: 2, resolved: 2, open: 0, carried: 0 },
-        { problem: 'No Show', severity: 'medium', appeared: 1, resolved: 0, open: 1, carried: 0 },
-        { problem: 'Promise Not Kept', severity: 'medium', appeared: 1, resolved: 0, open: 1, carried: 0 },
-        { problem: 'Timesheet Chaser', severity: 'low', appeared: 1, resolved: 0, open: 1, carried: 0 },
+        { problem: 'Unstaffed Session', severity: 'high', appeared: 6, resolved: 6, open: 0, carried: 0, stillOpen: 0 },
+        { problem: 'Empty Slot', severity: 'medium', appeared: 2, resolved: 2, open: 0, carried: 0, stillOpen: 0 },
+        { problem: 'No Show', severity: 'medium', appeared: 1, resolved: 0, open: 1, carried: 0, stillOpen: 1 },
+        { problem: 'Promise Not Kept', severity: 'medium', appeared: 1, resolved: 0, open: 1, carried: 0, stillOpen: 1 },
+        { problem: 'Timesheet Chaser', severity: 'low', appeared: 1, resolved: 0, open: 1, carried: 0, stillOpen: 1 },
       ],
       totals: { appeared: 11, resolved: 8, open: 3, carried: 0, kinds: 5, before: 0, change: 11 },
     },
@@ -76,9 +76,9 @@ const BOARD = {
       period: 'ytd', label: 'Year to date', since: 'Since 2026-01-01',
       previousLabel: 'the same point last year',
       problems: [
-        { problem: 'Unstaffed Session', severity: 'high', appeared: 6, resolved: 6, open: 0, carried: 0 },
-        { problem: 'Empty Slot', severity: 'medium', appeared: 2, resolved: 2, open: 0, carried: 0 },
-        { problem: 'No Show', severity: 'medium', appeared: 1, resolved: 0, open: 1, carried: 0 },
+        { problem: 'Unstaffed Session', severity: 'high', appeared: 6, resolved: 6, open: 0, carried: 0, stillOpen: 0 },
+        { problem: 'Empty Slot', severity: 'medium', appeared: 2, resolved: 2, open: 0, carried: 0, stillOpen: 0 },
+        { problem: 'No Show', severity: 'medium', appeared: 1, resolved: 0, open: 1, carried: 0, stillOpen: 1 },
       ],
       totals: { appeared: 11, resolved: 8, open: 3, carried: 0, kinds: 5, before: 0, change: 11 },
     },
@@ -173,14 +173,36 @@ setTimeout(async function () {
     if (out.tiles.indexOf('Appeared=11') < 0) bad('tiles: ' + out.tiles);
     if (out.tiles.indexOf('Still open=3') < 0) bad('tiles: ' + out.tiles);
 
-    // ── The table lists the problems, worst first ───────────────────────
-    var rows = panel.querySelectorAll('.rp-table tbody tr');
+    // ── The chart draws a bar per problem, worst first ──────────────────
+    var rows = panel.querySelectorAll(".rp-chart .rp-row");
     out.rows = rows.length;
-    if (rows.length !== 5) bad('table has ' + rows.length + ' rows, expected 5');
-    out.first = rows[0] ? rows[0].textContent.trim().replace(/\\s+/g, ' ') : '';
-    if (out.first.indexOf('Unstaffed Session') !== 0) bad('table not ordered by occurrences: ' + out.first);
-    if (!rows[0].querySelector('.rp-sev--high')) bad('severity is not shown on the row');
+    if (rows.length !== 5) bad("chart has " + rows.length + " bars, expected 5");
+    out.first = rows[0] ? rows[0].querySelector(".rp-row__name").textContent.trim() : "";
+    if (out.first !== "Unstaffed Session") bad("not ordered by occurrences: " + out.first);
+    if (!rows[0].querySelector(".rp-sev--high")) bad("severity is not shown on the row");
 
+    // The widest bar is the biggest number, and the rest are drawn against
+    // it. A chart whose bars are all the same length is a chart that is
+    // not plotting anything.
+    var widths = [].map.call(rows, function (x) {
+      return Math.round(x.querySelector(".rp-bar").getBoundingClientRect().width);
+    });
+    out.widths = widths.join(",");
+    if (widths[0] <= widths[widths.length - 1]) bad("bars do not scale: " + out.widths);
+    if (widths[widths.length - 1] < 2) bad("the smallest bar is invisible: " + out.widths);
+
+    // Each bar sums to its own count: still-open plus dealt-with.
+    var top = rows[0];
+    var parts = top.querySelectorAll(".rp-bar__part");
+    var sum = 0;
+    [].forEach.call(parts, function (q) { sum += q.getBoundingClientRect().width; });
+    out.segments = parts.length;
+    if (Math.abs(sum - widths[0]) > 2) bad("the segments do not fill the bar");
+
+    // Nothing is wider than the column it sits in.
+    var chartW = panel.querySelector(".rp-chart").getBoundingClientRect().width;
+    out.chartW = Math.round(chartW);
+    widths.forEach(function (w) { if (w > chartW + 1) bad("a bar overflows the chart: " + w + " > " + Math.round(chartW)); });
     // ── Switching period redraws from the same payload ──────────────────
     var reportCalls = function () { return (window.__calls || []).filter(function (u) { return u.indexOf("/api/reports") === 0; }).length; };
     var before = reportCalls();
@@ -212,7 +234,7 @@ setTimeout(async function () {
     function ratio(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
     out.contrast = [];
     [['a tile figure', panel.querySelector('.rp-tile__v')],
-     ['a table cell', panel.querySelector('.rp-table td')],
+     ['a bar label', panel.querySelector('.rp-row__name')],
      ['the headline', panel.querySelector('.rp-head__line')]].forEach(function (s) {
       if (!s[1]) { bad('nothing to measure for ' + s[0]); return; }
       var r = ratio(rgb(getComputedStyle(s[1]).color), behind(s[1]));
@@ -284,7 +306,7 @@ console.log(`${ok ? 'PASS' : 'FAIL'}  reports — css ${r.cssRules ?? '?'} rules
 console.log(`      sidebar: "${r.label ?? '?'}"   tabs: ${r.tabs ?? '?'}`);
 console.log(`      week : ${r.headline ?? '?'}`);
 console.log(`      tiles: ${r.tiles ?? '?'}`);
-console.log(`      top  : ${r.first ?? '?'}`);
+console.log(`      bars : ${r.rows ?? '?'} · widths ${r.widths ?? '?'} in ${r.chartW ?? '?'}px · top "${r.first ?? '?'}" (${r.segments ?? '?'} segments)`);
 console.log(`      month: ${r.month ?? '?'}  (carried ${r.carried ?? '?'})`);
 console.log(`      note : ${r.note ?? '?'}`);
 console.log(`      contrast: ${(r.contrast || []).join(' · ')} · width ${r.scrollW ?? '?'}/${r.clientW ?? '?'}`);

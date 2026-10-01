@@ -211,3 +211,108 @@ describe('it reaches a customer at all', () => {
     }
   });
 });
+
+/**
+ * The bar has to add up.
+ *
+ * A stacked bar whose segments do not sum to the bar they sit in is a lie
+ * drawn to scale, and it is the easy mistake here: `resolved` counts
+ * resolutions that happened in the window — which may belong to findings from
+ * months earlier — and `open` counts everything true right now, including what
+ * was carried in. Neither is a part of `appeared`.
+ *
+ * `stillOpen` is the one that is: of the findings that appeared in THIS
+ * window, how many are still true. So appeared = dealt with + stillOpen, and
+ * the chart may split the bar on it.
+ */
+describe('splitting the bar', () => {
+  it('counts only what appeared in the window and is still true', () => {
+    const rows = [
+      f('No Show', '2026-09-29T06:00:00Z'),
+      f('No Show', '2026-09-29T07:00:00Z', { state: 'resolved', resolvedAt: new Date('2026-09-30T06:00:00Z') }),
+    ];
+    const r = summarise(rows, wins.week);
+    expect(r.problems[0].appeared).toBe(2);
+    expect(r.problems[0].stillOpen).toBe(1);
+  });
+
+  it('never exceeds the bar it is drawn inside', () => {
+    const rows = [
+      f('A', '2026-09-29T06:00:00Z'),
+      f('A', '2026-09-29T06:00:00Z'),
+      // Appeared before the window and still open: it is carried, not part of
+      // this period's bar.
+      f('A', '2026-08-01T06:00:00Z'),
+    ];
+    const r = summarise(rows, wins.week);
+    const p = r.problems[0];
+    expect(p.appeared).toBe(2);
+    expect(p.stillOpen).toBe(2);
+    expect(p.stillOpen).toBeLessThanOrEqual(p.appeared);
+    expect(p.carried).toBe(1);
+    // open counts everything true now, which is MORE than the bar — which is
+    // exactly why it may not be used to split it.
+    expect(p.open).toBe(3);
+  });
+
+  it('is excluded from a bar whose problem appeared earlier', () => {
+    const old = f('A', '2026-08-01T06:00:00Z');
+    const r = summarise([old], wins.week);
+    expect(r.problems[0].appeared).toBe(0);
+    expect(r.problems[0].stillOpen).toBe(0);
+  });
+
+  it('totals the same way', () => {
+    const rows = [
+      f('A', '2026-09-29T06:00:00Z'),
+      f('B', '2026-09-29T06:00:00Z', { state: 'resolved', resolvedAt: new Date('2026-09-30T06:00:00Z') }),
+    ];
+    const t = summarise(rows, wins.week).totals;
+    expect(t.appeared).toBe(2);
+    expect(t.stillOpen).toBe(1);
+  });
+});
+
+describe('the chart', () => {
+  const ui = read('../eame-template/frontend/reports.js');
+  const css = read('../eame-template/frontend/app.css');
+
+  it('is sized as a share of the widest bar, so it fits whatever screen it is on', () => {
+    expect(ui).toContain('var share = max ? (total / max) * 100 : 0;');
+    // Plain substrings rather than a pattern: the line being checked is itself
+    // full of quotes and plus signs, and every attempt to escape it as a regex
+    // produced an assertion that matched nothing and said so unhelpfully.
+    expect(ui).toContain('class="rp-bar" style="width:');
+    expect(ui).toContain('+ share +');
+  });
+
+  it('splits the bar on stillOpen and nothing else', () => {
+    // resolved and open are not parts of appeared; using either would draw
+    // segments that overflow or underfill their own bar.
+    expect(ui).toContain("p.stillOpen");
+    expect(ui).not.toMatch(/openPart[^;]*p\.(open|resolved)\b/);
+  });
+
+  it('survives a server that does not send stillOpen yet', () => {
+    // During a rolling deploy a page can be newer than the API answering it,
+    // and an unguarded undefined drew every bar empty.
+    expect(ui).toContain("p[metric]) || 0;");
+  });
+
+  it('charts what is open when nothing new appeared, rather than a row of nothing', () => {
+    expect(ui).toContain("var metric = r.totals.appeared ? 'appeared' : 'open';");
+    expect(ui).toContain('Nothing new appeared, so this is what is still open from before.');
+  });
+
+  it('says which shade is which, because a colour needs a legend', () => {
+    expect(ui).toContain('still open');
+    expect(ui).toContain('dealt with');
+    expect(css).toContain('.rp-key__sw--open');
+    expect(css).toContain('.rp-key__sw--done');
+  });
+
+  it('left no table behind', () => {
+    expect(ui).not.toContain('<table');
+    expect(css).not.toContain('.rp-table');
+  });
+});

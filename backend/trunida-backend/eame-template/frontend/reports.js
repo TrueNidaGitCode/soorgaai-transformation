@@ -105,29 +105,96 @@
       + '</div>';
   }
 
-  function table(r) {
+  /**
+   * The problems, as bars.
+   *
+   * ── Why horizontal, and why no library ────────────────────────────────────
+   *
+   * Horizontal because the labels are sentences — "Unstaffed Session",
+   * "Promise Not Kept" — and vertical bars would either clip them or turn
+   * them on their side. A horizontal bar gives the name a whole line and
+   * still reads on a phone.
+   *
+   * No charting library because a bar is a div with a width. Every length
+   * here is a percentage of the widest bar, so the chart is whatever size the
+   * screen is, with nothing to recalculate on resize and nothing to overflow.
+   *
+   * ── The two shades, and why they are allowed to be one bar ────────────────
+   *
+   * The bar is how many times this problem appeared in the period, split into
+   * the ones since dealt with and the ones still true. Those two sum exactly
+   * to the bar, which is the only reason they may be drawn inside it — the
+   * server computes `stillOpen` for this, rather than the screen reaching for
+   * `resolved` or `open`, neither of which is a part of `appeared`.
+   */
+  function chart(r) {
     if (!r.problems.length) {
       return '<p class="rp-empty">No problems have been recorded in this period.</p>';
     }
-    var rows = r.problems.map(function (p) {
-      return '<tr>'
-        + '<td class="rp-what"><span class="rp-sev rp-sev--' + esc(p.severity) + '"></span>'
-        + esc(p.problem) + '</td>'
-        + '<td class="rp-n"><strong>' + p.appeared + '</strong></td>'
-        + '<td class="rp-n">' + p.resolved + '</td>'
-        + '<td class="rp-n">' + p.open + '</td>'
-        + '<td class="rp-n rp-n--soft">' + (p.carried || '') + '</td>'
-        + '</tr>';
+
+    /*
+     * A period where nothing new appeared still has something to show: what
+     * is carried in and still unfixed. Charting `appeared` there would draw a
+     * row of empty bars and say nothing.
+     */
+    var metric = r.totals.appeared ? 'appeared' : 'open';
+    var rows = r.problems.filter(function (p) { return p[metric] > 0; });
+    if (!rows.length) {
+      return '<p class="rp-empty">Nothing appeared in this period, and nothing is open.</p>';
+    }
+
+    var max = 0;
+    rows.forEach(function (p) { if (p[metric] > max) max = p[metric]; });
+
+    var bars = rows.map(function (p) {
+      var total = p[metric];
+      /*
+       * Guarded, because a bar with no segments is an invisible row.
+       * stillOpen arrives from the server, and during a rolling deploy a
+       * page can briefly be newer than the API answering it — which drew
+       * every bar empty rather than merely unsplit.
+       */
+      var open = (metric === 'appeared' ? p.stillOpen : p[metric]) || 0;
+      var closed = Math.max(0, total - open);
+      // Of the whole chart's width, this bar takes its share of the largest.
+      var share = max ? (total / max) * 100 : 0;
+      var openPart = total ? (open / total) * 100 : 0;
+
+      var parts = '';
+      if (closed) {
+        parts += '<span class="rp-bar__part rp-bar__part--done" style="width:' + (100 - openPart) + '%"></span>';
+      }
+      if (open) {
+        parts += '<span class="rp-bar__part rp-bar__part--open" style="width:' + openPart + '%"></span>';
+      }
+
+      var carried = p.carried
+        ? '<span class="rp-row__carried">' + p.carried + ' from before</span>'
+        : '';
+
+      return '<li class="rp-row">'
+        + '<p class="rp-row__top">'
+        + '<span class="rp-sev rp-sev--' + esc(p.severity) + '"></span>'
+        + '<span class="rp-row__name">' + esc(p.problem) + '</span>'
+        + '<span class="rp-row__n">' + total + '</span>'
+        + '</p>'
+        + '<span class="rp-bar" style="width:' + share + '%">' + parts + '</span>'
+        + '<p class="rp-row__foot">'
+        + (open ? '<span class="rp-row__open">' + open + ' still open</span>' : '')
+        + (closed ? '<span class="rp-row__done">' + closed + ' dealt with</span>' : '')
+        + carried
+        + '</p>'
+        + '</li>';
     }).join('');
 
-    return '<table class="rp-table">'
-      + '<thead><tr>'
-      + '<th scope="col">Problem</th>'
-      + '<th scope="col" class="rp-n">Appeared</th>'
-      + '<th scope="col" class="rp-n">Resolved</th>'
-      + '<th scope="col" class="rp-n">Open</th>'
-      + '<th scope="col" class="rp-n">Carried in</th>'
-      + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    var caption = metric === 'appeared'
+      ? 'How many times each problem appeared.'
+      : 'Nothing new appeared, so this is what is still open from before.';
+
+    return '<p class="rp-chart__cap">' + caption
+      + ' <span class="rp-key"><i class="rp-key__sw rp-key__sw--open"></i>still open</span>'
+      + ' <span class="rp-key"><i class="rp-key__sw rp-key__sw--done"></i>dealt with</span></p>'
+      + '<ul class="rp-chart">' + bars + '</ul>';
   }
 
   function draw() {
@@ -144,7 +211,7 @@
         + esc(x.label) + '<span>' + x.totals.appeared + '</span></button>';
     }).join('');
 
-    body.innerHTML = '<div class="rp-head">' + headline(r) + '</div>' + tiles(r) + table(r);
+    body.innerHTML = '<div class="rp-head">' + headline(r) + '</div>' + tiles(r) + chart(r);
 
     /*
      * The counting rule, written where the numbers are.

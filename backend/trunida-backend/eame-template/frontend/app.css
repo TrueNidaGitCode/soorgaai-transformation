@@ -2833,35 +2833,6 @@ body {
 .rp-tile__v { font-size: 26px; font-variant-numeric: tabular-nums; color: var(--ch-text); line-height: 1.1; }
 .rp-tile__n { font-size: 12px; color: var(--ch-dim); line-height: 1.45; }
 
-.rp-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  border: 1px solid var(--ch-line);
-  border-radius: var(--ch-radius);
-  overflow: hidden;
-}
-
-.rp-table th {
-  text-align: left;
-  padding: 11px 14px;
-  background: var(--ch-panel);
-  border-bottom: 1px solid var(--ch-line);
-  font-size: 11.5px;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--ch-dim);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.rp-table td { padding: 11px 14px; border-bottom: 1px solid var(--ch-line); color: var(--ch-text); }
-.rp-table tbody tr:last-child td { border-bottom: 0; }
-
-.rp-n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rp-n--soft { color: var(--ch-dim); }
-
-.rp-what { display: flex; align-items: center; gap: 9px; }
 
 /* How serious this kind of problem is, as the watcher declares it. */
 .rp-sev { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--ch-dim); }
@@ -2882,6 +2853,94 @@ body {
 
 @media (max-width: 560px) {
   .rp-tile__v { font-size: 22px; }
-  .rp-table { font-size: 13px; }
-  .rp-table th, .rp-table td { padding: 9px 10px; }
+  .rp-row__name { font-size: 13px; }
+}
+
+/* ── The chart ─────────────────────────────────────────────────────────────
+   A bar is a div with a width, so there is no charting library here and
+   nothing to recalculate when the window changes: every length is a
+   percentage of the widest bar, which makes the chart exactly as wide as the
+   screen it is on.
+
+   Horizontal because the labels are sentences. Vertical bars would either
+   clip "Unstaffed Session" or stand it on its side, and this is a screen
+   somebody reads on a phone at the front desk. */
+
+.rp-chart__cap {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  color: var(--ch-dim);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+
+.rp-key { display: inline-flex; align-items: center; gap: 6px; }
+.rp-key__sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.rp-key__sw--open { background: var(--ch-accent); }
+.rp-key__sw--done { background: color-mix(in srgb, var(--ch-accent) 32%, transparent); }
+
+.rp-chart { list-style: none; margin: 0; padding: 0; }
+
+.rp-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ch-line);
+}
+
+.rp-row:last-child { border-bottom: 0; }
+
+.rp-row__top {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0 0 7px;
+}
+
+/* The name takes the room it needs and wraps rather than being clipped; the
+   count stays pinned to the right where the eye can run down the column. */
+.rp-row__name { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--ch-text); }
+
+.rp-row__n {
+  flex: none;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ch-text);
+}
+
+/* The bar itself. Width is this problem's share of the largest, so the
+   longest bar fills the column and the rest are read against it. */
+.rp-bar {
+  display: flex;
+  height: 10px;
+  min-width: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.rp-bar__part { display: block; height: 100%; }
+
+/* Still true. The stronger colour, because it is the part that needs doing. */
+.rp-bar__part--open { background: var(--ch-accent); }
+
+/* Appeared in this period and since dealt with. */
+.rp-bar__part--done { background: color-mix(in srgb, var(--ch-accent) 32%, transparent); }
+
+.rp-row__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--ch-dim);
+}
+
+.rp-row__open { color: var(--ch-accent); }
+.rp-row__carried { color: var(--ch-warn); }
+
+@media (max-width: 560px) {
+  .rp-row__top { gap: 7px; }
+  .rp-row__n { font-size: 14px; }
 }

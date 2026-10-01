@@ -156,6 +156,19 @@ export function summarise(findings = [], win) {
       by.set(name, {
         problem: name, severity: severity || 'medium',
         appeared: 0, resolved: 0, open: 0, carried: 0,
+        /*
+         * Of the ones that appeared in this window, how many are still true.
+         *
+         * Needed because `resolved` and `open` cannot be drawn as parts of
+         * `appeared` — `resolved` counts resolutions that happened in the
+         * window, which may belong to findings from months earlier, and
+         * `open` counts everything true right now including what was carried
+         * in. Stacking either inside the appeared bar would be a chart whose
+         * segments do not add up to the bar they are in.
+         *
+         * This one does: appeared = (appeared and since fixed) + stillOpen.
+         */
+        stillOpen: 0,
         before: 0, firstAt: null, lastAt: null,
       });
     }
@@ -169,6 +182,7 @@ export function summarise(findings = [], win) {
 
     if (inWindow(first, win.from, win.to)) {
       row.appeared += 1;
+      if (f.state !== 'resolved') row.stillOpen += 1;
       if (!row.firstAt || first < row.firstAt) row.firstAt = first;
       if (!row.lastAt || first > row.lastAt) row.lastAt = first;
     }
@@ -227,6 +241,7 @@ export function summarise(findings = [], win) {
       open: sum('open'),
       carried: sum('carried'),
       kinds: rows.filter((r) => r.appeared).length,
+      stillOpen: sum('stillOpen'),
       before,
       /*
        * The change, as a count and not as a percentage.

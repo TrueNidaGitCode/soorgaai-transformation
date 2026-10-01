@@ -394,6 +394,23 @@
        owner who missed the message still sees everything that was noticed,
        because a finding is recorded before anything is sent. agents.js drives
        it. -->
+  <!-- What went wrong over a week, a month and the year so far.
+
+       The board forgets by design: it shows what is true this morning, so a
+       problem found and fixed in March leaves no mark on it. An owner deciding
+       whether this application was worth keeping needs the other question
+       answered -- what did it actually catch -- and until this screen existed
+       nothing could answer it. reports.js draws it. -->
+  <section class="rp" id="ch-reports" hidden aria-label="Reports">
+    <header class="rp__head">
+      <h2 class="rp__h">What went wrong</h2>
+      <p class="rp__sub">The same findings as the board, counted over time.</p>
+      <div class="rp__tabs" id="rp-tabs" role="tablist" aria-label="Period"></div>
+    </header>
+    <div class="rp__body" id="rp-body"></div>
+    <p class="rp__note" id="rp-note"></p>
+  </section>
+
   <section class="ag" id="ch-agents" hidden aria-label="Agents">
     <header class="ag__head">
       <p class="ag__topline"><a href="#" class="ag__back" id="ag-back" hidden>&larr; Back to the chat</a></p>
@@ -1012,6 +1029,10 @@
          * it: they have read a finding and want to go further than the
          * finding goes.
          */
+        // The history of what those watchers caught. After Watchers, because
+        // it is the same subject one step back: what is being watched, then
+        // what watching it has found.
+        + '<a href="#reports" class="ch-side__item" id="ch-reports-link" data-side="reports">' + svg('bars') + '<span>Reports</span></a>'
         + '<a href="#ask" class="ch-side__item" id="ch-ask-link" data-side="ask">' + svg('chat') + '<span>Ask</span></a>';
       nav.addEventListener('click', function (e) {
         var b = e.target.closest('[data-side]'); if (!b) return;
@@ -1019,6 +1040,7 @@
         if (b.dataset.side === 'ask') { e.preventDefault(); goAskTab(); }
         if (b.dataset.side === 'data') { e.preventDefault(); showConnections(); showPanel('data'); }
         if (b.dataset.side === 'agents') { e.preventDefault(); showPanel('agents'); }
+        if (b.dataset.side === 'reports') { e.preventDefault(); showPanel('reports'); }
         // Data: data.js opens the page from this link; the page opens on Connections.
       });
       // Any way onto the Data page lands on Connections first.
@@ -1279,7 +1301,7 @@
        * item. A panel that arrives later gets consistent behaviour by being
        * listed, not by remembering to copy anything.
        */
-      var PANELS = ['ch-findings', 'ch-finding', 'ch-agents', 'ch-data', 'ch-access'];
+      var PANELS = ['ch-findings', 'ch-finding', 'ch-agents', 'ch-data', 'ch-access', 'ch-reports'];
 
       function showPanel(which) {
         if (page) page.hidden = true;     // the front door
@@ -1294,11 +1316,13 @@
         markSide(which);
         if (which === 'home') window.dispatchEvent(new CustomEvent('svarg:findings-open'));
         if (which === 'agents') window.dispatchEvent(new CustomEvent('svarg:agents-open'));
+        if (which === 'reports') window.dispatchEvent(new CustomEvent('svarg:reports-open'));
         if (which === 'ask') { if (typeof sync === 'function') sync(); log.scrollTop = 0; if (input) input.focus(); }
       }
       var PANEL_OF = {
         home: 'ch-findings', finding: 'ch-finding',
         agents: 'ch-agents', data: 'ch-data', people: 'ch-access',
+        reports: 'ch-reports',
       };
 
       // Exposed so the panel scripts hand control back rather than reaching
@@ -1597,6 +1621,7 @@
        immediately if its sections are not on the page, so an older generated
        application that predates them is unaffected. -->
   <script src="findings.js" defer></script>
+  <script src="reports.js" defer></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

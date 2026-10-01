@@ -2748,3 +2748,140 @@ body {
 @media (max-width: 560px) {
   .fn__mode { align-items: flex-start; }
 }
+
+/* ── Reports: what went wrong, counted ─────────────────────────────────────
+   The board shows what is true this morning and forgets everything else, so
+   nothing could answer "what has this application actually caught". This is
+   the same findings over a week, a month and the year so far.
+
+   Laid out as a headline sentence, four tiles, then the table. The sentence
+   first because it is the part that can be repeated to somebody else; the
+   table because the sentence has to be checkable. */
+
+.rp {
+  padding: 34px clamp(16px, 4vw, 48px) 72px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.rp__h { margin: 0 0 4px; font-size: 22px; color: var(--ch-text); }
+.rp__sub { margin: 0 0 18px; font-size: 13.5px; color: var(--ch-dim); }
+
+.rp__tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+
+.rp-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid var(--ch-line);
+  border-radius: 999px;
+  background: var(--ch-panel);
+  color: var(--ch-dim);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.rp-tab:hover { color: var(--ch-text); border-color: var(--ch-line-hi); }
+
+.rp-tab--on {
+  color: var(--ch-text);
+  border-color: var(--ch-accent);
+  background: color-mix(in srgb, var(--ch-accent) 14%, transparent);
+}
+
+/* The count on the tab, so the three periods can be compared without
+   opening each one. */
+.rp-tab span {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--ch-dim);
+}
+
+.rp-tab--on span { color: var(--ch-accent); }
+
+.rp-head { margin-bottom: 20px; }
+.rp-head__line { margin: 0 0 4px; font-size: 17px; line-height: 1.5; color: var(--ch-text); }
+.rp-head__line strong { color: var(--ch-text); }
+.rp-head__sub { margin: 0; font-size: 13px; color: var(--ch-dim); }
+
+/* Up is worse here: more problems appeared than in the period before. Said in
+   the sentence as well as coloured, because a colour needs a legend. */
+.rp-trend { font-variant-numeric: tabular-nums; font-weight: 600; }
+.rp-trend--up { color: var(--ch-bad); }
+.rp-trend--down { color: var(--ch-accent); }
+
+.rp-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.rp-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  border: 1px solid var(--ch-line);
+  border-radius: var(--ch-radius);
+  background: var(--ch-panel);
+}
+
+.rp-tile__k { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ch-dim); }
+.rp-tile__v { font-size: 26px; font-variant-numeric: tabular-nums; color: var(--ch-text); line-height: 1.1; }
+.rp-tile__n { font-size: 12px; color: var(--ch-dim); line-height: 1.45; }
+
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  border: 1px solid var(--ch-line);
+  border-radius: var(--ch-radius);
+  overflow: hidden;
+}
+
+.rp-table th {
+  text-align: left;
+  padding: 11px 14px;
+  background: var(--ch-panel);
+  border-bottom: 1px solid var(--ch-line);
+  font-size: 11.5px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ch-dim);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rp-table td { padding: 11px 14px; border-bottom: 1px solid var(--ch-line); color: var(--ch-text); }
+.rp-table tbody tr:last-child td { border-bottom: 0; }
+
+.rp-n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rp-n--soft { color: var(--ch-dim); }
+
+.rp-what { display: flex; align-items: center; gap: 9px; }
+
+/* How serious this kind of problem is, as the watcher declares it. */
+.rp-sev { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--ch-dim); }
+.rp-sev--high { background: var(--ch-bad); }
+.rp-sev--medium { background: var(--ch-warn); }
+.rp-sev--low { background: var(--ch-accent); }
+
+.rp-empty { margin: 0; padding: 26px 4px; color: var(--ch-dim); font-size: 14px; }
+.rp-empty--bad { color: var(--ch-bad); }
+
+.rp__note {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ch-dim);
+  max-width: 78ch;
+}
+
+@media (max-width: 560px) {
+  .rp-tile__v { font-size: 22px; }
+  .rp-table { font-size: 13px; }
+  .rp-table th, .rp-table td { padding: 9px 10px; }
+}

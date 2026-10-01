@@ -115,8 +115,14 @@ export const FIXED_PATHS = [
   'services/peopleService.js',
   'controllers/agentsController.js',
   'routes/agentsRoutes.js',
+  // What went wrong over a week, a month and the year so far. The board
+  // forgets; this is the history of what it caught.
+  'services/reportService.js',
+  'controllers/reportsController.js',
+  'routes/reportsRoutes.js',
   'frontend/agents.js',
   'frontend/findings.js',
+  'frontend/reports.js',
   'services/turnLog.js',
   'services/selfCheck.js',
   'services/conformance.js',

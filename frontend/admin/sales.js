@@ -3580,7 +3580,7 @@ const FIRST_MESSAGE = {
         + 'person who can act on them &mdash; before they become costly.',
       'I&rsquo;d like to understand whether you see similar problems at your centre.',
       'Would you be open to a 15-minute call?',
-      'Learn more: https://www.svargai.com/',
+      'Learn more: {{link}}',
     ],
     sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
     /*
@@ -3597,7 +3597,7 @@ const FIRST_MESSAGE = {
         + 'even though they had been treated, and customers using more than their package '
         + 'entitlement without being noticed early.',
       'Do you see similar problems at your centre? Happy to have a short chat.',
-      'Learn more: https://www.svargai.com/',
+      'Learn more: {{link}}',
     ],
   },
 };
@@ -3624,16 +3624,101 @@ function setPitchSegment(id) {
   renderPitches();
 }
 
+/**
+ * Who this message is being sent to, or '' for the version with no link.
+ *
+ * Held here rather than in `state` because it is a property of reading this
+ * tab, not of the funnel — moving away and coming back should leave you
+ * looking at the message rather than at whoever you last copied it for.
+ */
+let fmLead = '';
+
+/** The leads this message can be addressed to: the ones that have a link. */
+function fmCandidates() {
+  return (state.signals?.outreach || []).filter((r) => r.inviteLink);
+}
+
+/**
+ * The message, filled in for one person.
+ *
+ * ── Why the link is a token and not an address ────────────────────────────
+ *
+ * Both messages used to end "Learn more: https://www.svargai.com/". That is
+ * the one line in them that cannot do its job as written: a plain address
+ * loses the ref, and the ref is the only thing that turns somebody who signs
+ * up into an attributed row rather than another anonymous guest. The lead sits
+ * in Outreach afterwards looking as though they never replied.
+ *
+ * So it is {{link}}, filled with that lead's own tracked link — the same
+ * token, filled the same way, as the per-lead invite on the funnel.
+ *
+ * With nobody chosen it falls back to the bare site address, because a message
+ * you cannot read until you have picked somebody is a message nobody will
+ * read. The block says plainly that the untracked version attributes nothing.
+ */
+function fmFill(lines, lead) {
+  const link = lead?.inviteLink || 'https://www.svargai.com/';
+  return lines.map((l) => l
+    .replace(/\{\{\s*link\s*\}\}/gi, esc(link))
+    // [Name] is the bracket the subtitle tells you to fill. Filled here when
+    // we know it, left standing when we do not — never silently blanked.
+    .replace(/\[Name\]/g, lead?.name ? esc(lead.name) : '[Name]'));
+}
+
+/**
+ * The same lines as plain text, for the clipboard.
+ *
+ * The copy holds HTML entities — &mdash;, &ldquo; — because it is written to
+ * be read on this page. Pasting those into WhatsApp sends them literally, so
+ * the clipboard gets decoded text and the screen keeps the entities.
+ */
+function fmPlain(lines) {
+  const box = document.createElement('textarea');
+  return lines.map((l) => {
+    box.innerHTML = String(l).replace(/<[^>]+>/g, '');
+    return box.value;
+  }).join('\n\n');
+}
+
 /** The first message, laid out to be copied rather than read. */
 function renderFirstMessage(seg) {
   const o = FIRST_MESSAGE[seg];
   if (!o) return '';
-  const para = (lines) => lines.map((l) => `<p>${l}</p>`).join('');
+  const people = fmCandidates();
+  const lead = people.find((r) => r.id === fmLead) || null;
+  const para = (lines) => fmFill(lines, lead).map((l) => `<p>${l}</p>`).join('');
+
   return `
     <section class="sg-fm">
       <h3 class="sg-fm__title">The first message</h3>
       <p class="sg-fm__sub">Before there is a meeting to pitch in. Send it as written; the
         brackets are the only thing to fill.</p>
+
+      <!--
+        Who it is for, which is what makes the link worth anything.
+
+        Choosing somebody fills their name and swaps the bare address for their
+        own tracked link, so a signup that follows is attributed to this
+        conversation instead of arriving as an anonymous guest.
+      -->
+      <div class="sg-fm__who">
+        <label>Send to
+          <select id="sg-fm-lead">
+            <option value="">Nobody chosen — untracked link</option>
+            ${people.map((r) => `<option value="${esc(r.id)}"${r.id === fmLead ? ' selected' : ''}>
+              ${esc(r.name || '(no name)')}${r.company ? ` — ${esc(r.company)}` : ''}</option>`).join('')}
+          </select>
+        </label>
+        <p class="sg-fm__whynote">${lead
+          ? `Both messages carry <strong>${esc(lead.name || 'this lead')}</strong>&rsquo;s own link.
+             Anyone who signs up through it is attributed to them, which is how they leave Outreach.`
+          : people.length
+            ? `Nobody chosen, so the messages end in the plain address. It still works &mdash; it
+               just attributes nothing, and the lead sits in Outreach afterwards looking as though
+               they never replied.`
+            : `No lead on a link-sharing motion yet. Add one on the Funnel tab and it can be
+               chosen here.`}</p>
+      </div>
 
       <div class="sg-fm__grid">
         <article class="sg-fm__msg">
@@ -3641,12 +3726,14 @@ function renderFirstMessage(seg) {
           <p class="sg-fm__subject"><span>Subject</span>${o.subject}</p>
           <div class="sg-fm__body">${para(o.email)}</div>
           <div class="sg-fm__sign">${para(o.sign)}</div>
+          <button type="button" class="sg-btn sg-fm__copy" data-fmcopy="email">Copy email</button>
         </article>
 
         <article class="sg-fm__msg">
           <p class="sg-fm__kind">WhatsApp or LinkedIn</p>
           <p class="sg-fm__subject"><span>Ends with</span>The link. Nothing after it gets read on a phone.</p>
           <div class="sg-fm__body">${para(o.short)}</div>
+          <button type="button" class="sg-btn sg-fm__copy" data-fmcopy="short">Copy message</button>
         </article>
 
         <article class="sg-fm__msg sg-fm__msg--deck">
@@ -4168,5 +4255,43 @@ function renderPitches() {
   el.querySelector('.sg-seg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-seg]');
     if (b) setPitchSegment(b.dataset.seg);
+  });
+
+  // Choosing somebody re-renders both messages with their name and link.
+  const who = el.querySelector('#sg-fm-lead');
+  if (who) {
+    who.addEventListener('change', () => { fmLead = who.value; renderPitches(); });
+  }
+
+  /*
+   * Copy the message, not the markup.
+   *
+   * Decoded here rather than on screen: the copy is written with entities so
+   * it reads correctly on this page, and pasting &mdash; into WhatsApp sends
+   * it literally. The lead is resolved again at click time so the clipboard
+   * can never hold a link for somebody other than the one on screen.
+   */
+  el.querySelectorAll('[data-fmcopy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const o = FIRST_MESSAGE[pitchSegment];
+      if (!o) return;
+      const lead = fmCandidates().find((r) => r.id === fmLead) || null;
+      const which = btn.dataset.fmcopy;
+      const lines = which === 'email'
+        ? [...fmFill(o.email, lead), '', ...fmFill(o.sign, lead)]
+        : fmFill(o.short, lead);
+      const text = fmPlain(lines);
+      const original = btn.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = lead ? `Copied for ${lead.name || 'them'}` : 'Copied — untracked';
+      } catch {
+        // A clipboard the browser refuses is not a copy. Say so rather than
+        // claiming one that did not happen.
+        banner('The browser refused the clipboard. Select the text above and copy it.');
+        btn.textContent = 'Could not copy';
+      }
+      setTimeout(() => { btn.textContent = original; }, 2500);
+    });
   });
 }

@@ -3429,3 +3429,61 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   border-color: var(--accent-green, #5CC5A7);
   background: rgba(92, 197, 167, 0.1);
 }
+
+/* ── Who the first message is for ──────────────────────────────────────────
+   The link is the one line in these messages that cannot do its job as
+   written: a plain address loses the ref, and the ref is the only thing that
+   turns somebody who signs up into an attributed row. Choosing a lead here
+   fills their name and swaps in their own tracked link. */
+
+.sg-fm__who {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem 1.4rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.1rem;
+  padding: 0.9rem 1.1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.2);
+  border-radius: 12px;
+}
+
+.sg-fm__who label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #CCCCCC);
+}
+
+.sg-fm__who select {
+  min-width: 16rem;
+  max-width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(92, 197, 167, 0.2);
+  border-radius: 10px;
+  color: var(--text-primary, #FFFFFF);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+.sg-fm__who select:focus {
+  outline: none;
+  border-color: var(--accent-green, #5CC5A7);
+}
+
+.sg-fm__whynote {
+  flex: 1 1 22rem;
+  margin: 0;
+  align-self: center;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #CCCCCC);
+}
+
+.sg-fm__whynote strong { color: var(--text-primary, #FFFFFF); }
+
+/* The copy button sits at the foot of its own message, not in a shared row —
+   the two messages are copied separately and go to different places. */
+.sg-fm__copy { margin-top: 0.9rem; align-self: flex-start; }

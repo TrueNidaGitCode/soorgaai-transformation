@@ -89,47 +89,50 @@ export const MOTIONS = [
     note: 'Do not ask "do you know anyone who might buy Svarg?". Ask "who is responsible for '
       + 'AI adoption / engineering transformation / digital initiatives at [company]?" — a '
       + 'question about a role gets an answer; a question about a purchase gets a shrug.',
-    messageSubject: 'Something we have been building',
+    /*
+     * ── The draft, rewritten as a pitch to the prospect ──────────────────
+     *
+     * This used to open "We're building SvargAI — it transforms existing
+     * business workflows and products with AI", and then ask the reader for
+     * an introduction to someone else. That is a different request from the
+     * one being made now: it asked a friend for a favour, and the owner is
+     * approaching clinic and wellness centre operators directly.
+     *
+     * So it leads with their problem rather than with the product, and the
+     * example is attributed to the centre that reported it. "A wellness
+     * centre in Bengaluru FOUND these" — not "we detected them", which
+     * invites "how?" and has to be answered with "they told us in an
+     * interview". Attributing it is also the stronger sentence: it says you
+     * have already sat with somebody in their trade and listened, which is
+     * the one thing a first message can offer that a product page cannot.
+     *
+     * The same wording is on the Pitches tab, where it is read before a call;
+     * this is the copy a lead's row generates, filled with their name and
+     * their own tracked link.
+     */
+    messageSubject: 'When a treated patient is recorded as a “No Show”',
     message: [
-      'Hi {{name}},',
+      'Hi {{name}} — I work with clinics and wellness centres on problems that quietly cost money.',
       '',
-      /**
-       * The positioning sentence, and the reason it is not about speed.
+      'SvargAI runs multiple AI agents on top of the data and systems you already use. They '
+        + 'continuously look for signals that something is going wrong and identify problems early '
+        + '— before they turn into significant costs.',
+      '',
+      'For example, a wellness centre in Bengaluru found patients marked as “No Show” even though '
+        + 'they had been treated, and customers using more than their package entitlement without '
+        + 'being noticed early.',
+      '',
+      'Do you see similar problems at your centre? Happy to have a short chat.',
+      '',
+      /*
+       * The link, last, and tracked.
        *
-       * This used to open with "a working AI application in less than 30
-       * minutes, at around $0.10" — almost word for word the claim Lovable and
-       * Bolt make. It invited exactly that comparison, filing Svarg next to
-       * consumer app builders where the questions are about price and speed
-       * rather than about the reader's business.
-       *
-       * It also undersold the product: Aria reads their real data sources, Arth
-       * picks a model against their constraints, and Yusu integrates the result
-       * into a codebase they already run. None of that is app-building.
-       *
-       * "Existing" is the word doing the work. It says brownfield, integration
-       * and enterprise, and it is a claim an app builder cannot make.
-       *
-       * The speed and the cost are still true and still useful — as evidence,
-       * once somebody believes Svarg does serious work. Not as the first thing
-       * they read.
+       * Last because nothing after a link gets read on a phone. Tracked
+       * because a plain www.svargai.com loses the ref, and the ref is the
+       * only thing that turns somebody who signs up into a row against this
+       * conversation rather than another anonymous guest.
        */
-      'We’re building SvargAI — it transforms existing business workflows and products with AI. '
-        + 'You describe a real problem your team has, and Svarg works out where AI fits, builds '
-        + 'the solution, and integrates it into the systems you already run.',
-      '',
-      'Would really appreciate it if you could spend a few minutes trying the product:',
-      '{{link}}',
-      '',
-      'We’re now working on our first few enterprise customers, and these early customers are '
-        + 'extremely important to us. I’m reaching out to friends and colleagues who can '
-        + 'genuinely help — either by introducing us to the right person in your organization '
-        + 'or connecting us with someone in your network who may have a relevant problem.',
-      '',
-      'If you see potential in SvargAI, one good introduction would mean a lot to us.',
-      '',
-      // No sign-off name: WhatsApp already shows who sent it, and a typed name
-      // under a message from your own number reads like a template.
-      'Thanks!',
+      'Learn more: {{link}}',
     ],
   },
   {

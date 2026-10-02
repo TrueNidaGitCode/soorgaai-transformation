@@ -35,7 +35,7 @@
  * timezone, taken from the watchers, because that is where the owner already
  * set it — see adoptTimezone.
  */
-import { findingsCollection, agentsCollection, localParts } from './agentService.js';
+import { findingsCollection, agentsCollection, localParts, switchedOffIds } from './agentService.js';
 import mongoose from 'mongoose';
 
 export const PERIODS = ['week', 'month', 'ytd'];
@@ -284,8 +284,16 @@ export async function reports(now = new Date()) {
   const tz = await appTimezone();
   const wins = windowsFor(now, tz);
 
+  /*
+   * Not the findings of a watcher somebody switched off.
+   *
+   * The same rule the board applies, for the same reason: switching a watcher
+   * off says "this is not a problem here", and a history that kept counting
+   * its findings would report as problems the things the owner had just said
+   * were not.
+   */
   const findings = await findingsCollection()
-    .find({}, { projection: { agentName: 1, severity: 1, state: 1, firstSeenAt: 1, resolvedAt: 1 } })
+    .find({ agentId: { $nin: await switchedOffIds() } }, { projection: { agentName: 1, severity: 1, state: 1, firstSeenAt: 1, resolvedAt: 1 } })
     .toArray()
     .catch(() => []);
 

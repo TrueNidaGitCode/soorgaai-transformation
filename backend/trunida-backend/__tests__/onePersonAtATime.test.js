@@ -161,7 +161,10 @@ describe('how the board uses it', () => {
 
   it('filters without asking the server again', () => {
     // A lens on one morning's findings, exactly as a category chip is.
-    expect(ui).toContain('if (person && (f.person || f.title) !== person) return false;');
+    // An empty person means "not about one person", never "use the title" —
+    // the fallback to the title is how a session name became a patient.
+    expect(ui).toContain("if (person && ('person' in f ? f.person : f.title) !== person) return false;");
+    expect(ui).not.toContain('(f.person || f.title) !== person');
     expect(ui).toContain('if (_last) render(_last);');
   });
 

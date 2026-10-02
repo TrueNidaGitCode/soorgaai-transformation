@@ -491,7 +491,9 @@
 
     var open = all.filter(function (f) {
       if (picked && f.category !== picked) return false;
-      if (person && (f.person || f.title) !== person) return false;
+      // An empty person means the finding is not about one person; it does not
+      // mean "use the title", which is how a session name became a patient.
+      if (person && ('person' in f ? f.person : f.title) !== person) return false;
       return true;
     });
 

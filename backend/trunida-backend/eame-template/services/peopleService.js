@@ -26,6 +26,7 @@
  * is a far smaller failure than naming the wrong person confidently.
  */
 import { readIndex, readAllRows, dataVersion } from './connectorService.js';
+import { entryFor, columnsFor } from './agentCatalogue.js';
 
 /**
  * Columns that hold a telephone number.
@@ -252,7 +253,88 @@ export function numbersIn(evidence) {
  * rather than to whichever came first — which is what stops this rule
  * attaching every outbound call in the practice to one unlucky patient.
  */
+/**
+ * Is this watcher's subject a person, or a thing?
+ *
+ * Read from the catalogue entry's own question, whose first placeholder is the
+ * subject of every finding it produces: "{who} in …" is about a person, and
+ * "{slot} in …", "rows in …" and "days in …" are about a session, a record or
+ * a date.
+ *
+ * ── Why this had to be asked ───────────────────────────────────────────────
+ *
+ * A finding's title is whatever its subject column held, and the people
+ * picker used to take any title that was not a phone number as a person. Over
+ * Capacity's subject is the session, so the picker offered
+ * "Physiotherapy Consultation - Rahul" beside "Rahul Sharma" — a meeting, as
+ * though it were a patient.
+ *
+ * A question somebody typed has no catalogue entry, so its subject is unknown;
+ * it keeps the behaviour it always had rather than disappearing from the list.
+ */
+export function subjectIsPerson(watcherId) {
+  const e = watcherId ? entryFor(watcherId) : null;
+  if (!e) return true;
+  return /^\{(left\.)?who\}/.test(String(e.question || ''));
+}
+
+/** The staff whose diary a row is in, rather than the customer it is about. */
+const STAFF = /owner|assign|responsible|manager|created|modified|(^|_)by$/i;
+
+/**
+ * The one person a finding about a THING is nonetheless about.
+ *
+ * A session over capacity is a session, but it is a session with Rahul in it,
+ * and a reader filtering the board to Rahul should see it. So the person is
+ * read from the finding's own evidence — the column the catalogue would use
+ * for `who`, ranked the way the watchers rank it — and accepted only when the
+ * evidence names exactly one.
+ *
+ * The staff columns are skipped outright. On a CRM's Meetings, Owner is the
+ * physiotherapist whose diary it is, and it ranks just below the patient; a
+ * session with no patient linked must resolve to nobody, not fall through to
+ * the member of staff and file their own diary under their name.
+ */
+export function personInEvidence(evidence, book) {
+  const sides = Array.isArray(evidence?.sides) && evidence.sides.length === 2
+    ? [{ columns: evidence.sides[0].columns, rows: (evidence.lines || []).slice(0, evidence.leftCount) }]
+    : [{ columns: evidence?.columns || [], rows: evidence?.lines || [] }];
+
+  for (const s of sides) {
+    const cols = s.columns || [];
+    for (const col of columnsFor('who', cols)) {
+      if (STAFF.test(col)) continue;
+      const i = cols.indexOf(col);
+      const seen = new Set();
+      for (const r of s.rows || []) {
+        const v = String((r || [])[i] ?? '').trim();
+        if (v) seen.add(v);
+      }
+      // Several people in one finding is not one person's finding.
+      if (seen.size > 1) return '';
+      if (seen.size === 1) {
+        const v = [...seen][0];
+        if (looksLikePhone(v)) return (book && book.get ? book.get(phoneKey(v)) : '') || '';
+        if (isName(v)) return v;
+      }
+      // Empty here: try the next candidate, as the watchers would.
+    }
+  }
+  return '';
+}
+
 export function personForFinding(view, book) {
+  /*
+   * A finding about a thing names its person from its evidence, or nobody.
+   *
+   * '' rather than the title, deliberately: an empty person keeps the finding
+   * on the board and out of the people picker, which is exactly right for a
+   * session nobody is linked to.
+   */
+  if (view?.watcherId && !subjectIsPerson(view.watcherId)) {
+    return personInEvidence(view.evidence, book);
+  }
+
   const titled = personFor(view?.title, book);
   if (titled !== String(view?.title || '').trim()) return titled;
   if (!looksLikePhone(view?.title)) return titled;
@@ -308,7 +390,12 @@ export async function phoneBook(kind = 'own') {
 export function peopleIn(findings = []) {
   const by = new Map();
   for (const f of findings) {
-    const person = String(f.person || f.title || '').trim();
+    /*
+     * An explicit empty person means "not about one person", and must stay
+     * empty. Falling back to the title here is precisely how a meeting name
+     * became an entry in the picker.
+     */
+    const person = String('person' in f ? f.person : (f.title || '')).trim();
     if (!person) continue;
     if (!by.has(person)) by.set(person, { person, findings: 0 });
     by.get(person).findings += 1;

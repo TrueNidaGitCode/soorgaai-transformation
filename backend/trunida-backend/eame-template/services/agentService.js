@@ -505,6 +505,20 @@ export async function createAgent({
   return publicView({ ...doc, _id: r.insertedId });
 }
 
+/**
+ * The watchers somebody has switched off, as the ids their findings carry.
+ *
+ * Read by the board and the reports so that a switched-off watcher's findings
+ * leave both — see listFindingsHandler for why they are hidden rather than
+ * resolved or deleted.
+ */
+export async function switchedOffIds() {
+  if (mongoose.connection.readyState !== 1) return [];
+  const off = await agentsCollection()
+    .find({ enabled: false }, { projection: { _id: 1 } }).toArray().catch(() => []);
+  return off.map((a) => a._id);
+}
+
 export async function setAgentEnabled(id, enabled) {
   const _id = new mongoose.Types.ObjectId(String(id));
   // Switching one back on clears the failures that stopped it — otherwise the

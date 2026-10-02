@@ -7,7 +7,7 @@
  */
 import {
   listAgents, createAgent, setAgentEnabled, deleteAgent,
-  findingsCollection, SCHEDULES, adoptTimezone, noteLooked,
+  findingsCollection, SCHEDULES, adoptTimezone, noteLooked, switchedOffIds,
 } from '../services/agentService.js';
 import mongoose from 'mongoose';
 import fs from 'fs';
@@ -129,12 +129,28 @@ export async function listFindingsHandler(req, res) {
     const example = String(req.query.example || '') === '1';
     const onlyKind = { 'evidence.simulated': example ? true : { $ne: true } };
 
+    /*
+     * A watcher that has been switched off takes its findings with it.
+     *
+     * It did not. Pausing a watcher stopped it running and left everything it
+     * had already found on the board — so a finding the owner had just called
+     * irrelevant stayed in front of them indefinitely, with nothing left
+     * running that could ever resolve it. "Switch it off" did not switch it
+     * off, which is the one thing that control promises.
+     *
+     * Hidden, not resolved and not deleted. Marking them resolved would claim
+     * the problem was fixed and count it in the reports as caught and dealt
+     * with; deleting them would make switching it back on lose its history.
+     * Switch the watcher on again and they return exactly as they were.
+     */
+    const notOff = { agentId: { $nin: await switchedOffIds() } };
+
     const open = await findingsCollection()
-      .find({ state: 'open', ...onlyKind }).sort({ firstSeenAt: 1 }).limit(200).toArray();
+      .find({ state: 'open', ...onlyKind, ...notOff }).sort({ firstSeenAt: 1 }).limit(200).toArray();
 
     // Resolved is a reassurance, not a to-do list: the most recent handful.
     const resolved = await findingsCollection()
-      .find({ state: 'resolved', ...onlyKind }).sort({ resolvedAt: -1 }).limit(20).toArray();
+      .find({ state: 'resolved', ...onlyKind, ...notOff }).sort({ resolvedAt: -1 }).limit(20).toArray();
 
     /*
      * Who each finding is about, as a person.

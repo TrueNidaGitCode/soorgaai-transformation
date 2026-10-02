@@ -92,6 +92,33 @@ export const ROLES = {
   // lead list that merely happened to have more columns.
   slot:     /slot|session|class|booking|appointment|meeting|event|visit|consult|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint/i,
   doc:      /document|certificate|licence|license|permit|policy|registration|insurance/i,
+  /*
+   * ── The fact a question depends on, not just its shape ───────────────────
+   *
+   * Leave Clash asked "where more than one {who} is AWAY" and Over Capacity
+   * asked for "more {who} than PLACES", and neither had a role for the word
+   * that carried the question. So any dataset with a person, a date and a
+   * status column satisfied Leave Clash, and any dataset with a session and a
+   * person satisfied Over Capacity — which is every CRM's Meetings module.
+   *
+   * Measured on a clinic: both bound to Zoho Meetings, a list of patient
+   * appointments with no leave and no capacity in it, and both reported
+   * Rahul. The answer step was asked to find who was "away" and how many
+   * "places" a consultation had, found nothing to read either from, and
+   * produced a finding anyway.
+   *
+   * `leave` deliberately leaves out "absent". An attendance register marks a
+   * student absent; that is a missed class, not a staff member on leave, and
+   * matching it would fire Leave Clash every day two students stayed home.
+   */
+  leave:    /leave|holiday|vacation|time.?off|(^|[^a-z])pto([^a-z]|$)/i,
+  /*
+   * And `capacity` deliberately leaves out "limit" and "quota", which are
+   * money words as often as room words — a credit_limit is not a classroom.
+   * "strength" is anchored because Indian class registers say class_strength
+   * and because unanchored it matches "strengthen".
+   */
+  capacity: /capacity|(^|[^a-z])(places|seats|spaces)([^a-z]|$)|max(imum)?[_ ]?(size|seats|attendees|participants|students|people|places)|(^|[_\s])strength([_\s]|$)/i,
   reply:    /reply|response|answer|resolved|closed|handled|acknowledg/i,
   /*
    * Somebody here said they would do something.
@@ -132,9 +159,14 @@ export const CATALOGUE = [
   { id: 'timesheet-chaser', area: 'People', name: 'Timesheet Chaser',
     says: 'Staff who have not submitted their hours',
     needs: ['who', 'status'], question: '{who} in {dataset} whose {status} is not submitted' },
+  /*
+   * Needs a column that is about leave. It used to need only who, when and a
+   * status, which every CRM module has — see `leave` in ROLES for what that
+   * cost a clinic.
+   */
   { id: 'leave-clash', area: 'People', name: 'Leave Clash',
     says: 'Two people away on the same day',
-    needs: ['who', 'when', 'status'], question: 'days in {dataset} where more than one {who} is away' },
+    needs: ['who', 'when', 'leave'], question: 'days in {dataset} where more than one {who} has {leave} on the same {when}' },
   { id: 'new-joiner', area: 'People', name: 'New Joiner Not Set Up',
     says: 'Someone added but not finished',
     needs: ['who', 'status'], question: 'recently added {who} in {dataset} whose {status} is incomplete' },
@@ -204,9 +236,14 @@ export const CATALOGUE = [
   { id: 'empty-slot', area: 'Schedule', name: 'Empty Slot',
     says: 'Capacity going unused',
     needs: ['slot', 'when'], question: '{slot} in {dataset} with nobody booked' },
+  /*
+   * Needs a column saying how many fit. "Than places" was a word in the
+   * question with nothing bound to it, so the answer step invented a capacity
+   * for a one-to-one consultation and found it over.
+   */
   { id: 'over-capacity', area: 'Schedule', name: 'Over Capacity',
     says: 'More booked than there is room for',
-    needs: ['slot', 'who'], question: '{slot} in {dataset} with more {who} than places' },
+    needs: ['slot', 'who', 'capacity'], question: '{slot} in {dataset} with more {who} than its {capacity}' },
   /*
    * The status column is named, because it is the whole question.
    *

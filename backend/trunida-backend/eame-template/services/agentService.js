@@ -1077,9 +1077,49 @@ export function watchersToRebind(live = [], catalogue = []) {
 
     const was = asStored.binding(a.boundTo);
     if (!was) return asStored.question(c.question) !== asStored.question(a.question);
-    return asStored.binding(c.using) !== was;
+    if (asStored.binding(c.using) === was) return false;
+
+    /*
+     * ── And a better binding has to be CLEARLY better ─────────────────────
+     *
+     * The catalogue picks the highest-scoring binding, and scores are close by
+     * nature — nine CRM modules look alike. Measured on a clinic: Promise Not
+     * Kept could bind its follow-up side to Contacts (14), Meetings (14) or
+     * Tasks (12, and 16 whenever Zoho happened to hold a single task). So the
+     * watcher moved to Tasks when a task appeared and back to Contacts when it
+     * was completed, and every move was a real move — which clears findings,
+     * for the reason given in rebindWatchers. The owner's best finding vanished
+     * three times, on noise.
+     *
+     * So a running watcher stays where it is unless where it is has stopped
+     * working, or the challenger is better by at least STICK. STICK is the
+     * weight fitOf gives a dataset for holding the business's own records,
+     * which is exactly the move rebinding exists to make: off the sample data
+     * an application ships with and onto the customer's real records. That
+     * still happens. A two-point wobble between three real datasets does not.
+     *
+     * No scores at all — a catalogue from before they were recorded — means
+     * the old rule, so nothing that used to follow the data stops following it.
+     */
+    const scores = c.candidates && typeof c.candidates === 'object' ? c.candidates : null;
+    if (!scores || c.fit == null) return true;
+    let incumbent;
+    for (const [binding, fit] of Object.entries(scores)) {
+      if (asStored.binding(binding) === was) incumbent = Number(fit);
+    }
+    // Where it is no longer works at all: it has to move.
+    if (incumbent === undefined || Number.isNaN(incumbent)) return true;
+    return Number(c.fit) - incumbent >= STICK;
   });
 }
+
+/**
+ * How much better a new binding must score before a running watcher moves.
+ *
+ * Four, because that is what fitOf awards a dataset for holding the business's
+ * own records — the one difference that should always move a watcher.
+ */
+export const STICK = 4;
 
 /**
  * Watchers watching the same data, described differently.

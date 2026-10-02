@@ -740,6 +740,9 @@ export function matchPair(entry, datasets) {
   };
 
   let best = null;
+  // Every pair that works, with its score — so a watcher already bound to one
+  // of them can be compared against the winner rather than simply replaced.
+  const candidates = {};
   for (const l of pool) {
     const left = side(spec.left, l);
     if (!left) continue;
@@ -748,12 +751,13 @@ export function matchPair(entry, datasets) {
       const right = side(spec.right, r);
       if (!right) continue;
       const fit = left.fit + right.fit;
+      candidates[`${l.name} + ${r.name}`] = fit;
       if (!best || fit > best.fit) {
         best = { dataset: `${l.name} + ${r.name}`, left, right, fit, mode: spec.mode, when: spec.when };
       }
     }
   }
-  return best;
+  return best ? { ...best, candidates } : null;
 }
 
 /**
@@ -855,12 +859,15 @@ export function catalogueFor(datasets, plan = {}) {
      * dataset, so an application with one obvious source is unchanged.
      */
     let match = null;
+    let candidates = {};
     if (entry.across) {
       match = matchPair(entry, datasets);
+      candidates = match ? match.candidates : {};
     } else {
       for (const d of datasets || []) {
         const m = matchDataset(entry, d);
         if (!m) continue;
+        candidates[d.name] = m.fit;
         /*
          * Fit first; then, between two that answer equally well, the one
          * holding more of the business's records.
@@ -886,6 +893,18 @@ export function catalogueFor(datasets, plan = {}) {
       severity: severityFor(entry.id),
       startHere: startHere.has(entry.id),
       using: match ? match.dataset : '',
+      /*
+       * How good the winner is, and how good every other workable binding is.
+       *
+       * Read by the rebinder, which must not move a running watcher onto a
+       * binding that is only marginally better than the one it has. Measured
+       * on a clinic: three bindings for Promise Not Kept scored 14, 14 and 12,
+       * and the third became 16 whenever Zoho held a single task — so the
+       * watcher moved back and forth on noise, and every move cleared what it
+       * had found. See watchersToRebind.
+       */
+      fit: match ? match.fit : null,
+      candidates,
       question: match ? fillQuestion(entry, match) : '',
       schedule: SLOW.has(entry.id) ? 'daily' : DEFAULT.schedule,
       atHour: DEFAULT.atHour,

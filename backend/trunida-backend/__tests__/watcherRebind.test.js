@@ -21,7 +21,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { watchersToRebind, watchersToReword } from '../eame-template/services/agentService.js';
+import { watchersToRebind, watchersToReword, STICK } from '../eame-template/services/agentService.js';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
@@ -282,5 +282,97 @@ describe('what a rewording costs', () => {
     // A log calling both "followed the data" is how repeated deletion of a
     // customer's findings went unnoticed for an hour.
     expect(rebind).toContain('same data, new wording');
+  });
+});
+
+/**
+ * A running watcher does not move on noise.
+ *
+ * ── Measured on a clinic ───────────────────────────────────────────────────
+ *
+ * Promise Not Kept joins a call to a follow-up record, and three of the
+ * clinic's Zoho modules could serve as the follow-up side:
+ *
+ *     Calls + Contacts   14
+ *     Calls + Meetings   14
+ *     Calls + Tasks      12 — or 16 whenever Zoho held a single task
+ *
+ * The catalogue takes the highest, so the watcher moved to Tasks when a task
+ * appeared and back to Contacts when it was completed. Every one of those is a
+ * genuine move, and a genuine move clears findings — so the finding the owner
+ * had called "the perfect one" disappeared three times, each time for a reason
+ * that had nothing to do with whether the promise had been kept.
+ *
+ * A running watcher now stays unless where it is stops working, or the
+ * challenger wins by at least STICK — the weight of "holds the business's own
+ * records", which is the move rebinding exists to make.
+ */
+describe('a running watcher stays put unless the alternative is clearly better', () => {
+  const PAIR = 'Calls (Exotel) + Contacts (Zoho CRM)';
+  const row = (fit, candidates, using) => ({
+    id: 'promise-not-kept', ready: true, question: 'Q', using, fit, candidates,
+  });
+  const on = (boundTo) => [{ _id: 1, watcherId: 'promise-not-kept', question: 'Q', boundTo }];
+
+  it('is four points, the weight of holding real records', () => {
+    expect(STICK).toBe(4);
+  });
+
+  it('does not move to Tasks when a single task lands (16 against 14)', () => {
+    const cat = [row(16, { [PAIR]: 14, 'Calls (Exotel) + Tasks (Zoho CRM)': 16 }, 'Calls (Exotel) + Tasks (Zoho CRM)')];
+    expect(watchersToRebind(on(PAIR), cat)).toEqual([]);
+  });
+
+  it('does not move back when the task is completed (14 against 12)', () => {
+    const cat = [row(14, { [PAIR]: 14, 'Calls (Exotel) + Tasks (Zoho CRM)': 12 }, PAIR)];
+    expect(watchersToRebind(on('Calls (Exotel) + Tasks (Zoho CRM)'), cat)).toEqual([]);
+  });
+
+  it('does not move between two that tie', () => {
+    const cat = [row(14, { [PAIR]: 14, 'Calls (Exotel) + Meetings (Zoho CRM)': 14 }, PAIR)];
+    expect(watchersToRebind(on('Calls (Exotel) + Meetings (Zoho CRM)'), cat)).toEqual([]);
+  });
+
+  it('does move off sample data onto real records, which is the point', () => {
+    // fitOf gives +4 for holding the owner's rows; the sample diary has none.
+    const cat = [{ id: 'no-show', ready: true, question: 'Q', using: 'Meetings (Zoho CRM)',
+      fit: 8, candidates: { 'Meetings (Zoho CRM)': 8, 'Appointment Booking Diary': 4 } }];
+    const live = [{ _id: 1, watcherId: 'no-show', question: 'Q', boundTo: 'Appointment Booking Diary' }];
+    expect(watchersToRebind(live, cat).map((a) => a.watcherId)).toEqual(['no-show']);
+  });
+
+  it('does move when where it is no longer works at all', () => {
+    // The incumbent is not among the bindings that still work — removed, or a
+    // column it needed has gone.
+    const cat = [row(14, { [PAIR]: 14 }, PAIR)];
+    expect(watchersToRebind(on('Calls (Exotel) + Deleted Module'), cat).length).toBe(1);
+  });
+
+  it('falls back to the old rule for a catalogue that carries no scores', () => {
+    // Nothing that used to follow the data stops following it.
+    const cat = [{ id: 'promise-not-kept', ready: true, question: 'Q', using: PAIR }];
+    expect(watchersToRebind(on('Calls (Exotel) + Tasks (Zoho CRM)'), cat).length).toBe(1);
+  });
+
+  it('is not reworded either while it stays, so its question is left alone', () => {
+    // Staying means staying: a challenger's wording must not be written onto a
+    // watcher that is still bound somewhere else.
+    const cat = [row(16, { [PAIR]: 14, 'Calls (Exotel) + Tasks (Zoho CRM)': 16 }, 'Calls (Exotel) + Tasks (Zoho CRM)')];
+    expect(watchersToReword(on(PAIR), cat)).toEqual([]);
+  });
+});
+
+describe('the catalogue reports how good each binding is', () => {
+  it('carries the winner’s score and every workable alternative', async () => {
+    const { catalogueFor } = await import('../eame-template/services/agentCatalogue.js');
+    const d = (name, columns, own) => ({ name, columns, own });
+    const cat = catalogueFor([
+      d('Meetings (Zoho CRM)', ['Event_Title', 'Start_DateTime', 'Participants', 'Appointment_Status'], 1),
+      d('Appointment Booking Diary', ['patient_name', 'appointment_date', 'status'], 0),
+    ], {});
+    const ns = cat.find((c) => c.id === 'no-show');
+    expect(typeof ns.fit).toBe('number');
+    expect(Object.keys(ns.candidates).length).toBe(2);
+    expect(ns.candidates[ns.using]).toBe(ns.fit);
   });
 });

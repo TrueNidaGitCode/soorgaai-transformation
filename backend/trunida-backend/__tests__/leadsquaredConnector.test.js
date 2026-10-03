@@ -24,7 +24,7 @@ import axios from 'axios';
 import {
   HOSTS, OBJECTS, provides, fields, hostFor, forgetHosts, stamp, windowFor, leadFields, leadRow,
   activityRow, noteOf, opportunityColumns, opportunityRow, columnName, advancedSearchFor,
-  describeShape, pull, test as testConnection, reason,
+  describeShape, pull, test as testConnection, reason, listPopulated,
 } from '../eame-template/services/connectors/leadsquared.js';
 import { guessMapping, mapOntoColumns } from '../eame-template/services/connectorService.js';
 import { catalogueFor } from '../eame-template/services/agentCatalogue.js';
@@ -341,10 +341,13 @@ describe('Opportunities', () => {
     await expect(testConnection({ ...CONFIG, object: 'Opportunities', opportunityType: '99' })).rejects.toThrow(/no opportunity type with code 99/);
   });
 
-  it('requires the code only when reading opportunities', () => {
+  it('is written by the connect flow, and an opportunity read without it still refuses plainly', async () => {
+    // Nobody types the code any more: the scan lists the types and the flow
+    // writes each one. A connection that somehow lacks it says so.
     const f = fields.find((x) => x.name === 'opportunityType');
-    expect(f.required).toBe(false);
-    expect(f.requiredWhen).toEqual({ object: ['Opportunities'] });
+    expect(f.hidden).toBe(true);
+    serve([[anyHost('LeadsMetaData.Get'), () => ok([])]]);
+    await expect(describeShape({ ...CONFIG, object: 'Opportunities', opportunityType: '' })).rejects.toThrow(/opportunity type code/);
   });
 });
 
@@ -409,5 +412,64 @@ describe('Gone Quiet is offered on the activity record', () => {
       expect(row.question).toContain('Activities (LeadSquared)');
     }
     expect(rows.find((r) => r.id === 'stopped-coming').question).toContain('activity_date');
+  });
+});
+
+/* ── Connecting in Zoho's steps ───────────────────────────────────────── */
+
+describe('finding what the account holds, as Zoho finds its modules', () => {
+  /* GetOpportunityTypes, as documented: an array, EventCode and names. */
+  const TYPES = [
+    { EventCode: 12003, DisplayName: 'Admission', Name: 'Admission', PluralName: 'Admissions', Fields: null },
+    { EventCode: 12005, DisplayName: 'Treatment Plan', Name: 'Treatment Plan', PluralName: 'Treatment Plans', Fields: null },
+  ];
+
+  it('offers only the parts holding records, and names each opportunity type itself', async () => {
+    serve([
+      [anyHost('LeadsMetaData.Get'), () => ok([])],
+      [anyHost('Leads.RecentlyModified'), () => ok({ RecordCount: 0, Leads: [] })],
+      [anyHost('RetrieveRecentlyModified'), () => ok({ RecordCount: 1, ProspectActivities: [ACTIVITY] })],
+      [anyHost('GetOpportunityTypes'), () => ok(TYPES)],
+      [anyHost('Retrieve/BySearchParameter'), (url, req) => ok(req.data.OpportunityEventCode === 12005 ? OPP_LIST : { RecordCount: 0, List: [] })],
+    ]);
+    expect(await listPopulated(CONFIG)).toEqual([
+      { object: 'Activities', label: 'Activities' },
+      { object: 'Opportunities', opportunityType: '12005', label: 'Treatment Plans' },
+    ]);
+  });
+
+  it('asks each part for one record, not a page', async () => {
+    serve([
+      [anyHost('LeadsMetaData.Get'), () => ok([])],
+      [anyHost('Leads.RecentlyModified'), () => ok({ Leads: [] })],
+      [anyHost('RetrieveRecentlyModified'), () => ok({ ProspectActivities: [] })],
+      [anyHost('GetOpportunityTypes'), () => ok(TYPES)],
+      [anyHost('Retrieve/BySearchParameter'), () => ok({ List: [] })],
+    ]);
+    await listPopulated(CONFIG);
+    const sizes = axios.request.mock.calls.map((c) => c[0].data?.Paging?.PageSize).filter((n) => n !== undefined);
+    expect(sizes.length).toBe(4);
+    expect(new Set(sizes)).toEqual(new Set([1]));
+  });
+
+  it('skips a part that refuses, and keeps the rest — opportunities switched off still leaves activities', async () => {
+    serve([
+      [anyHost('LeadsMetaData.Get'), () => ok([])],
+      [anyHost('Leads.RecentlyModified'), () => ok({ Leads: [{ LeadPropertyList: [] }] })],
+      [anyHost('RetrieveRecentlyModified'), () => ok({ ProspectActivities: [ACTIVITY] })],
+      [anyHost('GetOpportunityTypes'), () => { throw refusal(500, { ExceptionMessage: 'Opportunity feature is not enabled' }); }],
+    ]);
+    expect((await listPopulated(CONFIG)).map((p) => p.object)).toEqual(['Leads', 'Activities']);
+  });
+
+  it('still says the keys are wrong rather than "nothing to read"', async () => {
+    serve([[anyHost('LeadsMetaData.Get'), () => { throw refusal(401); }]]);
+    await expect(listPopulated(CONFIG)).rejects.toThrow(/every region/);
+  });
+
+  it('asks the owner for the two keys and nothing else', () => {
+    // Which part, and which opportunity type, are answers the flow already has.
+    const typed = fields.filter((f) => !f.hidden).map((f) => f.name);
+    expect(typed).toEqual(['accessKey', 'secretKey']);
   });
 });

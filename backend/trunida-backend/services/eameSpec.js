@@ -88,6 +88,7 @@ export const FIXED_PATHS = [
   'services/connectors/leadsquared.js',
   'services/svargZohoService.js',
   'controllers/zohoConnectController.js',
+  'controllers/leadsquaredConnectController.js',
   'controllers/whatsappController.js',
   'routes/whatsappRoutes.js',
   'controllers/phoneController.js',

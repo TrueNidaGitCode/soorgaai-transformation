@@ -39,8 +39,8 @@ import axios from 'axios';
 
 export const kind = 'leadsquared';
 export const label = 'LeadSquared';
-export const help = 'Records from LeadSquared. In LeadSquared open My Profile → Settings → API and Webhooks and copy '
-  + 'the Access Key and Secret Key — an admin’s keys see every record.';
+export const help = 'Leads, activities and opportunities from LeadSquared. In LeadSquared open My Profile → Settings → '
+  + 'API and Webhooks and copy the Access Key and Secret Key — an admin’s keys see every record.';
 
 /*
  * ── Which region, found rather than asked ─────────────────────────────────
@@ -68,12 +68,15 @@ export const OBJECTS = ['Leads', 'Activities', 'Opportunities'];
 export const fields = [
   { name: 'accessKey', label: 'Access key', placeholder: 'u$r…' },
   { name: 'secretKey', label: 'Secret key', secret: true },
-  { name: 'object', label: 'What to read', options: OBJECTS,
-    hint: 'Activities is the record of every call and visit — the one that shows a customer going quiet. '
-      + 'Connect Leads too, and Opportunities if you use them.' },
-  { name: 'opportunityType', label: 'Opportunity type code', required: false,
-    requiredWhen: { object: ['Opportunities'] }, placeholder: '12000',
-    hint: 'In LeadSquared: My Profile → Settings → Opportunities → Opportunity Types — the number beside the type.' },
+  /*
+   * Written by the connect flow, never typed — the same as Zoho's module.
+   * Connecting reads the account and connects every part holding records,
+   * each as its own connection, so which part and which opportunity type are
+   * answers the flow already has. Declared because connectorService stores
+   * only the fields a kind names.
+   */
+  { name: 'object', label: 'What to read', options: OBJECTS, hidden: true, required: false },
+  { name: 'opportunityType', label: 'Opportunity type code', hidden: true, required: false },
 ];
 
 /*
@@ -554,4 +557,56 @@ export async function pull(config, { maxRows = 50000, now = new Date() } = {}) {
   if (object === 'Leads') return pullLeads(config, { maxRows, now });
   if (object === 'Opportunities') return pullOpportunities(config, { maxRows });
   return pullActivities(config, { maxRows, now });
+}
+
+// ── What this account holds ─────────────────────────────────────────────────
+
+/** Opportunity types this application reads at most, the same ceiling Zoho's modules have. */
+const MOST_TYPES = 12;
+
+/**
+ * Everything in this account worth connecting, the way Zoho's modules are found.
+ *
+ * Connecting Zoho asks nobody which module: every module holding a record is
+ * connected, each as its own dataset. LeadSquared is connected the same way,
+ * so the two CRMs behind the one card take the same steps. Leads and
+ * Activities are asked whether they hold anything in the window a sync reads,
+ * and every opportunity type is listed and asked the same — which is what
+ * retired the "opportunity type code" box, a number nobody should have to
+ * look up in a settings screen.
+ *
+ * A part that refuses to be read is skipped rather than fatal, as in Zoho:
+ * an account where opportunities are switched off still has its activities.
+ */
+export async function listPopulated(config, { now = new Date() } = {}) {
+  await hostFor(config);
+  const out = [];
+  const holds = async (fn) => { try { return await fn(); } catch { return false; } };
+
+  if (await holds(async () => {
+    const d = await call(config, 'post', '/LeadManagement.svc/Leads.RecentlyModified', {
+      data: { Parameter: windowFor(now), Columns: { Include_CSV: 'ProspectID' }, Paging: { PageIndex: 1, PageSize: 1 } },
+    });
+    return (d?.Leads || []).length > 0;
+  })) out.push({ object: 'Leads', label: 'Leads' });
+
+  if (await holds(async () => {
+    const d = await call(config, 'post', '/ProspectActivity.svc/RetrieveRecentlyModified', {
+      data: { Parameter: { ...windowFor(now), IncludeCustomFields: 0 }, Paging: { PageIndex: 1, PageSize: 1 } },
+    });
+    return (d?.ProspectActivities || []).length > 0;
+  })) out.push({ object: 'Activities', label: 'Activities' });
+
+  const types = await holds(() => call(config, 'get', '/OpportunityManagement.svc/GetOpportunityTypes'));
+  for (const t of (Array.isArray(types) ? types : []).slice(0, MOST_TYPES)) {
+    const code = String(t?.EventCode ?? '').trim();
+    if (!/^\d+$/.test(code)) continue;
+    if (await holds(async () => {
+      const d = await call(config, 'post', '/OpportunityManagement.svc/Retrieve/BySearchParameter', {
+        data: { OpportunityEventCode: Number(code), AdvancedSearch: advancedSearchFor(code), Paging: { PageIndex: 1, PageSize: 1 } },
+      });
+      return (d?.List || []).length > 0;
+    })) out.push({ object: 'Opportunities', opportunityType: code, label: String(t.PluralName || t.DisplayName || t.Name || `Type ${code}`) });
+  }
+  return out;
 }

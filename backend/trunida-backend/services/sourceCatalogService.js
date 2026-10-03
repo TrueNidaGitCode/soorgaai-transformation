@@ -54,8 +54,9 @@ export const CONNECTOR_MODULES = {
   // kind is not chosen per industry: it is in ALWAYS_SHIPPED, and the card
   // is added to every application's list by sourcesForBlueprint.
   database:   'services/connectors/database.js',
-  // The CRM most of the businesses this is sold to actually run on. In
-  // ALWAYS_SHIPPED for the same reason as the database, and named here so an
+  // The CRM card. Its key is 'zoho-crm' for history; behind it sit both CRMs
+  // the businesses this is sold to run on, Zoho and LeadSquared, each in
+  // ALWAYS_SHIPPED for the same reason as the database. Named here so an
   // industry that keeps its records in a CRM can ask for the card as well.
   'zoho-crm': 'services/connectors/zohocrm.js',
 };
@@ -121,7 +122,9 @@ export function sourcesFromDatasets(datasets = []) {
     }
     if (/excel|xlsx|spreadsheet|google sheet|sheets|drive|onedrive|csv|folder/.test(t)) add('folder', 'Your folder of spreadsheets', 'Upload the folder; each sheet is matched to what the application expects.');
     if (/jira/.test(t)) add('jira', 'Jira', '');
-    if (/zoho|crm|customer relationship/.test(t)) add('zoho-crm', 'Your CRM', 'Customers, packages and appointments, read from the CRM your business already runs on.');
+    // One CRM card, whichever CRM: the tenant's card asks which, so a block
+    // naming LeadSquared asks for the same card a block naming Zoho does.
+    if (/zoho|leadsquared|crm|customer relationship/.test(t)) add('zoho-crm', 'Your CRM', 'Customers, packages and appointments, read from the CRM your business already runs on.');
     if (/confluence/.test(t)) add('confluence', 'Confluence', '');
     if (/github|gitlab|bitbucket/.test(t)) add('github', 'GitHub', '');
     if (/form/.test(t)) add('form', 'A form', 'Its responses sheet belongs in your folder.');

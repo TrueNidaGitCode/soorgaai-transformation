@@ -1158,6 +1158,9 @@
     var connect = t.closest('[data-connect]');
     if (connect) { await submitConnector(connect, kind); return; }
 
+    var lgo = t.closest('[data-lsq-go]');
+    if (lgo) { await startLeadSquared(lgo); return; }
+
     var zgo = t.closest('[data-zoho-go]');
     if (zgo) { await startZoho(zgo); return; }
 
@@ -1281,6 +1284,7 @@
     var kind = cardKind(kindName);
 
     if (kindName === 'zoho-crm' && zohoOneClick) { openZoho(k); return; }
+    if (kindName === 'leadsquared') { openLeadSquared(k); return; }
     var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName.split('-')[0], 'i').test(d.name) || /attend/i.test(d.name) && kindName === 'whatsapp-business' || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
     var setupHtml = kindName === 'whatsapp-business'
       ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
@@ -1391,7 +1395,7 @@
   function openZoho(k) {
     var regionField = (k.fields || []).find(function (f) { return f.name === 'region'; }) || { options: ['com'] };
     openFlow('zoho-crm', '<p class="dt-panel__head">Connect Zoho CRM</p>'
-      + '<p class="dt-form__help">You will be sent to Zoho to approve this, and back here to choose what to read. '
+      + '<p class="dt-form__help">You will be sent to Zoho to approve this, and back here, where every module holding records is read. '
       + 'Svarg asks only to read; the permission is kept in this application’s own database.</p>'
       + '<div class="dt-form__grid">'
       + '<label class="dt-form__field">Data centre<select name="region">'
@@ -1555,10 +1559,82 @@
       ? '<p class="dt-form__note">Not read: ' + (r.skipped || []).map(function (s) { return esc(s.module); }).join(', ') + '.</p>'
       : '';
     openFlow('zoho-crm', '<p class="dt-panel__head">Connected</p>'
-      + '<p class="dt-form__help">Every module holding records is now being read. '
+      + '<p class="dt-form__help">Every ' + (r.part || 'module') + ' holding records is now being read. '
       + 'The first sync is running; the empty ones were left alone.</p>'
       + '<ul class="dt-src__list">' + list + '</ul>' + missed
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-cancel="1">Done</button></div>');
+  }
+
+  /*
+   * LeadSquared, in the same steps as Zoho.
+   *
+   * Zoho's one-click path asks for consent and then reads: every module
+   * holding a record is connected as its own dataset, and the bar counts
+   * them as they land. LeadSquared has no consent screen to send anybody to
+   * -- its API takes an access key and a secret key -- so the keys are the
+   * first step, and everything after them is Zoho's: find what holds records,
+   * connect each, show the receipt. Nobody is asked which part of their CRM
+   * to read or to look up an opportunity type's code.
+   */
+  function openLeadSquared(k) {
+    openFlow('zoho-crm', '<p class="dt-panel__head">Connect LeadSquared</p>'
+      + '<p class="dt-form__help">' + esc(k.help) + ' The keys are kept encrypted in this application’s own database and never sent to Svarg.</p>'
+      + '<p class="dt-form__brings"><b>It reads</b> your leads, every call, email and visit logged against them, and each opportunity type that holds records.</p>'
+      + '<div class="dt-form__grid">'
+      + '<label class="dt-form__field">Access key<input type="text" name="accessKey" placeholder="u$r…" autocomplete="off"></label>'
+      + '<label class="dt-form__field">Secret key<input type="password" name="secretKey" autocomplete="off"></label>'
+      + '</div>'
+      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-lsq-go="1">Read my LeadSquared <span aria-hidden="true">&rarr;</span></button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+  }
+
+  async function startLeadSquared(btn) {
+    var b = bodyOf('zoho-crm');
+    var keys = {
+      accessKey: (b.querySelector('[name=accessKey]') || {}).value || '',
+      secretKey: (b.querySelector('[name=secretKey]') || {}).value || '',
+    };
+    if (!keys.accessKey.trim() || !keys.secretKey.trim()) { flowErr('zoho-crm', 'Enter both the access key and the secret key.'); return; }
+    btn.disabled = true; btn.textContent = 'Checking the keys…';
+    try {
+      await readLeadSquared(keys);
+    } catch (err) {
+      console.error('[leadsquared] connecting failed:', err);
+      openLeadSquared(kinds.find(function (x) { return x.kind === 'leadsquared'; }) || { help: '' });
+      flowErr('zoho-crm', err.message);
+    }
+  }
+
+  /** Zoho's readCrm, for LeadSquared: one request to find, one per part to connect. */
+  async function readLeadSquared(keys) {
+    var found = await ownerJson('/api/connectors/leadsquared/scan', 'POST', keys);
+    var parts = found.parts || [];
+    if (!parts.length) throw new Error('Nothing in this LeadSquared account holds records yet.');
+
+    var done = [];
+    var failed = [];
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      progress('zoho-crm', i, parts.length, 'Reading ' + p.label);
+      try {
+        var one = await ownerJson('/api/connectors/leadsquared/connect', 'POST', {
+          accessKey: keys.accessKey, secretKey: keys.secretKey,
+          object: p.object, opportunityType: p.opportunityType || '', label: p.label,
+        });
+        done.push(one);
+      } catch (err) {
+        console.error('[leadsquared] %s failed:', p.label, err);
+        failed.push({ module: p.label, reason: err.message });
+      }
+    }
+    progress('zoho-crm', parts.length, parts.length, 'Finishing');
+
+    if (!done.length) {
+      throw new Error('Nothing could be read. ' + (failed[0] ? failed[0].reason : ''));
+    }
+    closeFlow('zoho-crm');
+    await refresh();
+    connected({ connected: done, skipped: failed, part: 'part of LeadSquared' });
   }
 
   /** A consent that came back and then went wrong, said on the card. */

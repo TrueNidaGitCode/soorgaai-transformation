@@ -47,6 +47,9 @@ describe('where an industry keeps its data', () => {
     expect(connectorKindsFor(s)).toEqual(['whatsapp', 'database']);
     // And "repository" alone never means GitHub.
     expect(sourcesFromDatasets([{ typicalSource: 'a document repository' }]).map(x => x.kind)).toEqual([]);
+    // One CRM card, whichever CRM a dataset names: the tenant's card asks which.
+    expect(sourcesFromDatasets([{ typicalSource: 'LeadSquared opportunities' }]).map(x => x.kind)).toEqual(['zoho-crm']);
+    expect(sourcesFromDatasets([{ typicalSource: 'Zoho CRM contacts' }]).map(x => x.kind)).toEqual(['zoho-crm']);
   });
 
   it('ships only the connector modules the sources call for', async () => {

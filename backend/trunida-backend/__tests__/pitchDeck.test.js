@@ -68,6 +68,13 @@ describe('the systems it says it can read', () => {
   it('gives each one a name somebody outside the building recognises', () => {
     expect(list.find((c) => c.kind === 'zohocrm').name).toBe('Zoho CRM');
     expect(list.find((c) => c.kind === 'phone').name).toBe('Cloud telephony');
+    expect(list.find((c) => c.kind === 'leadsquared').name).toBe('LeadSquared');
+  });
+
+  it('names every connector that ships, rather than showing its file name', () => {
+    // LeadSquared reached the deck as "leadsquared" the day it shipped,
+    // because the directory is read and the names are not.
+    for (const c of list) expect(c.name, c.kind).not.toBe(c.kind);
   });
 
   it('leaves out the one that is not a customer system', () => {

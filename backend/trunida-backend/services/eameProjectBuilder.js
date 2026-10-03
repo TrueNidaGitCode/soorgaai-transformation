@@ -207,6 +207,8 @@ const ALWAYS_SHIPPED = new Set([
    * from dying on boot.
    */
   'services/connectors/zohocrm.js',
+  // And LeadSquared, the other CRM the businesses this is sold to already run.
+  'services/connectors/leadsquared.js',
 ]);
 
 /**
@@ -259,6 +261,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/svarg.js':     { template: 'services/connectors/svarg.js' },
     'services/connectors/database.js':  { template: 'services/connectors/database.js' },
     'services/connectors/zohocrm.js':   { template: 'services/connectors/zohocrm.js' },
+    'services/connectors/leadsquared.js': { template: 'services/connectors/leadsquared.js' },
     'services/svargZohoService.js':     { template: 'services/svargZohoService.js' },
     'controllers/zohoConnectController.js': { template: 'controllers/zohoConnectController.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },

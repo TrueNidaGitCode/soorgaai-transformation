@@ -119,9 +119,11 @@ try {
   const O = { Authorization: 'Bearer ' + own.body.token, 'Content-Type': 'application/json' };
   check('promoted account is now a writer', (await j('/api/data/intent', { method: 'POST', headers: U, body: JSON.stringify({ message: 'Which learners are at risk?' }) })).status === 200);
   const srcs = await j('/api/data/sources', { headers: O });
-  check('sources are the industry\'s: folder, WhatsApp', JSON.stringify(srcs.body?.sources?.map(s => s.kind)) === '["folder","whatsapp"]', JSON.stringify(srcs.body?.sources?.map(s => s.kind)));
+  // The database card is offered to every application, after the industry's own.
+  check('sources are the industry\'s, then the database', JSON.stringify(srcs.body?.sources?.map(s => s.kind)) === '["folder","whatsapp","database"]', JSON.stringify(srcs.body?.sources?.map(s => s.kind)));
   const kinds = await j('/api/connectors', { headers: O });
-  check('only the WhatsApp Business connector shipped', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)) === '["whatsapp-business"]', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)));
+  // WhatsApp Business is the industry's; the database, both CRMs and the phone ship to everyone.
+  check('WhatsApp Business plus what every application gets', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)) === '["database","leadsquared","phone","whatsapp-business","zoho-crm"]', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)));
 
   // A folder import, twice: the rule
   const imp1 = await j('/api/data/import', { method: 'POST', headers: O, body: JSON.stringify({ datasetName: 'Students', source: 'folder', origin: 'Students.xlsx', mode: 'merge', complete: true, rows: [['S1', 'Priya Nair', 'U14'], ['S2', 'Arjun Sharma', 'U16']] }) });

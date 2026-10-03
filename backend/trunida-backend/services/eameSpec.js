@@ -84,6 +84,8 @@ export const FIXED_PATHS = [
   'services/connectors/svarg.js',
   'services/connectors/database.js',
   'services/connectors/zohocrm.js',
+  // LeadSquared: leads, the activity record of every touch, and opportunities.
+  'services/connectors/leadsquared.js',
   'services/svargZohoService.js',
   'controllers/zohoConnectController.js',
   'controllers/whatsappController.js',

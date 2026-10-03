@@ -393,10 +393,23 @@
   var CORE = ['zoho-crm', 'phone'];
   var CORE_LABEL = { 'zoho-crm': 'CRM', phone: 'Phone system' };
 
+  /*
+   * The CRMs the one CRM card stands for. The card keeps the kind 'zoho-crm'
+   * as its name because flows, links back from Zoho's consent screen and
+   * tests already address it by that; what it holds is whichever of these
+   * the business runs.
+   */
+  var CRMS = [
+    { kind: 'zoho-crm', label: 'Zoho CRM' },
+    { kind: 'leadsquared', label: 'LeadSquared' },
+  ];
+  function isCrm(kind) { return CRMS.some(function (c) { return c.kind === kind; }); }
+
   /** Does this application actually ship the connector behind this card? */
   function shipped(kind) {
     return kinds.some(function (k) {
-      return k.kind === kind || (kind === 'whatsapp' && k.kind === 'whatsapp-business');
+      return k.kind === kind || (kind === 'whatsapp' && k.kind === 'whatsapp-business')
+        || (kind === 'zoho-crm' && isCrm(k.kind));
     });
   }
 
@@ -426,7 +439,7 @@
     var out = [Object.assign({ muted: true }, DEFAULT_FOLDER)];
     sources.forEach(function (s) {
       if (['form', 'file', 'folder'].indexOf(s.kind) !== -1) return;
-      if (CORE.indexOf(s.kind) !== -1) return;
+      if (CORE.indexOf(s.kind) !== -1 || isCrm(s.kind)) return;
       if (out.some(function (o) { return o.kind === s.kind; })) return;
       out.push(Object.assign({ muted: true }, s));
     });
@@ -498,6 +511,7 @@
 
   var TYPE_OF = {
     'zoho-crm': 'CRM',
+    leadsquared: 'CRM',
     database: 'Database',
     whatsapp: 'Messages',
     'whatsapp-business': 'Messages',
@@ -621,11 +635,11 @@
        * customers are kept. Which CRM is a question for the form, and the
        * form says Zoho plainly.
        */
-      var crm = kinds.find(function (x) { return x.kind === 'zoho-crm'; });
-      var crmc = connectors.filter(function (c) { return c.kind === 'zoho-crm'; });
+      var crms = crmsHere();
+      var crmc = connectors.filter(function (c) { return isCrm(c.kind); });
       d.icon = ICON.crm; d.title = 'CRM';
       d.note = 'Customers, packages and appointments.';
-      if (!crm) d.status = 'Not available on this application';
+      if (!crms.length) d.status = 'Not available on this application';
       else if (crmc.length) {
         d.on = true;
         d.status = 'Connected · ' + plural(crmc.length, 'module')
@@ -634,7 +648,8 @@
         d.held = folded(plural(crmc.length, 'module') + ' from this CRM',
           '<ul class="dt-src__list">' + crmc.map(renderConnector).join('') + '</ul>');
       }
-      if (crm) { d.go = crmc.length ? 'Connect another' : 'Connect'; d.goAction = 'zoho-crm'; }
+      // One CRM goes straight to its form; more than one asks which first.
+      if (crms.length) { d.go = crmc.length ? 'Connect another' : 'Connect'; d.goAction = crms.length > 1 ? 'crm' : crms[0].kind; }
     } else if (s.kind === 'phone') {
       var ph = kinds.find(function (x) { return x.kind === 'phone'; });
       var phc = connectors.filter(function (c) { return c.kind === 'phone'; });
@@ -743,7 +758,16 @@
   // ── A flow inside a card ──────────────────────────────────────────────────
 
   /** The card a flow belongs to: WhatsApp's two ways in share one card. */
-  function cardKind(kindName) { return kindName === 'whatsapp-business' ? 'whatsapp' : kindName; }
+  function cardKind(kindName) {
+    if (kindName === 'whatsapp-business') return 'whatsapp';
+    if (isCrm(kindName)) return 'zoho-crm';
+    return kindName;
+  }
+
+  /** The CRMs this application can connect, in the order the chooser shows them. */
+  function crmsHere() {
+    return CRMS.filter(function (c) { return kinds.some(function (k) { return k.kind === c.kind; }); });
+  }
   function bodyOf(kind) { return page.querySelector('[data-card="' + kind + '"] [data-body]'); }
 
   function openFlow(kind, html, state) {
@@ -1224,6 +1248,21 @@
 
   function openSource(kindName) {
     if (kindName === 'folder') { openFolder(); return; }
+    if (kindName === 'crm') {
+      /*
+       * Which CRM is the first question, and the only one on this screen.
+       * Its form is the second: Zoho and LeadSquared ask for different
+       * things, and showing both forms at once asks somebody to read one
+       * they will never fill in.
+       */
+      openFlow('zoho-crm', '<p class="dt-panel__head">Which CRM do you use?</p>'
+        + '<div class="dt-map__actions">'
+        + crmsHere().map(function (c) {
+          return '<button type="button" class="dt-btn" data-open="' + esc(c.kind) + '">' + esc(c.label) + '</button>';
+        }).join('')
+        + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+      return;
+    }
     if (kindName === 'whatsapp') {
       var guess = datasets.findIndex(function (d) { return /attend/i.test(d.name); });
       openFlow('whatsapp', '<p class="dt-panel__head">An exported chat</p>'
@@ -1313,7 +1352,8 @@
 
   /** Redraw the optional marks from what is in the form right now. */
   function markOptional(k) {
-    var b = bodyOf(k.kind);
+    // The card, not the kind: LeadSquared's form sits in the CRM card.
+    var b = bodyOf(cardKind(k.kind));
     if (!b) return;
     var apply = function () {
       var config = {};

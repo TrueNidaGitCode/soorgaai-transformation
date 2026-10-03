@@ -2544,8 +2544,10 @@ function renderIcpView() {
           and neither was prompted with it. Two words in the second one are doing more work than the
           product does, and this page does not let them pass unmarked. <b>&ldquo;The systems you
           already use&rdquo;</b> means whatever Svarg can read: an upload, a database connection, or
-          Zoho CRM, cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira. The CRM and the
-          phone connectors are new and were the two gaps this paragraph used to name; another CRM or
+          Zoho CRM, LeadSquared, cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira. The CRM and the
+          phone connectors are new and were the two gaps this paragraph used to name. LeadSquared was
+          built from its published API for The Wellness Co. and has not yet read a real account, so
+          say it connects, not that it has been proven to; another CRM or
           a different phone provider is still an export or a database, and that is the first thing to
           establish rather than the last. <b>&ldquo;Put it in front of&rdquo;</b> is a morning email
           &mdash; true, and the whole of it. Act is drafted and never sent; joining signals ACROSS

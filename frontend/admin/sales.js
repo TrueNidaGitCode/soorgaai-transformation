@@ -3379,11 +3379,10 @@ function renderAudience() {
         + 'and messages are logged against the opportunity in LeadSquared was not established'],
       spread: ['yes', 'The opportunity lives in LeadSquared; the conversations that show whether '
         + 'the customer is still engaged happen on the phone and elsewhere'],
-      late: ['open', 'Implied by the problem as they put it &mdash; engagement is lost over three '
-        + 'months &mdash; but when they actually notice was not asked'],
       same: ['open', 'A different problem from Vesoma. Vesoma&rsquo;s record disagrees with what '
         + 'happened; here the record is right and the customer is drifting. What they share is '
-        + 'that the signal exists and is seen too late'],
+        + 'that the signal exists and is seen too late. Whether drifting costs them anything was '
+        + 'not asked'],
       workflow: ['yes', 'Lead &rarr; opportunity &rarr; about three months of engagement &rarr; '
         + 'the customer goes quiet'],
       simsignals: ['open', 'Opportunity records in LeadSquared, and whatever activity is logged '
@@ -3819,14 +3818,14 @@ function renderFirstMessage(seg) {
           <p class="sg-fm__subject"><span>Subject</span>${o.subject}</p>
           <div class="sg-fm__body">${para(o.email)}</div>
           <div class="sg-fm__sign">${para(o.sign)}</div>
-          <button type="button" class="sg-btn sg-fm__copy" data-fmcopy="email">Copy email</button>
+          <button type="button" class="sg-fm__copy" data-fmcopy="email">Copy email</button>
         </article>
 
         <article class="sg-fm__msg">
           <p class="sg-fm__kind">WhatsApp or LinkedIn</p>
           <p class="sg-fm__subject"><span>Ends with</span>The link. Nothing after it gets read on a phone.</p>
           <div class="sg-fm__body">${para(o.short)}</div>
-          <button type="button" class="sg-btn sg-fm__copy" data-fmcopy="short">Copy message</button>
+          <button type="button" class="sg-fm__copy" data-fmcopy="short">Copy message</button>
         </article>
 
         <article class="sg-fm__msg sg-fm__msg--deck">

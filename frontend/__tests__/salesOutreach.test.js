@@ -117,7 +117,11 @@ describe('what the first message claims', () => {
   it('sends people to a domain that answers', () => {
     // svargai.com did not resolve earlier in this project's life; a link in a
     // first message that goes nowhere is worse than no link.
-    expect(sent).toContain('https://www.svargai.com/');
+    // The message now ends in a tracked {{link}}, filled per lead. With nobody
+    // chosen it falls back to the plain address, and that fallback is where a
+    // dead domain could get back in, so it is what this guards now.
+    expect(sent).toContain('Learn more: {{link}}');
+    expect(js).toContain("const link = lead?.inviteLink || 'https://www.svargai.com/';");
   });
 
   it('describes only what the product does today', () => {

@@ -29,7 +29,8 @@ const css = read('../admin/dashboard.css');
 describe('the two ways in', () => {
   it('links to the pages that are worked, and to nothing that no longer exists', () => {
     const hrefs = [...html.matchAll(/href="(\/admin\/[^"]+)"/g)].map((m) => m[1]);
-    expect(hrefs).toEqual(['/admin/sales.html', '/admin/capital.html', '/admin/model-catalog.html']);
+    // Finance sits beside Sales: what each account consumes, against its plan.
+    expect(hrefs).toEqual(['/admin/sales.html', '/admin/finance.html', '/admin/capital.html', '/admin/model-catalog.html']);
   });
 
   it('links to pages that are actually there, and still have a server behind them', () => {

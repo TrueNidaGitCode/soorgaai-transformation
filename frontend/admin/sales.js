@@ -3172,8 +3172,11 @@ const VERTICALS = [
       + 'hypothesis to fit the newest conversation. Two honest caveats: the cancellation variant is '
       + 'our inference from the systems Vesoma described, not something they reported; and widening '
       + 'is not free, so the bar moves with it. A gap alone no longer passes &mdash; the hypothesis '
-      + 'is a gap that costs something, which is why The Wellness Co. still owes the cost side and '
-      + 'its Same problem cell stays open until somebody asks.',
+      + 'is a gap that costs something. The Wellness Co.&rsquo;s second interview then described a '
+      + 'different problem: the record is right &mdash; the opportunity really is open &mdash; and '
+      + 'the customer drifts away regardless. That does not fit this hypothesis, so it is not '
+      + 'counted toward it. Whether to widen it again to take that in is an open decision, and by '
+      + 'this note&rsquo;s own rule not one to make on the strength of the newest conversation alone.',
   },
   {
     id: 'automotive',
@@ -3351,32 +3354,46 @@ function renderAudience() {
         + '&#8377;2.4L a year. It is a ceiling until somebody counts how many of the 20 attended'],
     },
     /*
-     * A short conversation, and it shows: one problem understood and most of
-     * the script unasked. Every unasked row is left blank rather than
-     * inferred from the first company — the second column agreeing with the
-     * first because somebody filled the gaps in is exactly how a repeatability
-     * table stops being evidence.
+     * Interviewed twice, and the second conversation corrected the first.
      *
-     * What they said: their CRM and their phone activity are disconnected, so
-     * a call happens and the business does not know it did. What they did NOT
-     * say: how often, what it costs, who notices, or what they would do. Those
-     * are the next conversation, not this one.
+     * The first was short and was written up as "their CRM and their phone
+     * activity are disconnected". The second says that was the wrong reading.
+     * What they actually described is a customer who converts and then
+     * drifts: a lead becomes an opportunity, and keeping that person engaged
+     * over the following three months is where it goes wrong. The CRM is
+     * LeadSquared.
+     *
+     * So this column no longer claims the same gap as Vesoma, and iSPAN's
+     * column, which counted this one as a sighting of it, was corrected in
+     * the same change. A repeatability table is only evidence while its rows
+     * stop agreeing when the interviews do.
+     *
+     * Only what was said is recorded. The write-up of this conversation also
+     * carried a worked example — month one some calls, month three nothing,
+     * "no meaningful interaction for 28 days" — and that is an illustration of
+     * the problem, not something they reported. It is not in any cell.
      */
     {
-      id: 'B', name: 'The Wellness Co.', met: 'Not recorded', when: 'Interviewed, briefly',
-      signals: ['yes', 'A phone system and a CRM, both already in use. Whether the call record '
-        + 'carries an outcome was not asked'],
-      spread: ['yes', 'Two systems that do not talk: the call happens in one, the customer lives '
-        + 'in the other'],
-      same: ['open', 'The gap is evidenced and it is the same gap: the call happens, the CRM does '
-        + 'not know it did. Missing is the other half of the hypothesis &mdash; nothing has been '
-        + 'counted, so whether it costs anything is unasked'],
-      workflow: ['yes', 'Call &rarr; the CRM should reflect it &rarr; it does not'],
-      simsignals: ['yes', 'Call activity and CRM records'],
-      icpline: ['open', 'Wellness operator &middot; call &rarr; CRM &middot; the call does not '
-        + 'reach the record &middot; the rest of the line was not asked'],
-      bucket: ['open', 'They raised it unprompted and stressed it, which is a signal. Frequency, '
-        + 'cost and urgency were not asked, so it is not yet Acute on the evidence'],
+      id: 'B', name: 'The Wellness Co.', met: 'Not recorded', when: 'Interviewed twice',
+      signals: ['open', 'LeadSquared, and a phone system from the first conversation. Whether calls '
+        + 'and messages are logged against the opportunity in LeadSquared was not established'],
+      spread: ['yes', 'The opportunity lives in LeadSquared; the conversations that show whether '
+        + 'the customer is still engaged happen on the phone and elsewhere'],
+      late: ['open', 'Implied by the problem as they put it &mdash; engagement is lost over three '
+        + 'months &mdash; but when they actually notice was not asked'],
+      same: ['open', 'A different problem from Vesoma. Vesoma&rsquo;s record disagrees with what '
+        + 'happened; here the record is right and the customer is drifting. What they share is '
+        + 'that the signal exists and is seen too late'],
+      workflow: ['yes', 'Lead &rarr; opportunity &rarr; about three months of engagement &rarr; '
+        + 'the customer goes quiet'],
+      simsignals: ['open', 'Opportunity records in LeadSquared, and whatever activity is logged '
+        + 'against them. Which of those mark a customer as drifting was not established'],
+      icpline: ['open', 'Wellness operator &middot; lead &rarr; opportunity &rarr; three months of '
+        + 'engagement &middot; the converted customer drifts away &middot; cost and action not asked'],
+      bucket: ['open', 'Described clearly and unprompted. Still nothing counted &mdash; how many '
+        + 'opportunities go quiet, and what one is worth &mdash; so not yet Acute on the evidence'],
+      reverse: ['open', 'What &ldquo;disengaged&rdquo; means in their data &mdash; days without '
+        + 'activity, an unanswered call, a missed session &mdash; is the next thing to watch'],
     },
     /*
      * Three problems named, none of them counted.
@@ -3390,11 +3407,15 @@ function renderAudience() {
      * ── The one that repeats ──────────────────────────────────────────────
      *
      * "He is not aware how the team is communicating with customers" is the
-     * third sighting of the same gap: Vesoma's call that leaves nothing to
-     * read, The Wellness Co.'s call that the CRM does not know happened, and
-     * now a founder who cannot see his own team's conversations. Three
-     * companies, unprompted, in one vertical. That is the strongest signal in
-     * this table and it is why `same` is marked rather than left open.
+     * second sighting of the same gap: Vesoma's call that leaves nothing to
+     * read unless somebody logs it, and now a founder who cannot see his own
+     * team's conversations. Two companies, unprompted, in one vertical.
+     *
+     * It was written as the THIRD, counting The Wellness Co.'s "call the CRM
+     * does not know happened". Their second interview corrected that reading
+     * — their problem is a converted customer drifting away, not a call going
+     * unrecorded — so the count came down with it. A tally that only ever goes
+     * up is not counting anything.
      *
      * The other two are new and neither has been seen elsewhere yet: a
      * cancellation that arrives too late to refill the slot, and work handed
@@ -3425,8 +3446,8 @@ function renderAudience() {
         + 'decides whether any of this is worth building'],
 
       same: ['yes', 'One of the three repeats, and it is the one that keeps repeating: the team '
-        + 'talks to customers and the owner cannot see it. Third company in this vertical to say '
-        + 'so unprompted'],
+        + 'talks to customers and the owner cannot see it. Second company in this vertical to say '
+        + 'so unprompted, after Vesoma'],
       workflow: ['yes', 'Lead &rarr; call &rarr; conversion, and booking &rarr; cancellation, and '
         + 'a handover between Physio and Nutrition'],
       simsignals: ['yes', 'Lead and call activity, bookings and cancellations, and whatever '

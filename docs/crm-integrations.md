@@ -134,19 +134,33 @@ Zoho has its consent. Everything after the keys matches Zoho's steps.
 |---|---|---|
 | Leads | `Leads (LeadSquared)` | Each lead's name, phone, email, stage, owner, source, and up to 60 of the account's own fields |
 | Activities | `Activities (LeadSquared)` | Every call, email and visit: the person it was with, the activity, `activity_date`, and a note where one was written |
-| Opportunities | `<Type> (LeadSquared)`, one per type | Status, the person, and the type's own fields under their display names |
+| Opportunities | `<Type> opportunities (LeadSquared)`, one per type | Status, the person, and the type's own fields under their display names |
 
 The window is the last year. Activities and opportunities carry only a lead
 id from LeadSquared, so each sync also looks up the leads, in bulk, to name
 the person behind each row. Without that step, a watcher could see that
 somebody went quiet but could not say who.
 
-**The watcher this was built for.** On `Activities (LeadSquared)`,
-**Gone Quiet** and **Stopped Coming** ("no activity in the last 14 days") are
-offered. The date column must stay named `activity_date`: it was first named
-`at`, which the watchers do not recognise as a date, so neither was offered
-and every test still passed. A test now binds the real watcher catalogue to
-the real shape.
+**The watchers this was built for.**
+
+- **Opportunity Gone Quiet** reads an opportunity dataset against
+  `Activities (LeadSquared)`. It reports anyone whose opportunity is open
+  (status none of won, lost or closed) and who has had no activity in the last
+  21 days. This is The Wellness Co.'s problem as they described it. It binds
+  only to a dataset whose name says opportunities, deals or pipeline, which is
+  why the connector names each type "<Type> opportunities". Renaming that
+  dataset would switch the watcher off.
+- **Gone Quiet** and **Stopped Coming** ("no activity in the last 14 days")
+  read `Activities (LeadSquared)` alone, so they do not know whether the
+  opportunity is still open.
+- **Asked About Upgrading** reads calls from a connected phone system, not
+  LeadSquared: calls whose transcript was tagged as an upgrade request in the
+  last 14 days.
+
+The date column must stay named `activity_date`: it was first named `at`,
+which the watchers do not recognise as a date, so none was offered and every
+test still passed. Tests now bind the real watcher catalogue to the real
+shapes (`__tests__/nextWatchers.test.js`, `__tests__/leadsquaredConnector.test.js`).
 
 ### What can go wrong
 

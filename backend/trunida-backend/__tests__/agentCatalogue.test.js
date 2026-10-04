@@ -91,7 +91,11 @@ describe('the catalogue itself', () => {
       expect(['both', 'leftOnly'], e.id).toContain(e.across.mode);
       // Sequence is the point of these; one without it asks a different and
       // usually wrong question — see the comment above them in the catalogue.
-      expect(['after', 'before'], e.id).toContain(e.across.when);
+      // The one other shape that is right is RECENCY: "no row in the last 21
+      // days" is about the clock too, measured from today rather than from
+      // the other row. A presence join with neither is still refused.
+      const recency = /in the last \d+ days/.test(e.question);
+      expect(['after', 'before'].includes(e.across.when) || recency, `${e.id} needs a sequence or a window`).toBe(true);
     }
   });
 });
@@ -155,7 +159,15 @@ describe('the question uses this application’s own column names', () => {
         const m = matchDataset(e, d);
         if (m) expect(fillQuestion(e, m), e.id).not.toMatch(/[{}]/);
       }
-      if (e.across) {
+      if (e.across && (e.across.left.only || e.across.right.only)) {
+        // A watcher that names the kind of record it needs must stay off a
+        // clinic that has none -- a diary has a status too -- and bind where
+        // that record exists.
+        expect(matchPair(e, CLINIC), `${e.id} must not pair on a clinic`).toBeNull();
+        const m = matchPair(e, CRM);
+        expect(m, `${e.id} should pair on a CRM`).toBeTruthy();
+        expect(fillQuestion(e, m), e.id).not.toMatch(/[{}]/);
+      } else if (e.across) {
         const m = matchPair(e, CLINIC);
         expect(m, `${e.id} should pair on a clinic`).toBeTruthy();
         expect(fillQuestion(e, m), e.id).not.toMatch(/[{}]/);
@@ -178,6 +190,18 @@ const CLINIC = [
   // reason that watcher can exist at all.
   { name: 'Enquiries and Calls', columns: ['Client Name', 'Contact Date', 'Channel', 'Notes', 'Promise', 'Intent'] },
   { name: 'Fee payments', columns: ['Client Name', 'Invoice No', 'Amount', 'Due Date', 'Paid'] },
+];
+
+/*
+ * A wellness business on LeadSquared, in the shapes the connector defines:
+ * the four shared columns lead, and its bookkeeping is marked internal.
+ */
+const CRM = [
+  { name: 'Leads (LeadSquared)', columns: ['id', 'name', 'phone', 'email', 'mobile', 'stage', 'owner', 'source', 'created', 'modified'], internal: [] },
+  { name: 'Activities (LeadSquared)', columns: ['id', 'name', 'phone', 'email', 'activity', 'activity_date', 'note', 'event_code', 'modified', 'lead_id', 'opportunity_id'],
+    internal: ['event_code', 'modified', 'lead_id', 'opportunity_id'] },
+  { name: 'Treatment Plan opportunities (LeadSquared)', columns: ['id', 'name', 'phone', 'email', 'status', 'created', 'modified', 'lead_id', 'Opportunity_Name', 'Stage', 'Expected_Value'],
+    internal: ['lead_id', 'modified'] },
 ];
 
 describe('a watcher that reads two systems against each other', () => {

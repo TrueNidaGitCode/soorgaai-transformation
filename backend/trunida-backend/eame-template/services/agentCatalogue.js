@@ -130,6 +130,13 @@ export const ROLES = {
    * same row.
    */
   promise:  /promise|commit|undertak|assur|callback|call ?back|follow ?up/i,
+  /*
+   * What a customer rang about, as callSignalService records it: one word
+   * from a closed list, so a watcher can ask for "upgrade" and get exactly
+   * that. Anchored, and deliberately not "interest": a CRM's Interested_In
+   * column holds a service name, never a wish to buy more of it.
+   */
+  intent:   /(^|[^a-z])intent([^a-z]|$)/i,
 };
 
 const C = (over) => ({ over: 'rows', op: 'gt', value: 0, ...over });
@@ -370,6 +377,60 @@ export const CATALOGUE = [
     },
     question: '{left.who} in {left} who have no row in {right} whose {right.when} is AFTER'
       + ' they got in touch' },
+  /*
+   * The problem The Wellness Co. described in their own words: a lead becomes
+   * an opportunity, and over the following weeks the customer drifts away
+   * while the opportunity sits there, open, saying nothing is wrong.
+   *
+   * Gone Quiet sees somebody stop, but reads one dataset and cannot know the
+   * opportunity is still open -- it would report a customer whose deal was won
+   * last month, or lost. This reads the opportunities for what is still open
+   * and the activity record for who has been touched recently, and reports
+   * the open ones nobody has touched.
+   *
+   * Open is "none of won, lost or closed", by containment, because CRMs spell
+   * those Won, Closed Won and Closed - Lost. Twenty-one days because the
+   * drift they described plays out over about three months and three weeks
+   * of silence is the earliest it is worth a call; Stopped Coming's fourteen
+   * is about visits, which are weekly.
+   *
+   * `only` on the left: this is a question about opportunities, and on a
+   * task list or a booking diary it would start itself and report noise.
+   */
+  { id: 'opportunity-gone-quiet', area: 'Customers', name: 'Opportunity Gone Quiet',
+    says: 'Still open, and nobody has been in touch for three weeks',
+    across: {
+      left:  { needs: ['who', 'status'], only: /opportunit|deal|pipeline/i, prefer: /opportunit|deal|pipeline/i },
+      /*
+       * A record of somebody being in touch, and nothing else. Measured on
+       * Vesoma's CRM, the best-scoring partner was Contacts -- whose only date
+       * is when the contact was created, so every open deal older than three
+       * weeks would have read as quiet. "contact" is therefore not one of the
+       * words: a contact list says who exists, not who was spoken to.
+       */
+      right: { needs: ['who', 'when'],
+        only: /activit|call|message|whatsapp|conversation|meeting|appoint|visit|session/i,
+        prefer: /activit|call|message|whatsapp|conversation|meeting|appoint|visit|session/i },
+      mode: 'leftOnly',
+    },
+    question: '{left.who} in {left} whose {left.status} matches none of won|lost|closed, who have no'
+      + ' row in {right} in the last 21 days' },
+  /*
+   * A customer rang asking for more than they have bought.
+   *
+   * The call's reading already marks it -- intent "upgrade" -- and until now
+   * it was only found by somebody thinking to ask. It is the cheapest sale a
+   * business will ever make, and the one most often lost to "I'll check and
+   * get back to you". Promise Not Kept catches the second half of that when a
+   * promise was said aloud; this catches every one, promise or not.
+   *
+   * One dataset, because the call is the whole of it. Fourteen days, because
+   * an upgrade asked about a month ago has usually been decided elsewhere.
+   */
+  { id: 'asked-to-upgrade', area: 'Customers', name: 'Asked About Upgrading',
+    says: 'A customer asked for more than they have bought',
+    needs: ['who', 'when', 'intent'],
+    question: '{who} in {dataset} whose {intent} is upgrade, in the last 14 days' },
 
   // ── Records ──────────────────────────────────────────────────────────────
   { id: 'missing-detail', area: 'Records', name: 'Missing Detail',
@@ -433,6 +494,8 @@ const SEVERITY = {
     // something and was never answered. Both are money, and both were
     // invisible to every watcher that reads one dataset at a time.
     'cancelled-not-updated', 'contact-no-record',
+    // An open deal going cold, which is the problem it was built for.
+    'opportunity-gone-quiet',
   ],
   low: [
     'missing-detail', 'duplicate', 'nothing-new', 'stale-source',
@@ -589,8 +652,14 @@ const PREFER = {
      * so ranked as well as First_Name did. Stopped Coming went to it, and the
      * board read: "Billing_Flat_House_No_Building_Apartment_Name with no
      * Last_Activity_Time in the last 14 days".
+     *
+     * Nor is the record's own title. Zoho's Deals carries Deal_Name before
+     * Contact_Name, both say "name", and the tie went to column order:
+     * measured on Vesoma's real CRM, Opportunity Gone Quiet would have
+     * reported "Knee rehab package" as the customer who had gone quiet.
+     * Subject and Title are the same mistake on a task and a meeting.
      */
-    bad:  /^total|count|num|qty|address|street|house|flat|building|apartment|city|country|postal|zip|state|province|lane|road/i,
+    bad:  /^total|count|num|qty|address|street|house|flat|building|apartment|city|country|postal|zip|state|province|lane|road|deal_?name|opportunit[a-z]*_?name|subject|title/i,
   },
   due: { good: /due|deadline/i, bad: /^total|count/i },
   amount: { good: /amount|balance|outstanding|total/i, bad: /count|qty|sessions/i },
@@ -732,6 +801,18 @@ export function matchPair(entry, datasets) {
   const pool = (datasets || []).filter(Boolean);
 
   const side = (s, d) => {
+    /*
+     * `only` where a preference is not enough.
+     *
+     * `prefer` breaks ties between datasets that could all answer. Some
+     * questions only one kind of record can answer at all: "which open
+     * opportunities have gone quiet" asked of a task list or a lead list is a
+     * different question that happens to have the same columns. A watcher that
+     * binds to the wrong one starts itself on every application that has a
+     * status column and a date -- which is how Leave Clash came to report a
+     * patient -- so the name is a requirement, not a hint.
+     */
+    if (s.only && !s.only.test(String(d.name || ''))) return null;
     const using = assignRoles(s.needs, businessColumns(d));
     if (!using) return null;
     let fit = fitOf({ ...entry, area: null }, d, using);

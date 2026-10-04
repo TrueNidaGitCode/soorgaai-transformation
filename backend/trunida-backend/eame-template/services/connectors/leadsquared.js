@@ -455,7 +455,13 @@ export async function describeShape(config) {
   if (object === 'Opportunities') {
     const { typeName, named } = await opportunityNamed(config);
     return {
-      name: `${typeName} (LeadSquared)`,
+      /*
+       * "Treatment Plan opportunities", not "Treatment Plan": an account names
+       * its types after what it sells, and a watcher about open opportunities
+       * binds only to a dataset that says it holds them — the way Zoho's says
+       * Deals. A type already called an opportunity is not told twice.
+       */
+      name: /opportunit/i.test(typeName) ? `${typeName} (LeadSquared)` : `${typeName} opportunities (LeadSquared)`,
       columns: [...LEADING, 'status', 'created', 'modified', 'lead_id', ...named.map((n) => n.column)],
       key: 'id',
       internal: ['lead_id', 'modified'],

@@ -176,7 +176,7 @@ function compare(v, op, n) {
 
 // ── Filtering ───────────────────────────────────────────────────────────────
 
-export const OPS = new Set(['is', 'is not', 'contains', 'is any of', 'empty', 'not empty', 'before', 'after', 'matches']);
+export const OPS = new Set(['is', 'is not', 'contains', 'is any of', 'empty', 'not empty', 'before', 'after', 'matches', 'matches none of']);
 const ANY_SEP = '|';
 
 export function matchesAll(cells, columns, where) {
@@ -192,6 +192,14 @@ export function matchesAll(cells, columns, where) {
       // Several values, any of which may appear inside the cell: how a status
       // column that reads "no response (2nd time)" is caught by "no response".
       case 'matches':   return String(val).split(ANY_SEP).map(norm).filter(Boolean).some(x => cell.includes(x));
+      /*
+       * The opposite, and not the same as several 'is not's. An opportunity is
+       * open when its status is none of won, lost or closed -- and a CRM writes
+       * those as Won, Closed Won, Closed - Lost. Only containment catches every
+       * spelling, and 'is not' takes one value. An empty cell matches nothing,
+       * so it passes: no status is not a closed one.
+       */
+      case 'matches none of': return !String(val).split(ANY_SEP).map(norm).filter(Boolean).some(x => cell.includes(x));
       case 'empty':     return cell === '';
       case 'not empty': return cell !== '';
       case 'before':    return cell !== '' && cell < v;

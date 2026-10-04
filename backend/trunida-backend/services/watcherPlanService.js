@@ -88,6 +88,14 @@ const TERMS = {
   'gone-quiet':           ['gone quiet', 'inactive', 'lapsed', 'stopped buying', 'declining', 'disengaged', 'at risk'],
   'repeat-complaint':     ['complaint', 'escalation', 'dissatisfied', 'unhappy'],
   'promise-overdue':      ['promise', 'commitment', 'sla', 'deadline', 'we said', 'due date', 'overdue task'],
+  /*
+   * The Wellness Co.'s words for it: a lead becomes an opportunity and then
+   * drifts. 'going cold' stays with Unanswered Enquiry, which had it first and
+   * is about a reply nobody sent; these are about a deal nobody is working.
+   */
+  'opportunity-gone-quiet': ['opportunity', 'opportunities', 'pipeline', 'deal', 'deals', 'drift', 'drifting',
+                           'engagement', 'disengag', 'nurture', 'conversion'],
+  'asked-to-upgrade':     ['upgrade', 'upsell', 'up-sell', 'cross-sell', 'bigger package', 'more sessions'],
 
   'unconfirmed-order':    ['unconfirmed', 'unacknowledged', 'purchase order', 'order confirmation'],
   'late-delivery':        ['late delivery', 'delayed', 'delay', 'shipment', 'dispatch', 'lead time'],

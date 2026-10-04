@@ -226,6 +226,20 @@ describe('only what the data can support actually starts', () => {
     // owner can go and start them by hand.
     expect(read('../eame-template/server.js')).toMatch(/autoStartWatchers\([\s\S]*?\.catch\(/);
   });
+
+  it('starts each watcher on the owner\'s real records, not on the sample it shipped with', () => {
+    /*
+     * Started from readIndex() alone, a watcher scored datasets as if none
+     * held real rows. On Vesoma that put Opportunity Gone Quiet on the sample
+     * Appointment Booking Diary, whose only person is the practitioner, beside
+     * 36 real Zoho meetings. The scheduler and the rebind already counted; the
+     * start has to as well.
+     */
+    const server = read('../eame-template/server.js');
+    const start = server.slice(server.lastIndexOf('indexWithOwnCounts()'), server.indexOf('autoStartWatchers(') + 40);
+    expect(start).toMatch(/indexWithOwnCounts\(\)[\s\S]*autoStartWatchers\(catalogueFor\(index,/);
+    expect(server).not.toContain('autoStartWatchers(catalogueFor(readIndex()');
+  });
 });
 
 describe('the owner\'s clock, not the container\'s', () => {

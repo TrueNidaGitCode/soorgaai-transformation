@@ -291,14 +291,24 @@ async function start() {
    *
    * Never blocks the boot and never fails it: an application that cannot start
    * its watchers must still serve, so the owner can go and start them by hand.
+   *
+   * With the owner's row counts, like the scheduler and the rebind above.
+   * Started from readIndex() alone, a watcher chose its datasets as if no
+   * real records existed, so a well-named sample dataset could win: measured
+   * on Vesoma, Opportunity Gone Quiet started on Deals + the sample Appointment
+   * Booking Diary -- whose only person is the practitioner -- while 36 real
+   * Zoho meetings sat beside it, and only the next scheduler tick moved it.
    */
-  autoStartWatchers(catalogueFor(readIndex(), agentPlan()), {
-    tz: process.env.APP_TZ || 'UTC',
-    categories: agentPlan().categories || [],
-    // What the plan covers. null when no limit is set, which is every
-    // application delivered before coverage existed.
-    covered: categoryLimit() ? activeCategories(agentPlan()) : null,
-  }).catch((err) => console.warn('[agents] auto-start skipped:', err.message));
+  indexWithOwnCounts()
+    .catch(() => readIndex())
+    .then((index) => autoStartWatchers(catalogueFor(index, agentPlan()), {
+      tz: process.env.APP_TZ || 'UTC',
+      categories: agentPlan().categories || [],
+      // What the plan covers. null when no limit is set, which is every
+      // application delivered before coverage existed.
+      covered: categoryLimit() ? activeCategories(agentPlan()) : null,
+    }))
+    .catch((err) => console.warn('[agents] auto-start skipped:', err.message));
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

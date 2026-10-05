@@ -188,3 +188,21 @@ describe('finding what the clinic\'s Clinicea holds', () => {
     expect(C.fields.filter((f) => !f.hidden).map((f) => f.name)).toEqual(['apiKey', 'username', 'password']);
   });
 });
+
+describe('both of Clinicea\'s spellings', () => {
+  it('reads a no-show however Clinicea writes it, because the watchers look for "no show"', () => {
+    for (const s of ['NoShow', 'No-Show', 'No Show']) {
+      expect(C.appointmentRow({ AppointmentID: 'a', AppointmentStatus: s }).status, s).toBe('No Show');
+    }
+    expect(C.statusWords('CheckedOut')).toBe('Checked Out');
+    expect(C.statusWords('Cancelled')).toBe('Cancelled');
+  });
+
+  it('maps the reference\'s v1 field names and the live v2 names to the same row', () => {
+    const v2 = { AppointmentID: 'A-1', PatientID: 'P-1', AppointmentWithName: 'Rahul Sharma', StartDateTime: '2026-09-12T10:00:00',
+      AppointmentStatus: 'NoShow', DoctorName: 'Dr. Iyer', WaitingStartTime: '2026-09-12T09:55:00' };
+    const v1 = { ID: 'A-1', AppointmentWithID: 'P-1', AppointmentWithFullName: 'Rahul Sharma', StartDate: '2026-09-12T10:00:00',
+      AppointmentStatus: 'NoShow', StaffName: 'Dr. Iyer', WaitingStartTime: '2026-09-12T09:55:00' };
+    expect(C.appointmentRow(v1)).toEqual(C.appointmentRow(v2));
+  });
+});

@@ -231,8 +231,8 @@ export function appointmentRow(a) {
     phone: first(a?.AppointmentWithPhone),
     email: first(a?.AppointmentWithEmail),
     appointment_date: dateOf(first(a?.StartDateTime, a?.StartDate)),
-    status: first(a?.AppointmentStatus),
-    previous_status: first(a?.PrevAppointmentStatus),
+    status: statusWords(first(a?.AppointmentStatus)),
+    previous_status: statusWords(first(a?.PrevAppointmentStatus)),
     check_in_time: dateOf(first(dateOf(a?.ArrivalDate), dateOf(a?.WaitingStartTime), dateOf(a?.EngagedStartTime))),
     service_completed: yes(a?.IsServiceCompleted),
     billed: yes(a?.IsBilled),
@@ -302,6 +302,20 @@ export function billRow(b) {
     appointment_id: first(b?.AppointmentID),
     patient_id: first(b?.PatientID),
   };
+}
+
+/**
+ * A status in plain words, however Clinicea spells it.
+ *
+ * Clinicea's reference does not list its status values, and its settings
+ * spell the one that matters most as one word (IsAutoMarkPatNoShow). The
+ * watchers look for "no show": a status written NoShow or No-Show would be
+ * missed on every booking, silently. So a run-together or hyphenated status
+ * is spaced out -- NoShow and No-Show become No Show, CheckedOut becomes
+ * Checked Out -- and one already in words is left as it is.
+ */
+export function statusWords(v) {
+  return text(v).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/s*-s*/g, ' ').replace(/s{2,}/g, ' ');
 }
 
 const ROWS = { Appointments: appointmentRow, Patients: patientRow, Packages: packageRow, Bills: billRow };

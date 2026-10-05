@@ -7,7 +7,8 @@
  * add-on, not after. So the Clinicea card offers "try it with a sample clinic",
  * and this is that clinic: six months of a physiotherapy and sports-medicine
  * practice, written as the raw records Clinicea's API returns -- the same
- * field names, the same unset-date convention -- so they go through the real
+ * field names, the same unset-date convention, and NoShow written as one word
+ * the way Clinicea's own settings spell it -- so they go through the real
  * connector, the real datasets and the real watchers. Nothing downstream knows
  * it is a sample except the dataset names, which say so.
  *
@@ -88,7 +89,7 @@ export function sampleClinic(now = new Date()) {
     appts.push({
       AppointmentID: id, PatientID: p.id, AppointmentWithName: p.name, AppointmentWithPhone: p.mobile,
       AppointmentWithEmail: p.email, StartDateTime: at(today, day, hour), AppointmentStatus: status,
-      PrevAppointmentStatus: status === 'No Show' ? 'Booked' : '',
+      PrevAppointmentStatus: status === 'NoShow' ? 'Booked' : '',
       ArrivalDate: checkIn ? at(today, day, hour - 1, 50) : UNSET,
       WaitingStartTime: checkIn ? at(today, day, hour - 1, 52) : UNSET,
       EngagedStartTime: checkIn ? at(today, day, hour, 2) : UNSET,
@@ -116,7 +117,7 @@ export function sampleClinic(now = new Date()) {
       if (d > 0) { book(p, d, { status: 'Booked' }); continue; }
       const roll = r();
       if (roll < 0.06) book(p, d, { status: 'Cancelled', reason: pick(['Travelling', 'Unwell', 'Work clash', 'Rescheduled by phone']) });
-      else if (roll < 0.075 && d > -60) book(p, d, { status: 'No Show' });           // a real no-show
+      else if (roll < 0.075 && d > -60) book(p, d, { status: 'NoShow' });            // a real no-show
       else book(p, d, { status: 'Completed', checkIn: true, completed: true, billed: true });
     }
     p.last = lastDay;
@@ -126,7 +127,7 @@ export function sampleClinic(now = new Date()) {
   const regulars = patients.filter((p) => p.role === 'regular');
   for (let i = 0; i < 18; i += 1) {
     const p = regulars[(i * 7) % regulars.length];
-    book(p, -(2 + i * 2), { status: 'No Show', checkIn: true, completed: true, billed: true });
+    book(p, -(2 + i * 2), { status: 'NoShow', checkIn: true, completed: true, billed: true });
   }
 
   // ── Packages: sold, used, some past what was bought ───────────────────

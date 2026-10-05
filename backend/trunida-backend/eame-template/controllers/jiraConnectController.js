@@ -27,6 +27,7 @@
 import {
   createConnector, defineDataset, syncConnector, listConnectors, deleteConnector,
 } from '../services/connectorService.js';
+import { requestLookNow } from '../services/agentService.js';
 
 async function jira() {
   try {
@@ -99,6 +100,8 @@ export async function jiraConnectOne(req, res) {
     } catch (err) {
       console.error('[jira] %s connected but the first read failed:', key, err.message);
     }
+    // Its watchers run now, not at the next restart.
+    requestLookNow();
     return res.json({ module: label, dataset: dataset.name, columns: dataset.columns.length, rows });
   } catch (err) {
     console.error('[jira] %s could not be connected:', key, err.message);

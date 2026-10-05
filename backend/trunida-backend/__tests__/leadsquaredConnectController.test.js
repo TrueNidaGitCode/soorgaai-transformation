@@ -19,6 +19,7 @@ vi.mock('../eame-template/services/connectors/leadsquared.js', () => ({
   listPopulated: M.listPopulated,
   describeShape: M.describeShape,
 }));
+vi.mock('../eame-template/services/agentService.js', () => ({ requestLookNow: () => true }));
 vi.mock('../eame-template/services/connectorService.js', () => ({
   defineDataset: M.defineDataset, createConnector: M.createConnector, syncConnector: M.syncConnector,
   listConnectors: M.listConnectors, deleteConnector: M.deleteConnector,

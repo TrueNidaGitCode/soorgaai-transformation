@@ -23,6 +23,7 @@
 import {
   createConnector, defineDataset, syncConnector, listConnectors, deleteConnector,
 } from '../services/connectorService.js';
+import { requestLookNow } from '../services/agentService.js';
 import { listPopulated, describeShape, OBJECTS } from '../services/connectors/leadsquared.js';
 
 const keysOf = (body) => ({
@@ -88,6 +89,8 @@ export async function leadsquaredConnectOne(req, res) {
       // Connected, and it will be read again on the hour.
       console.error('[leadsquared] %s connected but the first read failed:', label, err.message);
     }
+    // Its watchers run now, not at the next restart.
+    requestLookNow();
     return res.json({ module: label, dataset: dataset.name, columns: dataset.columns.length, rows });
   } catch (err) {
     console.error('[leadsquared] %s could not be connected:', label, err.message);

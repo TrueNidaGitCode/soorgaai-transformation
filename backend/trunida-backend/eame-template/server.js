@@ -26,7 +26,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets, indexWithOwnCounts } from './services/connectorService.js';
-import { startAgentScheduler, autoStartWatchers, rebindWatchers } from './services/agentService.js';
+import { startAgentScheduler, autoStartWatchers, rebindWatchers, onLookNow } from './services/agentService.js';
 import { catalogueFor } from './services/agentCatalogue.js';
 import { activeCategories, categoryLimit } from './services/coverage.js';
 // Cob's reading of which watchers matter here. Read from the same place the
@@ -299,7 +299,7 @@ async function start() {
    * Booking Diary -- whose only person is the practitioner -- while 36 real
    * Zoho meetings sat beside it, and only the next scheduler tick moved it.
    */
-  indexWithOwnCounts()
+  const startNewlyPossibleWatchers = () => indexWithOwnCounts()
     .catch(() => readIndex())
     .then((index) => autoStartWatchers(catalogueFor(index, agentPlan()), {
       tz: process.env.APP_TZ || 'UTC',
@@ -307,8 +307,12 @@ async function start() {
       // What the plan covers. null when no limit is set, which is every
       // application delivered before coverage existed.
       covered: categoryLimit() ? activeCategories(agentPlan()) : null,
-    }))
+    }));
+  startNewlyPossibleWatchers()
     .catch((err) => console.warn('[agents] auto-start skipped:', err.message));
+  // The same start, when a source connects -- so its watchers run now, not at
+  // the next restart. See requestLookNow in agentService.
+  onLookNow(startNewlyPossibleWatchers);
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

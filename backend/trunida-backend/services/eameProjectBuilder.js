@@ -265,6 +265,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/zohocrm.js':   { template: 'services/connectors/zohocrm.js' },
     'services/connectors/leadsquared.js': { template: 'services/connectors/leadsquared.js' },
     'services/connectors/clinicea.js':  { template: 'services/connectors/clinicea.js' },
+    'services/cliniceaSample.js':       { template: 'services/cliniceaSample.js' },
     'services/svargZohoService.js':     { template: 'services/svargZohoService.js' },
     'controllers/zohoConnectController.js': { template: 'controllers/zohoConnectController.js' },
     'controllers/leadsquaredConnectController.js': { template: 'controllers/leadsquaredConnectController.js' },

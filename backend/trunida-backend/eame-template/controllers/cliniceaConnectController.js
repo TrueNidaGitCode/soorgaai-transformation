@@ -19,16 +19,42 @@
 import {
   createConnector, defineDataset, syncConnector, listConnectors, deleteConnector,
 } from '../services/connectorService.js';
-import { listPopulated, describeShape, OBJECTS } from '../services/connectors/clinicea.js';
+import { listPopulated, describeShape, OBJECTS, isSample } from '../services/connectors/clinicea.js';
+import { forgetDataset } from '../services/connectorService.js';
+import { requestLookNow } from '../services/agentService.js';
 
-const credsOf = (body) => ({
-  apiKey: String(body?.apiKey || '').trim(),
-  username: String(body?.username || '').trim(),
-  password: String(body?.password || ''),
-});
 
-const missing = (c) => (!c.apiKey || !c.username || !c.password
-  ? 'Enter the Clinicea API key, the staff username and the staff password.' : '');
+/*
+ * The sample clinic takes no credentials: sample is 'yes' and nothing else is
+ * read. Anything else is a real account and needs all three.
+ */
+const credsOf = (body) => (String(body?.sample || '') === 'yes'
+  ? { sample: 'yes' }
+  : {
+    apiKey: String(body?.apiKey || '').trim(),
+    username: String(body?.username || '').trim(),
+    password: String(body?.password || ''),
+  });
+
+const missing = (c) => (isSample(c) ? '' : (!c.apiKey || !c.username || !c.password
+  ? 'Enter the Clinicea API key, the staff username and the staff password.' : ''));
+
+/**
+ * The sample clinic, gone, once a real Clinicea account connects.
+ *
+ * Its invented patients must never sit beside a clinic's real ones -- the
+ * board would mix them and a report would count them. Forgetting the
+ * datasets moves their watchers onto the real records on the next tick.
+ */
+export async function forgetSampleClinic() {
+  const gone = [];
+  for (const object of OBJECTS) {
+    const name = describeShape({ object, sample: 'yes' }).name;
+    if (await forgetDataset(name).catch(() => false)) gone.push(name);
+  }
+  if (gone.length) console.log('[clinicea] the real clinic connected; the sample is gone:', gone.join(', '));
+  return gone;
+}
 
 /** Which parts of this clinic's Clinicea hold records -- and nothing else. */
 export async function cliniceaScan(req, res) {
@@ -57,6 +83,7 @@ export async function cliniceaConnectOne(req, res) {
 
   const config = { ...creds, object };
   try {
+    if (!isSample(config)) await forgetSampleClinic();
     const shape = describeShape(config);
     const dataset = await defineDataset({
       name: shape.name, columns: shape.columns, key: shape.key, internal: shape.internal, from: 'clinicea',
@@ -76,6 +103,8 @@ export async function cliniceaConnectOne(req, res) {
     } catch (err) {
       console.error('[clinicea] %s connected but the first read failed:', label, err.message);
     }
+    // Its watchers run now, not at the next restart.
+    requestLookNow();
     return res.json({ module: label, dataset: dataset.name, columns: dataset.columns.length, rows });
   } catch (err) {
     console.error('[clinicea] %s could not be connected:', label, err.message);

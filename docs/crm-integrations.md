@@ -236,6 +236,32 @@ them correctly: `check_in_time` (a date the watchers rank as a check-in),
 Stopped Coming measures from the last visit). `__tests__/cliniceaConnector.test.js`
 binds the real catalogue to these shapes and runs the plan on rows.
 
+### Try it first: the sample clinic
+
+Clinicea's API is a paid add-on, so the Clinicea form offers **Try it with a
+sample clinic** before anybody buys it. It connects with no credentials and
+reads `eame-template/services/cliniceaSample.js`: six months of an invented
+physiotherapy practice, written as raw Clinicea records so it goes through the
+real connector, datasets and watchers. Planted in it, at the rates clinics
+described: 18 treated patients left marked No Show, 6 packages used past what
+was sold, 9 regulars who stopped coming with a package open, packages expiring
+with sessions left, and 6 real no-shows that must **not** be reported as
+treated. `__tests__/cliniceaSample.test.js` runs the watchers on it and checks
+those exact counts.
+
+Every sample dataset is named `<Part> (Clinicea sample)`, and the connection
+reads "Clinicea sample clinic". The moment a real Clinicea account connects,
+every sample dataset is removed with its rows and connections
+(`forgetSampleClinic`), so invented patients never sit beside real ones. Its
+watchers move to the real records on the next check.
+
+### Findings within minutes, for every connector
+
+Watchers that become possible when a source connects used to start only when
+the application restarted. Now every connect path (Zoho, LeadSquared, Jira,
+Clinicea and the generic form) calls `requestLookNow`: the application's own
+auto-start runs, then the scheduler checks at once. The receipt says so.
+
 ### What can go wrong
 
 | What the owner sees | What it means |

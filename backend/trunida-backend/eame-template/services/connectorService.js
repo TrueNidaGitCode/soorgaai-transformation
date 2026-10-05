@@ -991,6 +991,24 @@ export async function testConnector(id) {
 }
 
 /** Forget the credentials. The rows it brought stay, marked by their _source. */
+/**
+ * A dataset, gone: its connections, its rows and its definition.
+ *
+ * For a dataset that should never have been the customer's own -- the sample
+ * clinic, once the real one connects. Its watchers lose their binding, so the
+ * next tick moves them to the real records, and moving clears what they
+ * found on the sample. Returns false when there was nothing by that name.
+ */
+export async function forgetDataset(name) {
+  const d = await datasetsCollection().findOne({ name });
+  if (!d) return false;
+  await connectorsCollection().deleteMany({ datasetName: name });
+  await rowsCollection().deleteMany({ datasetName: name });
+  await datasetsCollection().deleteOne({ name });
+  await loadDefinedDatasets();
+  return true;
+}
+
 export async function deleteConnector(id) {
   const doc = await findDoc(id);
   if (!doc) throw new Error('No such connection.');

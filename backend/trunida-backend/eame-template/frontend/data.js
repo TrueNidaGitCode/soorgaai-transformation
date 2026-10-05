@@ -1190,6 +1190,14 @@
     var connect = t.closest('[data-connect]');
     if (connect) { await submitConnector(connect, kind); return; }
 
+    var csm = t.closest('[data-clinicea-sample]');
+    if (csm) {
+      csm.disabled = true; csm.textContent = 'Setting up the sample clinic…';
+      try { await readClinicea({ sample: 'yes' }); }
+      catch (err) { console.error('[clinicea] sample failed:', err); flowErr('zoho-crm', err.message); }
+      return;
+    }
+
     var cgo = t.closest('[data-clinicea-go]');
     if (cgo) { await startClinicea(cgo); return; }
 
@@ -1576,7 +1584,7 @@
     }
     closeFlow('zoho-crm');
     await refresh();
-    connected({ connected: done, skipped: failed });
+    connected({ connected: done, skipped: failed, looking: true });
   }
 
   /**
@@ -1602,6 +1610,7 @@
       + '<p class="dt-form__help">Every ' + (r.part || 'module') + ' holding records is now being read. '
       + 'The first sync is running; the empty ones were left alone.</p>'
       + '<ul class="dt-src__list">' + list + '</ul>' + missed
+      + (r.looking ? '<p class="dt-form__note">The watchers are looking at it now. The first findings arrive on the board within a few minutes.</p>' : '')
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-cancel="1">Done</button></div>');
   }
 
@@ -1674,7 +1683,7 @@
     }
     closeFlow('zoho-crm');
     await refresh();
-    connected({ connected: done, skipped: failed, part: 'part of LeadSquared' });
+    connected({ connected: done, skipped: failed, part: 'part of LeadSquared', looking: true });
   }
 
   /*
@@ -1741,7 +1750,7 @@
     if (!done.length) throw new Error('Nothing could be read. ' + (failed[0] ? failed[0].reason : ''));
     closeFlow('jira');
     await refresh();
-    connected({ connected: done, skipped: failed, part: 'Jira project', card: 'jira' });
+    connected({ connected: done, skipped: failed, part: 'Jira project', card: 'jira', looking: true });
   }
 
   /*
@@ -1760,7 +1769,15 @@
       + '<label class="dt-form__field">Staff password<input type="password" name="password" autocomplete="off"></label>'
       + '</div>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-clinicea-go="1">Read my Clinicea <span aria-hidden="true">&rarr;</span></button>'
-      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>'
+      /*
+       * Value before the add-on. Clinicea's API is bought separately, so an
+       * owner can see what this finds on a sample clinic first: invented
+       * patients, the problems clinics described planted in them, run through
+       * the real watchers. Removed the moment the real Clinicea connects.
+       */
+      + '<p class="dt-form__note">No API access yet? <button type="button" class="dt-linkbtn" data-clinicea-sample="1">Try it with a sample clinic</button> '
+      + '&mdash; invented patients with the problems clinics told us about, found by the same watchers. It is removed when you connect your own.</p>');
   }
 
   async function startClinicea(btn) {
@@ -1795,9 +1812,9 @@
       var p = parts[i];
       progress('zoho-crm', i, parts.length, 'Reading ' + p.label);
       try {
-        var one = await ownerJson('/api/connectors/clinicea/connect', 'POST', {
-          apiKey: creds.apiKey, username: creds.username, password: creds.password, object: p.object, label: p.label,
-        });
+        var one = await ownerJson('/api/connectors/clinicea/connect', 'POST', creds.sample === 'yes'
+          ? { sample: 'yes', object: p.object, label: p.label }
+          : { apiKey: creds.apiKey, username: creds.username, password: creds.password, object: p.object, label: p.label });
         done.push(one);
       } catch (err) {
         console.error('[clinicea] %s failed:', p.label, err);
@@ -1809,7 +1826,7 @@
     if (!done.length) throw new Error('Nothing could be read. ' + (failed[0] ? failed[0].reason : ''));
     closeFlow('zoho-crm');
     await refresh();
-    connected({ connected: done, skipped: failed, part: 'part of Clinicea' });
+    connected({ connected: done, skipped: failed, part: creds.sample === 'yes' ? 'part of the sample clinic' : 'part of Clinicea', looking: true });
   }
 
   /** A consent that came back and then went wrong, said on the card. */

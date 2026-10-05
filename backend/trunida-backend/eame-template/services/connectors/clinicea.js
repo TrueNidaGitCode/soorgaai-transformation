@@ -38,6 +38,7 @@
  * Clinicea account of our own when it was written.
  */
 import axios from 'axios';
+import { sampleClinic } from '../cliniceaSample.js';
 
 export const kind = 'clinicea';
 export const label = 'Clinicea';
@@ -53,7 +54,15 @@ export const fields = [
   { name: 'password', label: 'Staff password', secret: true },
   // Written by the connect flow, never typed -- the same as Zoho's module.
   { name: 'object', label: 'What to read', options: OBJECTS, hidden: true, required: false },
+  // 'yes' for the sample clinic: invented records, no credentials, no network.
+  { name: 'sample', label: 'Sample clinic', hidden: true, required: false },
 ];
+
+/** Is this connection the sample clinic rather than a real Clinicea account? */
+export const isSample = (config) => String(config?.sample || '') === 'yes';
+
+/** The sample's datasets say so in their names, so nobody mistakes them for a real clinic's. */
+export const SAMPLE_SUFFIX = '(Clinicea sample)';
 
 /*
  * The four shared columns lead every dataset, so a custom column whose name
@@ -322,20 +331,24 @@ const SHAPES = {
 
 export function describeShape(config) {
   const object = objectOf(config);
-  return { name: `${object} (Clinicea)`, key: 'id', ...SHAPES[object] };
+  return { name: `${object} ${isSample(config) ? SAMPLE_SUFFIX : '(Clinicea)'}`, key: 'id', ...SHAPES[object] };
 }
 
 export function describe(config) {
-  return `Clinicea · ${objectOf(config)}`;
+  return `${isSample(config) ? 'Clinicea sample clinic' : 'Clinicea'} · ${objectOf(config)}`;
 }
 
 export async function test(config) {
+  if (isSample(config)) return { ok: true, message: 'The sample clinic: invented records, for trying Svarg before connecting your own.' };
   await login(config);
   return { ok: true, message: 'Connected to Clinicea.' };
 }
 
 export async function pull(config, { maxRows = 50000, now = new Date() } = {}) {
   const object = objectOf(config);
+  // The sample clinic runs through the same row mapping as a real account,
+  // so what the watchers find in it is what they would find in yours.
+  if (isSample(config)) return sampleClinic(now)[object].slice(0, maxRows).map(ROWS[object]).filter((r) => r.id);
   const raw = await pages(config, PARTS[object], { maxRows, now });
   return raw.map(ROWS[object]).filter((r) => r.id);
 }
@@ -347,6 +360,7 @@ export async function pull(config, { maxRows = 50000, now = new Date() } = {}) {
  * diary.
  */
 export async function listPopulated(config, { now = new Date() } = {}) {
+  if (isSample(config)) return OBJECTS.map((object) => ({ object, label: object }));
   await login(config);
   const out = [];
   for (const object of OBJECTS) {

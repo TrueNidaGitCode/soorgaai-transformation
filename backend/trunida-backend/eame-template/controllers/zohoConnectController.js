@@ -22,6 +22,7 @@ import { available, startConsent, claimConsent } from '../services/svargZohoServ
 import {
   createConnector, defineDataset, syncConnector, listConnectors, deleteConnector,
 } from '../services/connectorService.js';
+import { requestLookNow } from '../services/agentService.js';
 import { listModules, listPopulated, describeShape } from '../services/connectors/zohocrm.js';
 
 /*
@@ -249,6 +250,8 @@ export async function zohoConnectOne(req, res) {
       // Connected, and it will be read again on the hour.
       console.error('[zoho] %s connected but the first read failed:', apiName, err.message);
     }
+    // Its watchers run now, not at the next restart.
+    requestLookNow();
     return res.json({ module: label, dataset: dataset.name, columns: dataset.columns.length, rows });
   } catch (err) {
     console.error('[zoho] %s could not be connected:', apiName, err.message);

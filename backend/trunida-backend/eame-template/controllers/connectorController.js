@@ -10,6 +10,7 @@ import {
   freshenConnections,
 } from '../services/connectorService.js';
 import { connectionLimit } from '../services/coverage.js';
+import { requestLookNow } from '../services/agentService.js';
 
 const fail = (res, err, code = 400) => res.status(code).json({ error: String(err?.message || err) });
 
@@ -68,6 +69,8 @@ export async function create(req, res) {
     }
     const { kind, datasetName, config, mapping, schedule } = req.body || {};
     const c = await createConnector({ kind, datasetName, config: config || {}, mapping, schedule });
+    // Its watchers run once its first rows land, not at the next restart.
+    requestLookNow({ delayMs: 45000 });
     res.status(201).json({ connector: c });
   } catch (err) { fail(res, err); }
 }

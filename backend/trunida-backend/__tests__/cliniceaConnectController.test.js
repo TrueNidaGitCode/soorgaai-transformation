@@ -10,17 +10,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const M = vi.hoisted(() => ({
   listPopulated: vi.fn(), describeShape: vi.fn(),
   defineDataset: vi.fn(), createConnector: vi.fn(), syncConnector: vi.fn(),
-  listConnectors: vi.fn(), deleteConnector: vi.fn(),
+  listConnectors: vi.fn(), deleteConnector: vi.fn(), forgetDataset: vi.fn(), requestLookNow: vi.fn(),
 }));
 
 vi.mock('../eame-template/services/connectors/clinicea.js', () => ({
   OBJECTS: ['Appointments', 'Patients', 'Packages', 'Bills'],
   listPopulated: M.listPopulated,
   describeShape: M.describeShape,
+  isSample: (c) => String(c?.sample || '') === 'yes',
 }));
+vi.mock('../eame-template/services/agentService.js', () => ({ requestLookNow: M.requestLookNow }));
 vi.mock('../eame-template/services/connectorService.js', () => ({
   defineDataset: M.defineDataset, createConnector: M.createConnector, syncConnector: M.syncConnector,
-  listConnectors: M.listConnectors, deleteConnector: M.deleteConnector,
+  listConnectors: M.listConnectors, deleteConnector: M.deleteConnector, forgetDataset: M.forgetDataset,
 }));
 
 const { cliniceaScan, cliniceaConnectOne } = await import('../eame-template/controllers/cliniceaConnectController.js');
@@ -35,7 +37,8 @@ const CREDS = { apiKey: 'key-123', username: 'frontdesk', password: 'pw' };
 
 beforeEach(() => {
   Object.values(M).forEach((f) => f.mockReset());
-  M.describeShape.mockImplementation((c) => ({ name: `${c.object} (Clinicea)`, columns: ['id', 'name', 'status'], key: 'id', internal: [] }));
+  M.describeShape.mockImplementation((c) => ({ name: `${c.object} ${c.sample === 'yes' ? '(Clinicea sample)' : '(Clinicea)'}`, columns: ['id', 'name', 'status'], key: 'id', internal: [] }));
+  M.forgetDataset.mockResolvedValue(false);
   M.defineDataset.mockImplementation(async (d) => ({ name: d.name, columns: d.columns }));
   M.createConnector.mockResolvedValue({ id: 'new' });
   M.syncConnector.mockResolvedValue({ rows: 418 });
@@ -92,5 +95,26 @@ describe('connect one part', () => {
     await cliniceaConnectOne({ body: { ...CREDS, object: 'Prescriptions' } }, res);
     expect(res.code).toBe(400);
     expect(M.createConnector).not.toHaveBeenCalled();
+  });
+});
+
+describe('the sample clinic', () => {
+  it('connects with no credentials at all', async () => {
+    const res = reply();
+    await cliniceaConnectOne({ body: { sample: 'yes', object: 'Appointments', label: 'Appointments' } }, res);
+    expect(M.createConnector.mock.calls[0][0]).toMatchObject({ datasetName: 'Appointments (Clinicea sample)', config: { sample: 'yes', object: 'Appointments' } });
+    expect(M.forgetDataset).not.toHaveBeenCalled();
+  });
+
+  it('is removed, every part of it, the moment a real Clinicea connects', async () => {
+    await cliniceaConnectOne({ body: { ...CREDS, object: 'Appointments' } }, reply());
+    expect(M.forgetDataset.mock.calls.map((c) => c[0])).toEqual([
+      'Appointments (Clinicea sample)', 'Patients (Clinicea sample)', 'Packages (Clinicea sample)', 'Bills (Clinicea sample)',
+    ]);
+  });
+
+  it('asks the watchers to look now, after either', async () => {
+    await cliniceaConnectOne({ body: { sample: 'yes', object: 'Packages' } }, reply());
+    expect(M.requestLookNow).toHaveBeenCalled();
   });
 });

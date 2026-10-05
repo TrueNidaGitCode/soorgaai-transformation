@@ -1605,9 +1605,47 @@ export function startAgentScheduler(ask, { catalogue = null } = {}) {
       console.error('[agents] tick failed —', err.message);
     }
   };
-  timer = setInterval(tick, TICK_MS);
+  // One tick at a time, whether it came from the clock or from a connection.
+  let ticking = false;
+  const guarded = async () => {
+    if (ticking) return;
+    ticking = true;
+    try { await tick(); } finally { ticking = false; }
+  };
+  tickNow = guarded;
+  timer = setInterval(guarded, TICK_MS);
   if (typeof timer.unref === 'function') timer.unref();
   return timer;
+}
+
+/*
+ * ── Looking now, not at the next restart ──────────────────────────────────
+ *
+ * Watchers that become possible when a source connects used to start only
+ * when the application booted -- a deploy, or the six-hourly update -- so an
+ * owner who connected their clinic system saw nothing for hours, and the
+ * moment they were most curious was the moment the product said least.
+ *
+ * Now a connection asks for a look: newly possible watchers start (the boot
+ * path's own function, registered by server.js) and the scheduler ticks at
+ * once, so they run. Debounced, because one connect is several parts landing
+ * a few seconds apart, and one look should follow the last of them.
+ */
+let tickNow = null;
+let startNewlyPossible = null;
+let lookTimer = null;
+
+export function onLookNow(fn) { startNewlyPossible = fn; }
+
+export function requestLookNow({ delayMs = 15000 } = {}) {
+  if (lookTimer) clearTimeout(lookTimer);
+  lookTimer = setTimeout(async () => {
+    lookTimer = null;
+    try { if (startNewlyPossible) await startNewlyPossible(); } catch (err) { console.warn('[agents] look-now start skipped:', err.message); }
+    try { if (tickNow) await tickNow(); } catch (err) { console.warn('[agents] look-now tick failed:', err.message); }
+  }, delayMs);
+  if (typeof lookTimer.unref === 'function') lookTimer.unref();
+  return true;
 }
 
 export function stopAgentScheduler() {

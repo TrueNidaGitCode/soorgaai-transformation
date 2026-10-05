@@ -88,6 +88,8 @@ export const FIXED_PATHS = [
   'services/connectors/leadsquared.js',
   // Clinicea: the clinic management system -- appointments, patients, packages, bills.
   'services/connectors/clinicea.js',
+  // The sample clinic the Clinicea card offers before the API add-on is bought.
+  'services/cliniceaSample.js',
   'services/svargZohoService.js',
   'controllers/zohoConnectController.js',
   'controllers/leadsquaredConnectController.js',

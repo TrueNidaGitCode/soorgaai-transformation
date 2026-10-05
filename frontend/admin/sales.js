@@ -3475,6 +3475,80 @@ function renderAudience() {
   const COMPANIES = ['A', 'B', 'C', 'D', 'E']
     .map((id, i) => done[i] || blank(id));
 
+  /*
+   * ── Enough evidence, not every row ────────────────────────────────────────
+   *
+   * The ten-step grid below asks for every row at every company, and three
+   * interviews in it was mostly amber — which read as "not validated" when
+   * the problem, at two of them, plainly happens. The bar that decides
+   * whether to keep going is four questions, so they lead and the grid is the
+   * detail behind them.
+   *
+   * The third is the one this product stands or falls on, and it is not
+   * "can we integrate with their CRM". It is: given what they already have,
+   * could it have been seen earlier? A cancellation that arrives with no
+   * notice may leave nothing earlier to see, and that is worth knowing
+   * before building for it.
+   *
+   * Same rule as the grid: only what was said or shown. A ? is a legitimate
+   * answer, not a cell waiting to be forced into a tick.
+   */
+  const FOUR = [
+    ['happens', 'Does the problem actually happen?'],
+    ['exists', 'Does the information to spot it already exist somewhere?'],
+    ['earlier', 'Could SvargAI have detected it earlier?'],
+    ['value', 'Is there enough economic value?'],
+  ];
+  const FOUR_BY_VERTICAL = {
+    clinics: {
+      A: {
+        happens: ['yes', 'The record says no-show when the patient came and was treated &mdash; '
+          + '~20 bookings a month left marked no-show, some of whom attended'],
+        exists: ['yes', 'Booking against treatment record, spread across a CRM, phone calls and '
+          + 'WhatsApp'],
+        earlier: ['open', 'Watchers are running on their connected Zoho CRM and Exotel calls. '
+          + 'Whether a finding caught a real incident before the HOD would have is not yet '
+          + 'confirmed with him'],
+        value: ['claim', '&#8377;1,000 &times; ~20 a month = up to &#8377;20,000. A ceiling until '
+          + 'somebody counts how many of the 20 attended'],
+      },
+      B: {
+        happens: ['yes', 'Described unprompted: a lead becomes an opportunity and the customer '
+          + 'drifts over about three months. How many do was not counted'],
+        exists: ['open', 'LeadSquared and a phone system are involved. Whether the conversations '
+          + 'are logged against the opportunity is not known'],
+        earlier: ['open', 'Opportunity Gone Quiet is built for exactly this. Not connected to '
+          + 'their LeadSquared yet, so untested on their records'],
+        value: ['', 'Not asked'],
+      },
+      C: {
+        happens: ['yes', 'Three problems raised unprompted: last-minute cancellations with no '
+          + 'notice, not seeing how the team talks to customers, and coordination between Physio, '
+          + 'Nutrition and the others'],
+        exists: ['open', 'A CRM they built. Whether it records cancellations, lead calls or '
+          + 'handovers was not asked'],
+        earlier: ['open', 'Not tried. A cancellation with no notice may leave no earlier signal '
+          + 'at all &mdash; the other two might'],
+        value: ['', 'Not asked. An empty slot has a price he did not give'],
+      },
+    },
+  };
+  const FOUR_OF = FOUR_BY_VERTICAL[audienceVertical] || {};
+
+  /*
+   * Five questions, the same for everybody, so five answers can be compared.
+   * Each one feeds one of the four above: the first two say whether it
+   * happens, the third whether the information exists, the fourth whether
+   * finding out earlier changes anything, and the fifth the value.
+   */
+  const FIVE = [
+    'What is something that goes wrong repeatedly?',
+    'How do you normally find out that it happened?',
+    'Where would the information needed to spot it earlier be?',
+    'If you knew about it earlier, what would you do?',
+    'What does one such incident roughly cost you?',
+  ];
+
   /**
    * What the next conversation has to close.
    *
@@ -3576,8 +3650,9 @@ function renderAudience() {
         <p class="sg-ta__note">${V.note}</p>
       </div>
 
+      <p class="sg-ta__label">Four questions &mdash; enough evidence, not every row</p>
       <div class="sg-ta__wrap">
-        <table class="sg-ta__grid">
+        <table class="sg-ta__grid sg-ta__grid--four">
           <thead>
             <tr>
               <th class="sg-ta__rowhead"></th>
@@ -3590,7 +3665,9 @@ function renderAudience() {
             </tr>
           </thead>
           <tbody>
-            ${STEPS.map(stepRows).join('')}
+            ${FOUR.map(([key, q], i) => `<tr class="sg-ta__steprow">
+                <th class="sg-ta__rowhead"><span class="sg-ta__stepn">${i + 1}</span>${q}</th>
+                ${COMPANIES.map((c) => value((FOUR_OF[c.id] || {})[key], 1)).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </div>
@@ -3602,16 +3679,43 @@ function renderAudience() {
         <span class="is-empty"><i>&middot;</i>not asked, or not done yet</span>
       </p>
 
+      <p class="sg-ta__label">Five questions, for every interview</p>
+      <ol class="sg-ta__asks">
+        ${FIVE.map((q) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
+      </ol>
+      <p class="sg-ta__note">The same five for everybody, so the answers can be compared. The
+        first two answer whether it happens, the third whether the information exists, the
+        fourth whether knowing earlier changes anything, and the fifth what it is worth.</p>
+
       ${ASKS.length ? `
-      <p class="sg-ta__label">What the next interview has to close</p>
+      <p class="sg-ta__label">Still open from the interviews so far</p>
       <ol class="sg-ta__asks">
         ${ASKS.map(([, q]) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
-      </ol>` : `
-      <p class="sg-ta__label">What the first interview asks</p>
-      <p class="sg-ta__note">The fifteen minutes on the ICP Interview tab, unchanged. Follow-ups
-        are what an answer produces; there are no answers here yet, and inventing
-        automotive-flavoured questions in advance would break the one property that makes five
-        interviews comparable.</p>`}
+      </ol>` : ''}
+
+      <details class="sg-ta__more">
+        <summary>The full ten-step playbook, row by row</summary>
+        <p class="sg-ta__note">The detail behind the four questions. It does not have to be
+          full for a company to count &mdash; it is where an answer goes once one is given.</p>
+        <div class="sg-ta__wrap">
+          <table class="sg-ta__grid">
+            <thead>
+              <tr>
+                <th class="sg-ta__rowhead"></th>
+                ${COMPANIES.map((c) => `
+                  <th class="sg-ta__co${c.name ? ' is-done' : ''}">
+                    <span class="sg-ta__coid">${c.id}</span>
+                    <span class="sg-ta__coname">${c.name || '&mdash;'}</span>
+                    <span class="sg-ta__cowho">${c.met || c.when}</span>
+                  </th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${STEPS.map(stepRows).join('')}
+            </tbody>
+          </table>
+        </div>
+      </details>
 
       ${audienceVertical === 'clinics' ? `
       <div class="sg-ta__wedge">

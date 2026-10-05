@@ -3525,3 +3525,16 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 
 .sg-fm__copy:hover { border-color: var(--accent-green, #5CC5A7); color: #fff; }
 .sg-fm__copy:focus-visible { outline: 2px solid var(--accent-green, #5CC5A7); outline-offset: 2px; }
+
+/* ── Target Audience: the four questions lead, the playbook folds ───────── */
+.sg-ta__grid--four .sg-ta__rowhead { min-width: 220px; }
+.sg-ta__more { margin-top: 26px; }
+.sg-ta__more > summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #5CC5A7;
+}
+.sg-ta__more > summary:focus-visible { outline: 2px solid #5CC5A7; outline-offset: 3px; }
+.sg-ta__more[open] > summary { margin-bottom: 10px; }

@@ -498,3 +498,43 @@ describe('the wider hypothesis kept its bar', () => {
     expect(clinics.note).toMatch(/inference|inferred/i);
   });
 });
+
+describe('four questions lead, and the playbook is the detail', () => {
+  // eslint-disable-next-line no-new-func
+  const FOUR = new Function(`return ${literal(view, 'FOUR')};`)();
+  // eslint-disable-next-line no-new-func
+  const BY = new Function(`return ${literal(view, 'FOUR_BY_VERTICAL')};`)();
+  // eslint-disable-next-line no-new-func
+  const FIVE = new Function(`return ${literal(view, 'FIVE')};`)();
+
+  it('asks exactly the four, in order, with whether it can be seen earlier third', () => {
+    expect(FOUR.map(([k]) => k)).toEqual(['happens', 'exists', 'earlier', 'value']);
+    // Not "can we integrate with their CRM": whether it could have been seen earlier.
+    expect(FOUR[2][1]).toMatch(/detected it earlier/);
+  });
+
+  it('interviews with five questions, the same for everybody', () => {
+    expect(FIVE).toHaveLength(5);
+    expect(FIVE.join(' ')).toMatch(/goes wrong repeatedly[\s\S]*find out[\s\S]*information[\s\S]*knew about it earlier[\s\S]*cost/);
+  });
+
+  it('fills a column only for a company that was interviewed, and invents nothing for a new vertical', () => {
+    const named = data('COMPANIES').filter((c) => c.name).map((c) => c.id);
+    for (const id of Object.keys(BY.clinics)) expect(named, id).toContain(id);
+    expect(BY.automotive).toBeUndefined();
+  });
+
+  it('keeps an unknown as a ? rather than forcing it into a tick', () => {
+    // The Wellness Co.: LeadSquared and a phone are involved; whether the
+    // conversations are logged is not known.
+    expect(BY.clinics.B.exists[0]).toBe('open');
+    // Nobody has yet shown a finding that caught a real incident early.
+    for (const id of Object.keys(BY.clinics)) expect(BY.clinics[id].earlier[0], id).not.toBe('yes');
+    // Vesoma's figure is a ceiling, not a measured loss.
+    expect(BY.clinics.A.value[0]).toBe('claim');
+  });
+
+  it('folds the ten-step grid under the four, rather than removing it', () => {
+    expect(view).toMatch(/sg-ta__grid--four[\s\S]*<details class="sg-ta__more">[\s\S]*STEPS\.map\(stepRows\)/);
+  });
+});

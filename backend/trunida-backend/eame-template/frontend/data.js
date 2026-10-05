@@ -290,6 +290,7 @@
     tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
     database: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v13c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-13"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h3l1.5 4-2 1.4a12 12 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5.5 5.7 2 2 0 0 1 7 3.5z"/></svg>',
+    tracker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3"/></svg>',
     crm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 6"/><path d="M17.5 14.2a5.5 5.5 0 0 1 3 5.3"/></svg>',
   };
 
@@ -391,7 +392,21 @@
    * a conversation about something else.
    */
   var CORE = ['zoho-crm', 'phone'];
-  var CORE_LABEL = { 'zoho-crm': 'CRM', phone: 'Phone system' };
+  var CORE_LABEL = { 'zoho-crm': 'CRM', phone: 'Phone system', jira: 'Project tracker' };
+
+  /*
+   * The top row, with the project tracker first wherever this application
+   * has one.
+   *
+   * Jira ships only to an application whose industry keeps its work there,
+   * and until now it was drawn a section down, among the sources that are
+   * "shown, and not offered" -- so an engineering organisation's own tracker,
+   * the one system its delivery runs on, could not be connected from this
+   * page at all. Where it ships, it is the first card.
+   */
+  function coreKinds() {
+    return (kinds.some(function (k) { return k.kind === 'jira'; }) ? ['jira'] : []).concat(CORE);
+  }
 
   /*
    * The CRMs the one CRM card stands for. The card keeps the kind 'zoho-crm'
@@ -423,7 +438,7 @@
    * anything else belongs a section down.
    */
   function systemCards() {
-    return CORE.filter(shipped).map(function (kind) {
+    return coreKinds().filter(shipped).map(function (kind) {
       return { kind: kind, label: CORE_LABEL[kind] || kind };
     });
   }
@@ -439,7 +454,7 @@
     var out = [Object.assign({ muted: true }, DEFAULT_FOLDER)];
     sources.forEach(function (s) {
       if (['form', 'file', 'folder'].indexOf(s.kind) !== -1) return;
-      if (CORE.indexOf(s.kind) !== -1 || isCrm(s.kind)) return;
+      if (coreKinds().indexOf(s.kind) !== -1 || isCrm(s.kind)) return;
       if (out.some(function (o) { return o.kind === s.kind; })) return;
       out.push(Object.assign({ muted: true }, s));
     });
@@ -650,6 +665,20 @@
       }
       // One CRM goes straight to its form; more than one asks which first.
       if (crms.length) { d.go = crmc.length ? 'Connect another' : 'Connect'; d.goAction = crms.length > 1 ? 'crm' : crms[0].kind; }
+    } else if (s.kind === 'jira') {
+      var jk = kinds.find(function (x) { return x.kind === 'jira'; });
+      var jc = connectors.filter(function (c) { return c.kind === 'jira'; });
+      d.icon = ICON.tracker; d.title = 'Project tracker';
+      d.note = 'Issues, owners, due dates, estimates and time spent.';
+      if (!jk) d.status = 'Not available on this application';
+      else if (jc.length) {
+        d.on = true;
+        d.status = 'Connected · ' + plural(jc.length, 'project')
+          + (jc[0].lastSyncAt ? ' · read ' + ago(jc[0].lastSyncAt) : '');
+        d.held = folded(plural(jc.length, 'project') + ' from Jira',
+          '<ul class="dt-src__list">' + jc.map(renderConnector).join('') + '</ul>');
+      }
+      if (jk) { d.go = jc.length ? 'Connect another' : 'Connect'; d.goAction = 'jira'; }
     } else if (s.kind === 'phone') {
       var ph = kinds.find(function (x) { return x.kind === 'phone'; });
       var phc = connectors.filter(function (c) { return c.kind === 'phone'; });
@@ -1158,6 +1187,9 @@
     var connect = t.closest('[data-connect]');
     if (connect) { await submitConnector(connect, kind); return; }
 
+    var jgo = t.closest('[data-jira-go]');
+    if (jgo) { await startJira(jgo); return; }
+
     var lgo = t.closest('[data-lsq-go]');
     if (lgo) { await startLeadSquared(lgo); return; }
 
@@ -1285,6 +1317,7 @@
 
     if (kindName === 'zoho-crm' && zohoOneClick) { openZoho(k); return; }
     if (kindName === 'leadsquared') { openLeadSquared(k); return; }
+    if (kindName === 'jira') { openJira(k); return; }
     var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName.split('-')[0], 'i').test(d.name) || /attend/i.test(d.name) && kindName === 'whatsapp-business' || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
     var setupHtml = kindName === 'whatsapp-business'
       ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
@@ -1558,7 +1591,7 @@
     var missed = (r.skipped || []).length
       ? '<p class="dt-form__note">Not read: ' + (r.skipped || []).map(function (s) { return esc(s.module); }).join(', ') + '.</p>'
       : '';
-    openFlow('zoho-crm', '<p class="dt-panel__head">Connected</p>'
+    openFlow(r.card || 'zoho-crm', '<p class="dt-panel__head">Connected</p>'
       + '<p class="dt-form__help">Every ' + (r.part || 'module') + ' holding records is now being read. '
       + 'The first sync is running; the empty ones were left alone.</p>'
       + '<ul class="dt-src__list">' + list + '</ul>' + missed
@@ -1635,6 +1668,73 @@
     closeFlow('zoho-crm');
     await refresh();
     connected({ connected: done, skipped: failed, part: 'part of LeadSquared' });
+  }
+
+  /*
+   * Jira, in the same steps as Zoho and LeadSquared: the token once, then
+   * every project holding issues is found and connected, counted as each
+   * lands. Nobody types a project key or writes JQL.
+   */
+  function openJira(k) {
+    openFlow('jira', '<p class="dt-panel__head">Connect Jira</p>'
+      + '<p class="dt-form__help">' + esc(k.help) + ' The token is kept encrypted in this application\u2019s own database and never sent to Svarg.</p>'
+      + '<p class="dt-form__brings"><b>It reads</b> every project this account can see that holds issues: status, owner, due date, estimate, time spent, sprint and release.</p>'
+      + '<div class="dt-form__grid">'
+      + '<label class="dt-form__field">Site<input type="text" name="siteUrl" placeholder="https://your-team.atlassian.net" autocomplete="off"></label>'
+      + '<label class="dt-form__field">Atlassian email<input type="text" name="email" placeholder="you@company.com" autocomplete="off"></label>'
+      + '<label class="dt-form__field">API token<input type="password" name="apiToken" autocomplete="off"></label>'
+      + '</div>'
+      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-jira-go="1">Read my Jira <span aria-hidden="true">&rarr;</span></button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+  }
+
+  async function startJira(btn) {
+    var b = bodyOf('jira');
+    var creds = {
+      siteUrl: (b.querySelector('[name=siteUrl]') || {}).value || '',
+      email: (b.querySelector('[name=email]') || {}).value || '',
+      apiToken: (b.querySelector('[name=apiToken]') || {}).value || '',
+    };
+    if (!creds.siteUrl.trim() || !creds.email.trim() || !creds.apiToken.trim()) {
+      flowErr('jira', 'Enter the site, the Atlassian email and the API token.'); return;
+    }
+    btn.disabled = true; btn.textContent = 'Checking the token\u2026';
+    try {
+      await readJira(creds);
+    } catch (err) {
+      console.error('[jira] connecting failed:', err);
+      openJira(kinds.find(function (x) { return x.kind === 'jira'; }) || { help: '' });
+      flowErr('jira', err.message);
+    }
+  }
+
+  /** Zoho's readCrm, for Jira: one request to find, one per project to connect. */
+  async function readJira(creds) {
+    var found = await ownerJson('/api/connectors/jira/scan', 'POST', creds);
+    var projects = found.projects || [];
+    if (!projects.length) throw new Error('This account can see no Jira project with an issue in it yet.');
+
+    var done = [];
+    var failed = [];
+    for (var i = 0; i < projects.length; i++) {
+      var p = projects[i];
+      progress('jira', i, projects.length, 'Reading ' + p.name);
+      try {
+        var one = await ownerJson('/api/connectors/jira/connect', 'POST', {
+          siteUrl: creds.siteUrl, email: creds.email, apiToken: creds.apiToken, project: p.key, label: p.name,
+        });
+        done.push(one);
+      } catch (err) {
+        console.error('[jira] %s failed:', p.name, err);
+        failed.push({ module: p.name, reason: err.message });
+      }
+    }
+    progress('jira', projects.length, projects.length, 'Finishing');
+
+    if (!done.length) throw new Error('Nothing could be read. ' + (failed[0] ? failed[0].reason : ''));
+    closeFlow('jira');
+    await refresh();
+    connected({ connected: done, skipped: failed, part: 'Jira project', card: 'jira' });
   }
 
   /** A consent that came back and then went wrong, said on the card. */

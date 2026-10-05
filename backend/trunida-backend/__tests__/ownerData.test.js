@@ -160,7 +160,11 @@ describe('the Data page names the systems a business runs on', () => {
      * product that does not work.
      */
     expect(ui).toContain("var CORE = ['zoho-crm', 'phone'];");
-    expect(ui).toContain('return CORE.filter(shipped).map(function (kind) {');
+    expect(ui).toContain('return coreKinds().filter(shipped).map(function (kind) {');
+    // The project tracker leads, and only where this application has Jira:
+    // an engineering organisation's tracker used to be drawn among the cards
+    // that are shown and not offered.
+    expect(ui).toMatch(/function coreKinds\(\) \{\s*return \(kinds\.some\(function \(k\) \{ return k\.kind === 'jira'; \}\) \? \['jira'\] : \[\]\)\.concat\(CORE\);/);
   });
 
   it('leads with the two that carry different kinds of signal', () => {
@@ -233,7 +237,7 @@ describe('the Data page names the systems a business runs on', () => {
      * it as an equal of the CRM. What a business runs on is the same short
      * answer for all of them.
      */
-    expect(ui).toContain('return CORE.filter(shipped).map(function (kind) {');
+    expect(ui).toContain('return coreKinds().filter(shipped).map(function (kind) {');
     expect(ui).toContain('var out = [Object.assign({ muted: true }, DEFAULT_FOLDER)];');
     expect(html).toContain('<h3 class="dt-other__head">Other data</h3>');
     expect(html).toContain('id="dt-other-cards"');

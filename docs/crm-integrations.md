@@ -1,10 +1,10 @@
-# CRM integrations
+# CRM and project tracker integrations
 
-How each CRM connects to a delivered application, written the same way for
-every CRM so they can be compared line by line. When a CRM is added or a step
-changes, this document changes in the same commit.
+How each CRM and project tracker connects to a delivered application, written
+the same way for each so they can be compared line by line. When one is added
+or a step changes, this document changes in the same commit.
 
-Last updated: 3 October 2026.
+Last updated: 5 October 2026 (Jira added as the project tracker).
 
 ## At a glance
 
@@ -185,6 +185,71 @@ is what proves it. Until then, say "it connects", not "it has been proven to".
 `eame-template/services/connectors/leadsquared.js`,
 `eame-template/controllers/leadsquaredConnectController.js`
 (`/api/connectors/leadsquared/scan` and `/leadsquared/connect`).
+
+## Jira (project tracker)
+
+### Before you start
+
+- A Jira Cloud site, and an account that can browse the projects to be read.
+- An API token: **id.atlassian.com → Security → API tokens → Create**. Copy
+  it with the Atlassian email it belongs to.
+- Jira ships only to an application whose industry keeps its work in a
+  tracker. The blueprint's sources must say "Jira", "Atlassian", "project
+  tracker" or "issue tracker" (`sourceCatalogService.js`). Where it ships, it
+  is the first card on the Data page.
+
+### Steps in the application
+
+1. Data → **Project tracker** card → **Connect**.
+2. Enter the site (`https://your-team.atlassian.net`), the Atlassian email and
+   the API token, and press **Read my Jira**.
+3. The card counts projects as they connect: every project the account can see
+   that holds an issue, up to 15.
+4. The receipt lists each project, its dataset, records and columns.
+
+Jira's API takes a token, not a consent screen, so the token is step 2 where
+Zoho has its consent. Everything after it matches Zoho's steps.
+
+### What it reads
+
+One dataset per project, `<Project> issues (Jira)`, keyed by the issue key:
+
+| Column | From Jira |
+|---|---|
+| `key`, `summary`, `type`, `status`, `priority`, `assignee`, `labels` | The issue |
+| `created`, `updated`, `resolved`, `due_date` | Its dates |
+| `original_estimate_hours`, `time_spent_hours`, `remaining_hours` | Time tracking, converted from seconds |
+| `sprint`, `release`, `epic`, `components` | The current sprint, fix versions, parent, components |
+| `story_points`, `flagged` | Custom fields, found by name on each site |
+| `reporter`, `description`, `url` | Kept, marked internal so no watcher is about them |
+
+**The watchers it is for.** On a Jira project: **Blocked Work**, **Unassigned
+Work**, **No Progress**, **Deadline Approaching**, **Promise Overdue** and
+**Over Estimate** (time spent above the original estimate). **Behind Plan**
+and **Milestone At Risk** need a planned-progress column, which Jira does not
+have. They bind to a plan exported from MS Project or Excel and uploaded
+through Documents. `__tests__/jiraForEngineering.test.js` binds the real
+catalogue to the real Jira shape.
+
+### What can go wrong
+
+| What the owner sees | What it means |
+|---|---|
+| "The site address should start with https://" | The site was pasted without its scheme |
+| "Jira refused the email and token." | The token is wrong, or belongs to a different email |
+| "This account can see no Jira project with an issue in it yet." | The account has no browse permission, or the projects are empty |
+| "Not read: <Project>" on the receipt | That project refused; the rest connected |
+| `flagged` and `sprint` always blank | The site has no field by those names; the rest still reads |
+
+### Where it lives
+
+`eame-template/services/connectors/jira.js` (ships only where asked for),
+`eame-template/controllers/jiraConnectController.js` (`/api/connectors/jira/scan`
+and `/jira/connect`; ships to every application and loads the connector on
+demand, so an application without Jira answers 404 rather than failing to boot).
+
+On Main: `sourceCatalogService.js` decides whether the Jira card and module
+ship. There is no consent screen, so nothing is brokered.
 
 ## Adding the next CRM
 

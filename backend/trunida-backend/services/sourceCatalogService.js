@@ -121,7 +121,9 @@ export function sourcesFromDatasets(datasets = []) {
       add('phone', 'Your phone system', 'Calls arrive as they end, with the recording read into text. Needs a cloud telephony service.');
     }
     if (/excel|xlsx|spreadsheet|google sheet|sheets|drive|onedrive|csv|folder/.test(t)) add('folder', 'Your folder of spreadsheets', 'Upload the folder; each sheet is matched to what the application expects.');
-    if (/jira/.test(t)) add('jira', 'Jira', '');
+    // A tracker by its product name or by what it is: an engineering
+    // blueprint says "project tracker" as often as it says Jira.
+    if (/jira|atlassian|project tracker|issue tracker/.test(t)) add('jira', 'Jira', '');
     // One CRM card, whichever CRM: the tenant's card asks which, so a block
     // naming LeadSquared asks for the same card a block naming Zoho does.
     if (/zoho|leadsquared|crm|customer relationship/.test(t)) add('zoho-crm', 'Your CRM', 'Customers, packages and appointments, read from the CRM your business already runs on.');

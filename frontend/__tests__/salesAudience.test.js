@@ -182,7 +182,7 @@ describe('five companies, one of them interviewed', () => {
      */
     // eslint-disable-next-line no-new-func
     const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
-    expect(verticals.map((v) => v.name)).toEqual(['Clinics &amp; Wellness', 'Automotive']);
+    expect(verticals.map((v) => v.name)).toEqual(['Clinics &amp; Wellness', 'Engineering &amp; Project Operations']);
 
     /*
      * Every vertical must name a knowledge base overlay that exists. The
@@ -196,9 +196,12 @@ describe('five companies, one of them interviewed', () => {
       const overlay = join(
         dirname(fileURLToPath(import.meta.url)),
         '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases',
-        v.name.replace('&amp;', '&'),
+        // A vertical with no overlay of its own names the one its applications
+        // are built on, and the page says which.
+        (v.overlay || v.name).replace('&amp;', '&'),
       );
       expect(existsSync(overlay), `no overlay for ${v.name}`).toBe(true);
+      if (v.overlay) expect(view).toContain('knowledge base overlay: ${V.overlay}');
     }
     expect(view).toContain('knowledge base overlay');
   });
@@ -210,8 +213,8 @@ describe('five companies, one of them interviewed', () => {
      * by the third conversation. So the shipped code is run for Automotive
      * and every cell checked, rather than the emptiness being assumed.
      */
-    const auto = dataFor('automotive', 'COMPANIES');
-    const steps = dataFor('automotive', 'STEPS');
+    const auto = dataFor('engineering', 'COMPANIES');
+    const steps = dataFor('engineering', 'STEPS');
     expect(auto).toHaveLength(5);
     const keys = steps.flatMap((s) => (s.rows ? s.rows.map(([k]) => k) : s.key ? [s.key] : []));
     for (const c of auto) {
@@ -225,7 +228,7 @@ describe('five companies, one of them interviewed', () => {
       expect(s.segment[1].length, `step ${s.n} text`).toBeGreaterThan(20);
     }
     // No follow-up questions, because nothing has been answered yet.
-    expect(dataFor('automotive', 'ASKS')).toEqual([]);
+    expect(dataFor('engineering', 'ASKS')).toEqual([]);
   });
 
   it('leaves the columns nobody has visited genuinely empty', () => {
@@ -521,7 +524,7 @@ describe('four questions lead, and the playbook is the detail', () => {
   it('fills a column only for a company that was interviewed, and invents nothing for a new vertical', () => {
     const named = data('COMPANIES').filter((c) => c.name).map((c) => c.id);
     for (const id of Object.keys(BY.clinics)) expect(named, id).toContain(id);
-    expect(BY.automotive).toBeUndefined();
+    expect(BY.engineering).toBeUndefined();
   });
 
   it('keeps an unknown as a ? rather than forcing it into a tick', () => {

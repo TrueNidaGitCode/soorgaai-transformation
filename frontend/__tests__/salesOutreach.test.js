@@ -152,3 +152,31 @@ describe('what the first message claims', () => {
     expect(text).not.toMatch(/20,000|2\.4L/);
   });
 });
+
+describe('the engineering pitch claims nothing it has not got', () => {
+  const eng = js.slice(js.indexOf("'engineering': {"), js.indexOf('const ENGINEERING_FIRST'));
+
+  it('opens on the question, not on "AI for engineering"', () => {
+    expect(eng).toMatch(/When a project starts slipping, how early do you/);
+    expect(eng).not.toMatch(/AI platform for engineering|AI for engineering/i);
+  });
+
+  it('attributes no example to anybody, because nobody in engineering has been interviewed', () => {
+    expect(eng).not.toMatch(/told us|shared|we found|found that|customers? (?:said|saw)/i);
+  });
+
+  it('marks the Orion lines that are not built, the progress gap among them', () => {
+    const orion = js.slice(js.indexOf('const ORION = {'), js.indexOf('function renderOrion'));
+    const cannot = orion.slice(orion.indexOf('cannot:'));
+    expect(cannot).toMatch(/86% planned/);
+    expect(cannot).toMatch(/hours over plan/);
+    expect(cannot).toMatch(/date never moved/);
+    // And the can-list holds nothing from the cannot-list.
+    expect(orion.slice(0, orion.indexOf('cannot:'))).not.toMatch(/planned|hours|never moved/);
+  });
+
+  it('keeps the clinic deck and proposal off the engineering tab', () => {
+    expect(js).toMatch(/\$\{seg === 'clinics' \? `\s*<article class="sg-fm__msg sg-fm__msg--deck">\s*<p class="sg-fm__kind">Presentation/);
+    expect(js).toContain("if (pitchSegment === 'clinics') loadDeckFacts();");
+  });
+});

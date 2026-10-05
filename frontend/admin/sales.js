@@ -3152,7 +3152,7 @@ function renderInterview() {
  * problem in a different industry would mean the problem is the asset and the
  * industry never mattered.
  *
- * So Automotive starts with the clinic's problem written down as a hypothesis
+ * So the second vertical starts with the clinic's problem written down as a hypothesis
  * and nothing else. Not one cell is filled: no interviews have happened, and
  * a plausible example typed here in advance is indistinguishable from
  * evidence by the third conversation.
@@ -3180,18 +3180,35 @@ const VERTICALS = [
       + 'counted toward it. Whether to widen it again to take that in is an open decision, and by '
       + 'this note&rsquo;s own rule not one to make on the strength of the newest conversation alone.',
   },
+  /*
+   * Engineering & Project Operations replaced Automotive on 5 October 2026.
+   *
+   * Automotive was a column with the right problem in it and the wrong name:
+   * the companies worth calling first are product, embedded and industrial
+   * engineering firms, and most of them are not automotive. Nobody had been
+   * interviewed under it, so nothing was lost.
+   *
+   * There is no knowledge base overlay by this name. An application delivered
+   * to one of these companies is built on the Automotive overlay, whose
+   * headings — Schedule, Quality, Cost, People, Customer, Risk — are a
+   * project's headings, so `overlay` names it rather than this page pretending
+   * an Engineering one exists.
+   */
   {
-    id: 'automotive',
-    name: 'Automotive',
-    hypothesis: 'Untested, and now specific: a project slips, and the signals were in the plan '
-      + 'before anybody saw them &mdash; work sitting blocked, tasks nobody owns, activity that '
-      + 'stopped moving while the milestone date kept coming.',
+    id: 'engineering',
+    name: 'Engineering &amp; Project Operations',
+    overlay: 'Automotive',
+    hypothesis: 'Untested. A project slips quietly: the schedule, engineering activity, testing and '
+      + 'customer commitments are each recorded somewhere and each looks fine on its own, and '
+      + 'nobody connects them until the delivery date has already moved.',
     note: 'Nothing here is filled in, and nothing should be until somebody has been asked. A '
       + 'plausible example typed in advance is indistinguishable from evidence by the third '
-      + 'conversation. What IS ready is the product: the Automotive overlay opens on Schedule, and '
-      + 'three watchers now read a plan rather than a diary &mdash; No Progress, Blocked Work and '
-      + 'Unassigned Work. Against a real project export the catalogue offers 22 of its 32 watchers, '
-      + 'where before it offered 10 and not one of them was about schedule.',
+      + 'conversation. It is run as three experiments below, because a product-engineering firm, '
+      + 'a plant-engineering firm and a manufacturer may describe three different problems. What '
+      + 'the product can already read in a plan: work that stopped moving, work that is blocked, '
+      + 'work nobody owns, and a deadline coming up while the work is open. What it cannot: '
+      + 'progress against plan on the same row, hours against plan, or a milestone date that was '
+      + 'never moved while the work slipped.',
   },
 ];
 
@@ -3245,7 +3262,7 @@ function renderAudience() {
         + 'customer'],
       wedge: ['open', 'Drafted below. It locks when more than one column is full, and not before'],
     },
-    automotive: {
+    engineering: {
       embed: ['', 'Not started. Nobody here has been spoken to yet, so there is no vocabulary to '
         + 'borrow &mdash; step 2 comes first'],
       build: ['', 'Nothing to choose between. A candidate before an interview is a guess with a '
@@ -3536,6 +3553,61 @@ function renderAudience() {
   const FOUR_OF = FOUR_BY_VERTICAL[audienceVertical] || {};
 
   /*
+   * ── How the second vertical is run ────────────────────────────────────────
+   *
+   * Three experiments rather than one list, because "engineering" is three
+   * kinds of business that may have three different problems: a product
+   * firm's project drifts, a plant-engineering firm's dependencies slip in a
+   * chain, a manufacturer's orders and production fall out of step. If they
+   * all say the same thing, that is the finding; if they do not, a single
+   * bucket would have hidden it.
+   *
+   * The companies are the prospect list as researched, not anybody's
+   * evidence. Nobody here has been interviewed, and the five columns below
+   * stay empty until somebody is.
+   */
+  const EXPERIMENTS = {
+    engineering: [
+      { id: 'A', name: 'Product &amp; embedded engineering',
+        hypothesis: 'Projects quietly drift because requirements, development, testing and customer '
+          + 'commitments live in different places.',
+        companies: ['Celstream', 'Zettaone', 'Brigosha', 'IAST Software', 'Sloki', 'Merraky',
+          'BLR Labs'] },
+      { id: 'B', name: 'Industrial &amp; project engineering',
+        hypothesis: 'A delay becomes visible only after several dependent activities have already '
+          + 'slipped. The strongest of the three for SvargAI.',
+        companies: ['Sidvin Outotec', 'Utthunga', 'MEC Concepts', 'Merritt Innovative',
+          'Symmetric Technologies'] },
+      { id: 'C', name: 'Manufacturing + engineering',
+        hypothesis: 'Orders, production, quality, materials and delivery commitments fall out of '
+          + 'sync. Possibly the larger market of the three.',
+        companies: ['RDMC', 'Mechano Engineering', 'Raj Engineering Industries',
+          'other Peenya manufacturers'] },
+    ],
+  };
+  const EXP = EXPERIMENTS[audienceVertical] || [];
+
+  /** The filter the list is built with, and who in the company is called. */
+  const WHO_BY_VERTICAL = {
+    engineering: [
+      ['The company', ['50&ndash;500 people, in India &mdash; Bengaluru first',
+        'B2B, project-based engineering', 'Five or more customer projects running at once',
+        'Its own engineering and delivery teams']],
+      ['Strong signals', ['Product, embedded, automotive, industrial, electronics or aerospace '
+        + 'engineering', 'Engineering consulting, testing and validation',
+        'Industrial automation, EPC and project engineering']],
+      ['Avoid for now', ['Ten-person consultancies', 'Pure staff augmentation',
+        'One large internal product', 'TCS, Infosys, Siemens &mdash; procurement would set the '
+        + 'pace of the learning']],
+      ['Who to contact', ['COO or Head of Operations', 'VP or Head of Engineering',
+        'Delivery Head or Program Director', 'Founder or CEO, at 50&ndash;200 people',
+        'PMO head, where there is a PMO', 'Not individual project managers &mdash; they may read '
+        + 'it as being watched']],
+    ],
+  };
+  const WHO = WHO_BY_VERTICAL[audienceVertical] || null;
+
+  /*
    * Five questions, the same for everybody, so five answers can be compared.
    * Each one feeds one of the four above: the first two say whether it
    * happens, the third whether the information exists, the fourth whether
@@ -3577,9 +3649,9 @@ function renderAudience() {
      * nothing to follow up. What it has is the interview, unchanged — the
      * same questions asked of everybody, which is what makes five answers
      * comparable. So it points at the tab that holds them rather than
-     * inventing automotive-flavoured versions of them here.
+     * inventing engineering-flavoured versions of them here.
      */
-    automotive: [],
+    engineering: [],
   };
   const ASKS = ASKS_BY_VERTICAL[audienceVertical] || [];
 
@@ -3645,10 +3717,35 @@ function renderAudience() {
 
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">${SEGMENT}<span>${metCount(audienceVertical)} of 5 interviewed</span>
-          <em class="sg-ta__kb">knowledge base overlay</em></p>
+          <em class="sg-ta__kb">${V.overlay ? `knowledge base overlay: ${V.overlay}` : 'knowledge base overlay'}</em></p>
         <p class="sg-ta__hyp">${V.hypothesis}</p>
         <p class="sg-ta__note">${V.note}</p>
       </div>
+
+      ${EXP.length ? `
+      <p class="sg-ta__label">Three experiments, not one bucket</p>
+      <div class="sg-ta__exps">
+        ${EXP.map((x) => `
+          <article class="sg-ta__exp">
+            <p class="sg-ta__expid">Experiment ${x.id}</p>
+            <h4 class="sg-ta__exph">${x.name}</h4>
+            <p class="sg-ta__exphyp">${x.hypothesis}</p>
+            <p class="sg-ta__expco">${x.companies.join(' &middot; ')}</p>
+          </article>`).join('')}
+      </div>
+      <p class="sg-ta__note">The aim is not to sell to all of them. It is to find out whether five
+        to eight of them independently describe the same &ldquo;we found out too late&rdquo;
+        problem &mdash; and which experiment they came from when they do.</p>` : ''}
+
+      ${WHO ? `
+      <p class="sg-ta__label">Who we are looking for</p>
+      <div class="sg-ta__who">
+        ${WHO.map(([h, items]) => `
+          <div class="sg-ta__whocol">
+            <p class="sg-ta__whoh">${h}</p>
+            <ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>
+          </div>`).join('')}
+      </div>` : ''}
 
       <p class="sg-ta__label">Four questions &mdash; enough evidence, not every row</p>
       <div class="sg-ta__wrap">
@@ -3798,11 +3895,71 @@ const FIRST_MESSAGE = {
       'Learn more: {{link}}',
     ],
   },
+  /*
+   * Engineering: a question, not a product.
+   *
+   * Not "an AI platform for engineering companies" — that sells a category
+   * and locks the conversation into it. It opens on the one thing every
+   * delivery head has an answer to, how late they find out, and asks where
+   * the warning would have been. Nobody in this vertical has been
+   * interviewed, so unlike the clinic message there is no "a company told
+   * us" to attribute: nothing here claims an example, a customer or a result.
+   */
+  'engineering': {
+    subject: 'When a project starts slipping, how early do you know?',
+    email: [
+      'Hi [Name],',
+      'When a project starts slipping, how early do you usually know?',
+      'I&rsquo;m exploring a problem across engineering companies: the schedule, the engineering '
+        + 'work, testing and customer commitments are all recorded in different places. Each one '
+        + 'looks fine in isolation, but nobody continuously connects them &mdash; so a project can go '
+        + 'quietly off track until the delivery date is already affected.',
+      'SvargAI runs AI agents on top of the systems a team already uses and looks for those '
+        + 'signals early. Before anything else, I&rsquo;d like to understand how it happens at '
+        + '[Company]: which problems in your projects do you usually discover only after they have '
+        + 'affected the delivery date, and where does the information that would have warned you '
+        + 'actually live?',
+      'Would you be open to a 15-minute call?',
+      'Learn more: {{link}}',
+    ],
+    sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
+    short: [
+      'Hi [Name] &mdash; when a project starts slipping, how early do you usually know?',
+      'I&rsquo;m talking to engineering companies about projects that drift quietly: the schedule, '
+        + 'engineering work, testing and customer commitments live in different systems, and nobody '
+        + 'connects them until the delivery date moves.',
+      'What problems in your projects do you usually discover only after they have hit the '
+        + 'delivery date? Happy to have a short chat.',
+      'Learn more: {{link}}',
+    ],
+  },
 };
+
+/**
+ * Who to write to first in engineering, and which experiment each is in.
+ *
+ * The ten from the researched list, in the order to contact them. The second
+ * batch is kept beside it so the next ten are not a fresh search.
+ */
+const ENGINEERING_FIRST = [
+  ['Celstream Technologies', 'A', 'Product engineering across many customer engagements'],
+  ['Merritt Innovative Solutions', 'B', 'Prototype &rarr; testing &rarr; manufacturing &rarr; supply'],
+  ['MEC Concepts India', 'B', 'Mechanical, electronics and IT teams across several industries'],
+  ['Sidvin Outotec Engineering', 'B', 'Layout, mechanical, piping, civil and instrumentation on one plant'],
+  ['Utthunga', 'B', 'Industrial engineering and automation on customer projects'],
+  ['IAST Software Solutions', 'A', 'Automotive ECU, AUTOSAR, safety &mdash; milestones and testing'],
+  ['Brigosha', 'A', 'Embedded, IoT, cloud and product engineering streams'],
+  ['Merraky Engineering Solutions', 'A', 'Positions on time-to-market and engineering cost'],
+  ['Symmetric Technologies', 'B', 'Project engineering, system integration and IV&amp;V'],
+  ['Sloki Software Technologies', 'A', 'Automotive embedded: hardware, firmware, HIL, BMS, ADAS'],
+];
+const ENGINEERING_NEXT = ['Zettaone Technologies', 'Ramdisk', 'iTWINE Technologies', 'BLR Labs',
+  'TalentRabbit', 'Evenion Technologies', 'RDMC', 'Mechano Engineering', 'Raj Engineering Industries'];
 
 /** Which industries the Pitches tab is organised into. */
 const PITCH_SEGMENTS = [
   { id: 'clinics', name: 'Clinics &amp; Wellness', note: 'Where the effort is going now' },
+  { id: 'engineering', name: 'Engineering &amp; Project Operations', note: 'The second vertical &mdash; discovery' },
   { id: 'other', name: 'Other industries', note: 'Patterns kept from earlier conversations' },
 ];
 
@@ -3934,6 +4091,9 @@ function renderFirstMessage(seg) {
           <button type="button" class="sg-fm__copy" data-fmcopy="short">Copy message</button>
         </article>
 
+        ${seg === 'engineering' ? renderOrion() : ''}
+
+        ${seg === 'clinics' ? `
         <article class="sg-fm__msg sg-fm__msg--deck">
           <p class="sg-fm__kind">Presentation</p>
           <p class="sg-fm__subject"><span>When</span>Emailed after the call, or instead of one.</p>
@@ -4009,10 +4169,76 @@ function renderFirstMessage(seg) {
             <img src="proposals/wellness-co-one-page-proposal.jpg" loading="lazy"
                  alt="The one-page proposal for The Wellness Co.: the promise was made on the phone and was not recorded in LeadSquared.">
           </a>
-        </article>
+        </article>` : ''}
       </div>
 
+      ${seg === 'engineering' ? renderEngineeringFirst() : ''}
+
     </section>`;
+}
+
+/*
+ * ── The reverse demo for engineering ──────────────────────────────────────
+ *
+ * Project Orion is an illustration, written before any engineering company
+ * has been spoken to — so the card says so, and splits it line by line into
+ * what the product can show today and what it cannot.
+ *
+ * The line that makes it land — "15% behind planned progress, and the
+ * committed date has not moved" — is exactly the part that is not built:
+ * the where-clause cannot compare two columns on one row, and nothing keeps
+ * a history of a date being moved. A delivery head shown that line who then
+ * connects their tracker and does not get it has been sold something.
+ */
+const ORION = {
+  can: [
+    ['3 engineers blocked on the test environment', 'Blocked Work'],
+    ['14 validation items still open', 'counted from the tracker'],
+    ['Customer milestone on 28 October, work still open', 'Deadline Approaching'],
+    ['Tasks that stopped moving a fortnight ago', 'No Progress'],
+  ],
+  cannot: [
+    ['71% done against 86% planned', 'planned against actual on one row is not expressible'],
+    ['Engineering hours over plan', 'the same comparison, on hours'],
+    ['The milestone date never moved while the work slipped', 'no history of a date being changed'],
+  ],
+};
+
+function renderOrion() {
+  const row = ([what, how]) => `<li><span>${what}</span><em>${how}</em></li>`;
+  return `
+        <article class="sg-fm__msg sg-fm__msg--deck">
+          <p class="sg-fm__kind">Reverse demo</p>
+          <p class="sg-fm__subject"><span>When</span>In the first call, after they describe a slip of their own.</p>
+          <div class="sg-fm__body">
+            <p><b>Project Orion &mdash; delivery risk.</b> Seen from where a Chief of
+              Engineering Operations sits: schedule, cost, quality and customer commitments,
+              each in its own system. Orion is invented &mdash; say so. It is a picture of the
+              problem, not a customer.</p>
+          </div>
+          <p class="sg-fm__lbl">It can show this today</p>
+          <ul class="sg-fm__orion is-yes">${ORION.can.map(row).join('')}</ul>
+          <p class="sg-fm__lbl">Not built &mdash; do not show it as working</p>
+          <ul class="sg-fm__orion is-no">${ORION.cannot.map(row).join('')}</ul>
+          <p class="sg-fm__whynote">The second list is the line that makes the demo land. Say it
+            as the question &mdash; &ldquo;would you want to know this?&rdquo; &mdash; not as
+            something the product does.</p>
+        </article>`;
+}
+
+/** Who to write to first, by experiment, and the next batch. */
+function renderEngineeringFirst() {
+  return `
+      <h3 class="sg-fm__title sg-fm__title--next">The first ten</h3>
+      <p class="sg-fm__sub">From the researched list, in the order to contact them. Write to the
+        COO, Head of Engineering, Delivery Head, PMO head or founder &mdash; not a project
+        manager. The goal is not ten sales: it is whether five to eight of them describe the same
+        &ldquo;we found out too late&rdquo; problem.</p>
+      <ol class="sg-fm__ten">
+        ${ENGINEERING_FIRST.map(([co, exp, why]) => `
+          <li><b>${co}</b><span class="sg-fm__exp">Experiment ${exp}</span><em>${why}</em></li>`).join('')}
+      </ol>
+      <p class="sg-fm__sub">Next batch: ${ENGINEERING_NEXT.join(' &middot; ')}.</p>`;
 }
 
 
@@ -4488,10 +4714,12 @@ function renderPitches() {
 
     <div class="sg-pitches">${mine.map(renderPitch).join('')}</div>
 
-    <div id="sg-deck"></div>`;
+    ${pitchSegment === 'clinics' ? '<div id="sg-deck"></div>' : ''}`;
 
+  // The clinic deck, on the clinic tab only: it is a clinic proposal, and it
+  // used to draw under every industry, including this one's engineering tab.
   // Drawn immediately from what is already known, and again when /deck answers.
-  loadDeckFacts();
+  if (pitchSegment === 'clinics') loadDeckFacts();
 
   el.querySelector('.sg-seg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-seg]');

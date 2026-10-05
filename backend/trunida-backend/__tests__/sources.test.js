@@ -55,7 +55,7 @@ describe('where an industry keeps its data', () => {
   it('ships only the connector modules the sources call for', async () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
-    expect(paths({}).length).toBe(8);
+    expect(paths({}).length).toBe(9);
     /*
      * WhatsApp is always among them, and that is not the filter leaking.
      *
@@ -70,7 +70,7 @@ describe('where an industry keeps its data', () => {
      * module and the application dies on boot in the identical way.
      */
     expect(paths({ connectors: ['jira'] }).sort())
-      .toEqual(['services/connectors/database.js', 'services/connectors/jira.js',
+      .toEqual(['services/connectors/clinicea.js', 'services/connectors/database.js', 'services/connectors/jira.js',
         'services/connectors/leadsquared.js', 'services/connectors/phone.js', 'services/connectors/whatsapp.js',
         'services/connectors/zohocrm.js']);
     /*
@@ -81,7 +81,7 @@ describe('where an industry keeps its data', () => {
      * asked to connect, and it belongs with the database rather than with
      * the two above it.
      */
-    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/database.js',
+    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/clinicea.js', 'services/connectors/database.js',
       'services/connectors/leadsquared.js', 'services/connectors/phone.js', 'services/connectors/whatsapp.js',
       'services/connectors/zohocrm.js']);
     // Everything else still ships.

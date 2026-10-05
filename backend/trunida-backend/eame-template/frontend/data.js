@@ -417,6 +417,9 @@
   var CRMS = [
     { kind: 'zoho-crm', label: 'Zoho CRM' },
     { kind: 'leadsquared', label: 'LeadSquared' },
+    // A clinic management system rather than a CRM, but it holds the same
+    // thing the card is for: the customers and their appointments.
+    { kind: 'clinicea', label: 'Clinicea' },
   ];
   function isCrm(kind) { return CRMS.some(function (c) { return c.kind === kind; }); }
 
@@ -1187,6 +1190,9 @@
     var connect = t.closest('[data-connect]');
     if (connect) { await submitConnector(connect, kind); return; }
 
+    var cgo = t.closest('[data-clinicea-go]');
+    if (cgo) { await startClinicea(cgo); return; }
+
     var jgo = t.closest('[data-jira-go]');
     if (jgo) { await startJira(jgo); return; }
 
@@ -1290,7 +1296,7 @@
        * things, and showing both forms at once asks somebody to read one
        * they will never fill in.
        */
-      openFlow('zoho-crm', '<p class="dt-panel__head">Which CRM do you use?</p>'
+      openFlow('zoho-crm', '<p class="dt-panel__head">Which system holds your customers and appointments?</p>'
         + '<div class="dt-map__actions">'
         + crmsHere().map(function (c) {
           return '<button type="button" class="dt-btn" data-open="' + esc(c.kind) + '">' + esc(c.label) + '</button>';
@@ -1318,6 +1324,7 @@
     if (kindName === 'zoho-crm' && zohoOneClick) { openZoho(k); return; }
     if (kindName === 'leadsquared') { openLeadSquared(k); return; }
     if (kindName === 'jira') { openJira(k); return; }
+    if (kindName === 'clinicea') { openClinicea(k); return; }
     var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName.split('-')[0], 'i').test(d.name) || /attend/i.test(d.name) && kindName === 'whatsapp-business' || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
     var setupHtml = kindName === 'whatsapp-business'
       ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
@@ -1735,6 +1742,74 @@
     closeFlow('jira');
     await refresh();
     connected({ connected: done, skipped: failed, part: 'Jira project', card: 'jira' });
+  }
+
+  /*
+   * Clinicea, in the same steps as Zoho, LeadSquared and Jira: the API key and
+   * a staff login once, then every part holding records is found and
+   * connected, counted as each lands. It sits in the CRM card, because it
+   * holds what that card is for.
+   */
+  function openClinicea(k) {
+    openFlow('zoho-crm', '<p class="dt-panel__head">Connect Clinicea</p>'
+      + '<p class="dt-form__help">' + esc(k.help) + ' The key and login are kept encrypted in this application\u2019s own database and never sent to Svarg.</p>'
+      + '<p class="dt-form__brings"><b>It reads</b> appointments with their status and check-in, patients, packages with sessions bought and used, and bills.</p>'
+      + '<div class="dt-form__grid">'
+      + '<label class="dt-form__field">API key<input type="password" name="apiKey" autocomplete="off"></label>'
+      + '<label class="dt-form__field">Staff username<input type="text" name="username" autocomplete="off"></label>'
+      + '<label class="dt-form__field">Staff password<input type="password" name="password" autocomplete="off"></label>'
+      + '</div>'
+      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-clinicea-go="1">Read my Clinicea <span aria-hidden="true">&rarr;</span></button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+  }
+
+  async function startClinicea(btn) {
+    var b = bodyOf('zoho-crm');
+    var creds = {
+      apiKey: (b.querySelector('[name=apiKey]') || {}).value || '',
+      username: (b.querySelector('[name=username]') || {}).value || '',
+      password: (b.querySelector('[name=password]') || {}).value || '',
+    };
+    if (!creds.apiKey.trim() || !creds.username.trim() || !creds.password) {
+      flowErr('zoho-crm', 'Enter the API key, the staff username and the staff password.'); return;
+    }
+    btn.disabled = true; btn.textContent = 'Logging in\u2026';
+    try {
+      await readClinicea(creds);
+    } catch (err) {
+      console.error('[clinicea] connecting failed:', err);
+      openClinicea(kinds.find(function (x) { return x.kind === 'clinicea'; }) || { help: '' });
+      flowErr('zoho-crm', err.message);
+    }
+  }
+
+  /** Zoho's readCrm, for Clinicea: one request to find, one per part to connect. */
+  async function readClinicea(creds) {
+    var found = await ownerJson('/api/connectors/clinicea/scan', 'POST', creds);
+    var parts = found.parts || [];
+    if (!parts.length) throw new Error('This Clinicea login can read nothing from the last year.');
+
+    var done = [];
+    var failed = [];
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      progress('zoho-crm', i, parts.length, 'Reading ' + p.label);
+      try {
+        var one = await ownerJson('/api/connectors/clinicea/connect', 'POST', {
+          apiKey: creds.apiKey, username: creds.username, password: creds.password, object: p.object, label: p.label,
+        });
+        done.push(one);
+      } catch (err) {
+        console.error('[clinicea] %s failed:', p.label, err);
+        failed.push({ module: p.label, reason: err.message });
+      }
+    }
+    progress('zoho-crm', parts.length, parts.length, 'Finishing');
+
+    if (!done.length) throw new Error('Nothing could be read. ' + (failed[0] ? failed[0].reason : ''));
+    closeFlow('zoho-crm');
+    await refresh();
+    connected({ connected: done, skipped: failed, part: 'part of Clinicea' });
   }
 
   /** A consent that came back and then went wrong, said on the card. */

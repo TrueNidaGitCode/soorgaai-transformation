@@ -86,10 +86,13 @@ export const FIXED_PATHS = [
   'services/connectors/zohocrm.js',
   // LeadSquared: leads, the activity record of every touch, and opportunities.
   'services/connectors/leadsquared.js',
+  // Clinicea: the clinic management system -- appointments, patients, packages, bills.
+  'services/connectors/clinicea.js',
   'services/svargZohoService.js',
   'controllers/zohoConnectController.js',
   'controllers/leadsquaredConnectController.js',
   'controllers/jiraConnectController.js',
+  'controllers/cliniceaConnectController.js',
   'controllers/whatsappController.js',
   'routes/whatsappRoutes.js',
   'controllers/phoneController.js',

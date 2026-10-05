@@ -52,7 +52,7 @@ else.
 | --- | --- | --- |
 | Schedule | Which deliveries are slipping | milestone-at-risk, behind-plan, blocked-work, no-progress, unassigned-work, deadline-approaching, promise-overdue, late-delivery, unconfirmed-order |
 | Quality | What came back wrong or is out of date | repeat-complaint, missing-detail, duplicate, nothing-new, stale-source |
-| Cost | Where effort and money run over the estimate | over-estimate, unusual-expense, overdue-invoice, never-invoiced, part-payment, price-change, renewal-due, absent-but-attended, cancelled-not-updated |
+| Cost | Where effort and money run over the estimate | over-estimate, unusual-expense, overdue-invoice, never-invoiced, part-payment, price-change, renewal-due, absent-but-attended, cancelled-not-updated, package-overused |
 | People | Who is missing, overloaded or not set up | timesheet-chaser, leave-clash, new-joiner, unstaffed-session, over-capacity, stopped-coming, missing-attendance |
 | Customer | What a customer is still waiting for | unanswered-enquiry, contact-no-record, promise-not-kept, gone-quiet, opportunity-gone-quiet, asked-to-upgrade, no-show-then-contact, no-show |
 | Risk | What would fail a review or an audit | expiring-soon, missing-document, empty-slot |

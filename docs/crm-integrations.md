@@ -4,21 +4,21 @@ How each CRM and project tracker connects to a delivered application, written
 the same way for each so they can be compared line by line. When one is added
 or a step changes, this document changes in the same commit.
 
-Last updated: 5 October 2026 (Jira added as the project tracker).
+Last updated: 5 October 2026 (Jira added as the project tracker; Clinicea as the clinic system).
 
 ## At a glance
 
-|                         | Zoho CRM                                   | LeadSquared                                        |
-|-------------------------|--------------------------------------------|----------------------------------------------------|
-| Where in the app        | Data → CRM card → Connect → Zoho CRM       | Data → CRM card → Connect → LeadSquared            |
-| What the owner provides | Approval on Zoho's screen (one-click), or a Self Client's credentials | Access Key and Secret Key                |
-| Region                  | Chosen (data centre); Zoho corrects it     | Found automatically by trying each region          |
-| What is read            | Every module holding a record (up to 15)   | Leads, Activities, and every opportunity type holding a record (up to 12 types) |
-| One dataset per         | Module, e.g. `Contacts (Zoho CRM)`         | Part, e.g. `Activities (LeadSquared)`              |
-| Read again              | Hourly, and when the Data page is opened   | Hourly, and when the Data page is opened           |
-| Reconnecting            | Replaces the connection, keeps the rows    | Replaces the connection, keeps the rows            |
-| Where the credential is | Encrypted in the application's own database | Encrypted in the application's own database       |
-| Proven on a real account | Yes                                       | **No**: built from the published API, not yet run against a live account |
+|                         | Zoho CRM                                   | LeadSquared                                        | Clinicea |
+|-------------------------|--------------------------------------------|----------------------------------------------------|---|
+| Where in the app        | Data → CRM card → Connect → Zoho CRM       | Data → CRM card → Connect → LeadSquared            | Data → CRM card → Connect → Clinicea |
+| What the owner provides | Approval on Zoho's screen (one-click), or a Self Client's credentials | Access Key and Secret Key                | API key (Clinicea's paid API add-on) and a staff username and password |
+| Region                  | Chosen (data centre); Zoho corrects it     | Found automatically by trying each region          | One host, `api.clinicea.com` |
+| What is read            | Every module holding a record (up to 15)   | Leads, Activities, and every opportunity type holding a record (up to 12 types) | Appointments, Patients, Packages and Bills, whichever hold records |
+| One dataset per         | Module, e.g. `Contacts (Zoho CRM)`         | Part, e.g. `Activities (LeadSquared)`              | Part, e.g. `Appointments (Clinicea)` |
+| Read again              | Hourly, and when the Data page is opened   | Hourly, and when the Data page is opened           | Hourly, and when the Data page is opened |
+| Reconnecting            | Replaces the connection, keeps the rows    | Replaces the connection, keeps the rows            | Replaces the connection, keeps the rows |
+| Where the credential is | Encrypted in the application's own database | Encrypted in the application's own database       | Encrypted in the application's own database |
+| Proven on a real account | Yes                                       | **No**: built from the published API, not yet run against a live account | **No**: built from the reference and a public live integration, not yet run on an account of ours |
 
 ## Main and Tenant: where each piece lives
 
@@ -26,17 +26,17 @@ Every CRM follows the rule in `connectors-in-the-application.md`: **Svarg
 (Main) sees the shape; the delivered application (Tenant) holds the data and
 the credentials.** The two CRMs differ only where their own APIs force it.
 
-| Piece | Lives in | Zoho CRM | LeadSquared |
-|---|---|---|---|
-| Deciding the CRM card belongs on the Data page | Main: `sourceCatalogService.js` | A dataset's source naming Zoho or "CRM" | A source naming LeadSquared or "CRM", which gives the same card |
-| Shipping the connector to the application | Main: `eameSpec.js` + `eameProjectBuilder.js` (`ALWAYS_SHIPPED`) | `zohocrm.js`, `zohoConnectController.js` | `leadsquared.js`, `leadsquaredConnectController.js` |
-| Naming it to buyers | Main: `pitchDeckService.js`, admin Sales page | "Zoho CRM" | "LeadSquared" |
-| The consent screen | Main brokers it: `zohoOAuth*`, `gatewayZohoController.js`, because Zoho requires an app registered by Svarg | Yes, one-click | **None**: LeadSquared's API takes keys, so there is nothing to broker |
-| Typing or approving the credential | Tenant: the CRM card on the Data page | Approval at Zoho, or own Self Client | Access Key and Secret Key |
-| Holding the credential | Tenant database, encrypted | Refresh token (Svarg hands it over once, then keeps none) | The two keys |
-| Finding what holds records, connecting each | Tenant: `/api/connectors/<crm>/scan`, `/connect` | Modules | Leads, Activities, opportunity types |
-| The records | Tenant database only | Never reach Svarg | Never reach Svarg |
-| Reading again | Tenant: hourly, and on opening the Data page | Same | Same |
+| Piece | Lives in | Zoho CRM | LeadSquared | Clinicea |
+|---|---|---|---|---|
+| Deciding the CRM card belongs on the Data page | Main: `sourceCatalogService.js` | A dataset's source naming Zoho or "CRM" | A source naming LeadSquared or "CRM", which gives the same card | A source naming Clinicea, or clinic or practice management |
+| Shipping the connector to the application | Main: `eameSpec.js` + `eameProjectBuilder.js` (`ALWAYS_SHIPPED`) | `zohocrm.js`, `zohoConnectController.js` | `leadsquared.js`, `leadsquaredConnectController.js` | `clinicea.js`, `cliniceaConnectController.js` |
+| Naming it to buyers | Main: `pitchDeckService.js`, admin Sales page | "Zoho CRM" | "LeadSquared" | "Clinicea" |
+| The consent screen | Main brokers it: `zohoOAuth*`, `gatewayZohoController.js`, because Zoho requires an app registered by Svarg | Yes, one-click | **None**: LeadSquared's API takes keys, so there is nothing to broker | **None**: an API key and a staff login, so there is nothing to broker |
+| Typing or approving the credential | Tenant: the CRM card on the Data page | Approval at Zoho, or own Self Client | Access Key and Secret Key | API key, staff username and password |
+| Holding the credential | Tenant database, encrypted | Refresh token (Svarg hands it over once, then keeps none) | The two keys | The key and the login; the session token is kept in memory only |
+| Finding what holds records, connecting each | Tenant: `/api/connectors/<crm>/scan`, `/connect` | Modules | Leads, Activities, opportunity types | Appointments, Patients, Packages, Bills |
+| The records | Tenant database only | Never reach Svarg | Never reach Svarg | Never reach Svarg |
+| Reading again | Tenant: hourly, and on opening the Data page | Same | Same | Same |
 
 So Main takes part in the connection only where a CRM's consent screen
 requires a registered app. A CRM that takes keys, like LeadSquared, connects
@@ -185,6 +185,87 @@ is what proves it. Until then, say "it connects", not "it has been proven to".
 `eame-template/services/connectors/leadsquared.js`,
 `eame-template/controllers/leadsquaredConnectController.js`
 (`/api/connectors/leadsquared/scan` and `/leadsquared/connect`).
+
+## Clinicea (clinic management)
+
+### Before you start
+
+- The clinic must have Clinicea's **API add-on**. It is in no standard plan;
+  the clinic buys it through its Clinicea account manager, who issues the API
+  key.
+- A **staff login** (username and password) whose role can see every
+  appointment, patient, package and bill. Clinicea logs in with the key and
+  this login and returns a session token for about an hour.
+
+### Steps in the application
+
+1. Data → **CRM** card → **Connect** → **Clinicea** (the card asks "Which
+   system holds your customers and appointments?").
+2. Enter the API key, the staff username and the staff password, and press
+   **Read my Clinicea**.
+3. The card counts parts as they connect: Appointments, Patients, Packages and
+   Bills, whichever hold records from the last year.
+4. The receipt lists each part, its dataset, records and columns.
+
+Clinicea has no consent screen, so the key and login are step 2 where Zoho has
+its consent. Everything after them matches Zoho's steps.
+
+### What it reads
+
+| Part | Dataset | What is in it |
+|---|---|---|
+| Appointments | `Appointments (Clinicea)` | Patient, `appointment_date`, `status` and the previous status, `check_in_time` (the first real arrival, waiting or engaged time), whether the service was completed and billed, the balance, service, practitioner, cancellation reason |
+| Patients | `Patients (Clinicea)` | Name, mobile, email, file number, `last_visit_date`, next appointment, visits, billed and paid totals |
+| Packages | `Packages (Clinicea)` | Patient, package, sold and expiry dates, `sessions_bought` and `sessions_used`, total, open or closed |
+| Bills | `Bills (Clinicea)` | Patient, invoice, date, total, paid and due amounts |
+
+**The watchers this was built for.** Vesoma described two problems, and both
+are now readable where they are recorded:
+
+- **Marked Absent, But Attended**, on Appointments: a booking whose status says
+  No Show and which has a `check_in_time`. That is a treated patient left
+  marked absent, about twenty a month at Vesoma. "Attended" is read from the
+  check-in and never from the booking date, which every no-show has.
+- **Package Over-used**, on Packages: `sessions_used` above
+  `sessions_bought`, which is treatment given away past what was sold.
+
+No Show, Gone Quiet, Stopped Coming (from `last_visit_date`) and Renewal Due
+(package expiry) bind too. Three column names were chosen so the watchers read
+them correctly: `check_in_time` (a date the watchers rank as a check-in),
+`bill_balance` (money, never a deadline), and `first_seen` (history, so
+Stopped Coming measures from the last visit). `__tests__/cliniceaConnector.test.js`
+binds the real catalogue to these shapes and runs the plan on rows.
+
+### What can go wrong
+
+| What the owner sees | What it means |
+|---|---|
+| "Clinicea refused the API key, username or password." | One of the three is wrong, or the staff account is disabled |
+| "This Clinicea login cannot read that…" | The clinic has no API add-on, or the staff role cannot see that part |
+| "Not read: Bills" on the receipt | That part refused for this role; the rest connected |
+| "Clinicea is rate limiting this application." | It catches up on the next hourly read |
+
+### Not yet proven
+
+The parts and fields come from Clinicea's Swagger reference
+(`api.clinicea.com/swagger`). What the reference does not say comes from a
+public integration that runs against the live API: the v2 login
+(`getTokenByStaffUsernamePwd`) and appointment changes call, the token sent as
+`api_key`, a new login invalidating the last (so one login is shared), the
+`YYYY-MM-DDTHH:mm:ss` date (milliseconds are refused), pages of 100, and 204
+for an empty page. The first real proof is Vesoma's account, once the add-on is
+bought.
+
+### Where it lives
+
+`eame-template/services/connectors/clinicea.js` (ships to every application),
+`eame-template/controllers/cliniceaConnectController.js`
+(`/api/connectors/clinicea/scan` and `/clinicea/connect`).
+
+On Main: `sourceCatalogService.js` (the CRM card for a blueprint naming
+Clinicea or clinic management), `pitchDeckService.js` (its name), the admin
+Sales page's connector sentence. There is no consent screen, so nothing is
+brokered.
 
 ## Jira (project tracker)
 

@@ -122,8 +122,8 @@ try {
   // The database card is offered to every application, after the industry's own.
   check('sources are the industry\'s, then the database', JSON.stringify(srcs.body?.sources?.map(s => s.kind)) === '["folder","whatsapp","database"]', JSON.stringify(srcs.body?.sources?.map(s => s.kind)));
   const kinds = await j('/api/connectors', { headers: O });
-  // WhatsApp Business is the industry's; the database, both CRMs and the phone ship to everyone.
-  check('WhatsApp Business plus what every application gets', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)) === '["database","leadsquared","phone","whatsapp-business","zoho-crm"]', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)));
+  // WhatsApp Business is the industry's; the database, the CRMs (Zoho, LeadSquared, Clinicea) and the phone ship to everyone.
+  check('WhatsApp Business plus what every application gets', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)) === '["clinicea","database","leadsquared","phone","whatsapp-business","zoho-crm"]', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)));
 
   // A folder import, twice: the rule
   const imp1 = await j('/api/data/import', { method: 'POST', headers: O, body: JSON.stringify({ datasetName: 'Students', source: 'folder', origin: 'Students.xlsx', mode: 'merge', complete: true, rows: [['S1', 'Priya Nair', 'U14'], ['S2', 'Arjun Sharma', 'U16']] }) });

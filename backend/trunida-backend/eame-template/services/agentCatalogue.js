@@ -160,6 +160,17 @@ export const ROLES = {
   planned:  /(plan|baseline|target|expected|forecast|scheduled)[a-z_ ]*(percent|progress|complet|pct|%)|(percent|progress|complet|pct)[a-z_ ]*(plan|baseline|target|expected|forecast)/i,
   hours:    /hour|effort|spent|logged|man.?days|person.?days|time.?spent/i,
   estimate: /estimat|budget(ed)?[_ ]?(hours|effort)|(planned|baseline|allocated|original)[_ ]?(hours|effort)/i,
+  /*
+   * ── Entitlement against use ──────────────────────────────────────────────
+   *
+   * A package of sessions: how many were bought, and how many have been used.
+   * The pair Vesoma described as its second problem -- gym packages used past
+   * what was sold -- and the shape Clinicea's packages carry as two numbers on
+   * one row. Separate roles so the comparison is only ever made between the
+   * two halves of the same package.
+   */
+  used:     /used|completed|consumed|attended|redeemed|taken/i,
+  entitled: /bought|purchased|entitle|allowed|included|prescribed|total[_ ]?sessions|sessions[_ ]?total/i,
 };
 
 const C = (over) => ({ over: 'rows', op: 'gt', value: 0, ...over });
@@ -351,6 +362,16 @@ export const CATALOGUE = [
     needs: ['slot', 'progress', 'planned', 'due'],
     question: '{slot} in {dataset} whose {progress} is below the {planned} column by 10 or more'
       + ' and whose {due} is within the next 14 days' },
+  /*
+   * A package used past what was bought: every session after the last one
+   * paid for is treatment given away, and nobody notices until the client
+   * asks for a refund or the books are closed. The comparison is the same
+   * column-to-column arithmetic as Over Estimate, on sessions.
+   */
+  { id: 'package-overused', area: 'Money', name: 'Package Over-used',
+    says: 'More sessions used than the package paid for',
+    needs: ['who', 'used', 'entitled'],
+    question: '{who} in {dataset} whose {used} is above the {entitled} column' },
   { id: 'over-estimate', area: 'Money', name: 'Over Estimate',
     says: 'More hours spent than were estimated',
     needs: ['slot', 'hours', 'estimate'],
@@ -548,6 +569,8 @@ const SEVERITY = {
     'opportunity-gone-quiet',
     // A delivery date about to be missed while the work is behind.
     'milestone-at-risk',
+    // Treatment given away past what was sold.
+    'package-overused',
   ],
   low: [
     'missing-detail', 'duplicate', 'nothing-new', 'stale-source',
@@ -722,6 +745,9 @@ const PREFER = {
   // Hours spent, not hours planned or left.
   hours: { good: /spent|logged|actual/i, bad: /plan|estim|budget|baseline|original|allocat|remain/i },
   estimate: { good: /estimat|budget/i, bad: /remain|spent|logged/i },
+  // What was used, never what remains or what was sold.
+  used: { good: /sessions?[_ ]?used|used|completed/i, bad: /remain|bought|total|service_completed|is_/i },
+  entitled: { good: /bought|purchased|total[_ ]?sessions|sessions[_ ]?total/i, bad: /used|completed|remain/i },
   amount: { good: /amount|balance|outstanding|total/i, bad: /count|qty|sessions/i },
 };
 

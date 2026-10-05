@@ -87,7 +87,7 @@ export function connectorsShipped() {
   let files = [];
   try { files = fs.readdirSync(dir); } catch { return []; }
   const NAME = {
-    'zohocrm': 'Zoho CRM', 'leadsquared': 'LeadSquared', 'phone': 'Cloud telephony', 'whatsapp': 'WhatsApp Business',
+    'zohocrm': 'Zoho CRM', 'leadsquared': 'LeadSquared', 'clinicea': 'Clinicea', 'phone': 'Cloud telephony', 'whatsapp': 'WhatsApp Business',
     'database': 'Your database', 'jira': 'Jira', 'confluence': 'Confluence',
     'github': 'GitHub', 'svarg': 'Svarg',
   };

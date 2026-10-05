@@ -126,7 +126,9 @@ export function sourcesFromDatasets(datasets = []) {
     if (/jira|atlassian|project tracker|issue tracker/.test(t)) add('jira', 'Jira', '');
     // One CRM card, whichever CRM: the tenant's card asks which, so a block
     // naming LeadSquared asks for the same card a block naming Zoho does.
-    if (/zoho|leadsquared|crm|customer relationship/.test(t)) add('zoho-crm', 'Your CRM', 'Customers, packages and appointments, read from the CRM your business already runs on.');
+    // Clinicea is a clinic management system, but it holds what the CRM card
+    // is for -- customers and their appointments -- and the card asks which.
+    if (/zoho|leadsquared|clinicea|crm|customer relationship|clinic management|practice management/.test(t)) add('zoho-crm', 'Your CRM', 'Customers, packages and appointments, read from the CRM your business already runs on.');
     if (/confluence/.test(t)) add('confluence', 'Confluence', '');
     if (/github|gitlab|bitbucket/.test(t)) add('github', 'GitHub', '');
     if (/form/.test(t)) add('form', 'A form', 'Its responses sheet belongs in your folder.');

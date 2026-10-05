@@ -11,6 +11,7 @@ import { list, create, update, test, sync, remove } from '../controllers/connect
 import { zohoStatus, zohoStart, zohoModules, zohoScan, zohoConnectOne, zohoFinish } from '../controllers/zohoConnectController.js';
 import { leadsquaredScan, leadsquaredConnectOne } from '../controllers/leadsquaredConnectController.js';
 import { jiraScan, jiraConnectOne } from '../controllers/jiraConnectController.js';
+import { cliniceaScan, cliniceaConnectOne } from '../controllers/cliniceaConnectController.js';
 
 const router = express.Router();
 
@@ -38,6 +39,9 @@ router.post('/leadsquared/connect', express.json(), leadsquaredConnectOne);
 // Jira, in the same two steps: find the projects holding issues, then connect each.
 router.post('/jira/scan',    express.json(), jiraScan);
 router.post('/jira/connect', express.json(), jiraConnectOne);
+// Clinicea, in the same two steps: find the parts holding records, then connect each.
+router.post('/clinicea/scan',    express.json(), cliniceaScan);
+router.post('/clinicea/connect', express.json(), cliniceaConnectOne);
 router.patch('/:id', express.json(), update);
 router.post('/:id/test', test);
 router.post('/:id/sync', sync);

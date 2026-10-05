@@ -91,6 +91,8 @@ const TERMS = {
                            'percent complete', 'progress', 'off track', 'drift', 'quietly'],
   'milestone-at-risk':    ['milestone', 'delivery date', 'customer milestone', 'commitment', 'committed date',
                            'time-to-market', 'time to market', 'found out too late', 'too late'],
+  'package-overused':     ['package', 'packages', 'entitlement', 'over-used', 'overused', 'used more',
+                           'more sessions than', 'sessions remaining', 'beyond the package'],
   'over-estimate':        ['over budget', 'over estimate', 'hours exceed', 'effort overrun', 'cost overrun',
                            'engineering hours', 'engineering cost', 'timesheet'],
 

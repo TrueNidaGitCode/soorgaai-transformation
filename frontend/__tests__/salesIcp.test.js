@@ -284,7 +284,7 @@ describe('the problem, as two interviews described it', () => {
 
     /** What the page calls each shipped connector. 'svarg' talks to itself. */
     const SAID = {
-      zohocrm: /Zoho CRM/, leadsquared: /Zoho CRM, LeadSquared/, phone: /cloud telephony/i, whatsapp: /WhatsApp/,
+      zohocrm: /Zoho CRM/, leadsquared: /Zoho CRM, LeadSquared/, clinicea: /LeadSquared, Clinicea/, phone: /cloud telephony/i, whatsapp: /WhatsApp/,
       database: /database/, confluence: /Confluence/, github: /GitHub/, jira: /Jira/,
     };
     for (const c of shipped.filter((x) => x !== 'svarg')) {

@@ -330,8 +330,13 @@ describe('a term has to be a word, not letters inside one', () => {
       + 'enquiries and cancellations. Today, some of these problems may only become visible after '
       + 'they have already happened — for example, a client stops attending midway through '
       + 'treatment, an enquiry is missed, or a cancelled session leaves a cabin unused.';
+    /*
+     * Four since 5 October 2026, argued for: the objective names "package
+     * balances", and a package used past what was sold is the second problem
+     * Vesoma described. Package Over-used is the watcher for exactly that.
+     */
     expect(watcherPlan({ businessObjective: text }).startHere.sort())
-      .toEqual(['empty-slot', 'stopped-coming', 'unanswered-enquiry']);
+      .toEqual(['empty-slot', 'package-overused', 'stopped-coming', 'unanswered-enquiry']);
   });
 });
 

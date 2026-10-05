@@ -209,6 +209,8 @@ const ALWAYS_SHIPPED = new Set([
   'services/connectors/zohocrm.js',
   // And LeadSquared, the other CRM the businesses this is sold to already run.
   'services/connectors/leadsquared.js',
+  // And Clinicea, the clinic system behind the same card; its controller imports it statically.
+  'services/connectors/clinicea.js',
 ]);
 
 /**
@@ -262,10 +264,12 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/database.js':  { template: 'services/connectors/database.js' },
     'services/connectors/zohocrm.js':   { template: 'services/connectors/zohocrm.js' },
     'services/connectors/leadsquared.js': { template: 'services/connectors/leadsquared.js' },
+    'services/connectors/clinicea.js':  { template: 'services/connectors/clinicea.js' },
     'services/svargZohoService.js':     { template: 'services/svargZohoService.js' },
     'controllers/zohoConnectController.js': { template: 'controllers/zohoConnectController.js' },
     'controllers/leadsquaredConnectController.js': { template: 'controllers/leadsquaredConnectController.js' },
     'controllers/jiraConnectController.js': { template: 'controllers/jiraConnectController.js' },
+    'controllers/cliniceaConnectController.js': { template: 'controllers/cliniceaConnectController.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
     'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },

@@ -165,14 +165,22 @@ describe('the engineering pitch claims nothing it has not got', () => {
     expect(eng).not.toMatch(/told us|shared|we found|found that|customers? (?:said|saw)/i);
   });
 
-  it('marks the Orion lines that are not built, the progress gap among them', () => {
+  it('shows plan against actual as built, and keeps what is not built marked', () => {
+    /*
+     * Behind Plan, Milestone At Risk and Over Estimate exist since
+     * 5 October 2026, and orionDemo.test.js in the backend runs them on the
+     * demo's own files. So the progress and hours lines are "can", named by
+     * the watcher that produces them. The date history and the per-project
+     * join are not built, and stay "cannot".
+     */
     const orion = js.slice(js.indexOf('const ORION = {'), js.indexOf('function renderOrion'));
+    const can = orion.slice(0, orion.indexOf('cannot:'));
     const cannot = orion.slice(orion.indexOf('cannot:'));
-    expect(cannot).toMatch(/86% planned/);
-    expect(cannot).toMatch(/hours over plan/);
+    expect(can).toMatch(/86% planned[^\]]*'Milestone At Risk'/);
+    expect(can).toMatch(/estimate of 120[^\]]*'Over Estimate'/);
     expect(cannot).toMatch(/date never moved/);
-    // And the can-list holds nothing from the cannot-list.
-    expect(orion.slice(0, orion.indexOf('cannot:'))).not.toMatch(/planned|hours|never moved/);
+    expect(cannot).toMatch(/joining all of the above/);
+    expect(can).not.toMatch(/never moved|joining/);
   });
 
   it('keeps the clinic deck and proposal off the engineering tab', () => {

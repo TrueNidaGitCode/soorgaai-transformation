@@ -3188,16 +3188,14 @@ const VERTICALS = [
    * engineering firms, and most of them are not automotive. Nobody had been
    * interviewed under it, so nothing was lost.
    *
-   * There is no knowledge base overlay by this name. An application delivered
-   * to one of these companies is built on the Automotive overlay, whose
-   * headings — Schedule, Quality, Cost, People, Customer, Risk — are a
-   * project's headings, so `overlay` names it rather than this page pretending
-   * an Engineering one exists.
+   * It has its own knowledge base overlay since 5 October 2026: attention
+   * areas (Schedule first), opportunity discovery, and the sources that put
+   * Jira and the plan folder on the Data page. A vertical whose overlay has
+   * another name would say so in `overlay`; this one needs none.
    */
   {
     id: 'engineering',
     name: 'Engineering &amp; Project Operations',
-    overlay: 'Automotive',
     hypothesis: 'Untested. A project slips quietly: the schedule, engineering activity, testing and '
       + 'customer commitments are each recorded somewhere and each looks fine on its own, and '
       + 'nobody connects them until the delivery date has already moved.',
@@ -3205,10 +3203,11 @@ const VERTICALS = [
       + 'plausible example typed in advance is indistinguishable from evidence by the third '
       + 'conversation. It is run as three experiments below, because a product-engineering firm, '
       + 'a plant-engineering firm and a manufacturer may describe three different problems. What '
-      + 'the product can already read in a plan: work that stopped moving, work that is blocked, '
-      + 'work nobody owns, and a deadline coming up while the work is open. What it cannot: '
-      + 'progress against plan on the same row, hours against plan, or a milestone date that was '
-      + 'never moved while the work slipped.',
+      + 'the product can read in a plan and in Jira: work behind its planned progress, a milestone '
+      + 'at risk (behind plan with the due date under two weeks away), hours over the estimate, work '
+      + 'that stopped moving, work that is blocked, and work nobody owns. What it cannot yet: tell '
+      + 'that a milestone date was never moved while the work slipped, or join several of those '
+      + 'findings into one project at risk.',
   },
 ];
 
@@ -4184,23 +4183,29 @@ function renderFirstMessage(seg) {
  * has been spoken to — so the card says so, and splits it line by line into
  * what the product can show today and what it cannot.
  *
- * The line that makes it land — "15% behind planned progress, and the
- * committed date has not moved" — is exactly the part that is not built:
- * the where-clause cannot compare two columns on one row, and nothing keeps
- * a history of a date being moved. A delivery head shown that line who then
+ * The line that makes it land — 71% done against 86% planned, due in ten
+ * days — was not built when this card was first written, and is now: Behind
+ * Plan, Milestone At Risk and Over Estimate compare two columns on one row.
+ * backend/trunida-backend/scripts/make_orion_demo.mjs writes the files, and
+ * __tests__/orionDemo.test.js runs the real watchers on them, so every line
+ * in "can" is one the product produces.
+ *
+ * Two are still not built and stay in "cannot": nothing keeps a history of a
+ * date, so "the date was never moved" cannot be shown; and findings are not
+ * yet joined into one project. A delivery head shown either who then
  * connects their tracker and does not get it has been sold something.
  */
 const ORION = {
   can: [
-    ['3 engineers blocked on the test environment', 'Blocked Work'],
-    ['14 validation items still open', 'counted from the tracker'],
-    ['Customer milestone on 28 October, work still open', 'Deadline Approaching'],
-    ['Tasks that stopped moving a fortnight ago', 'No Progress'],
+    ['Firmware integration: 71% done against 86% planned, due in ten days', 'Milestone At Risk'],
+    ['164 hours booked against an estimate of 120', 'Over Estimate'],
+    ['HIL bench blocked, 25 points behind plan', 'Blocked Work, Behind Plan'],
+    ['Customer FAT readiness: nobody assigned', 'Unassigned Work'],
+    ['Two high-severity validation items open against firmware', 'counted from the validation log'],
   ],
   cannot: [
-    ['71% done against 86% planned', 'planned against actual on one row is not expressible'],
-    ['Engineering hours over plan', 'the same comparison, on hours'],
     ['The milestone date never moved while the work slipped', 'no history of a date being changed'],
+    ['One "Project Orion at risk" joining all of the above', 'findings are not yet joined by project'],
   ],
 };
 
@@ -4220,9 +4225,11 @@ function renderOrion() {
           <ul class="sg-fm__orion is-yes">${ORION.can.map(row).join('')}</ul>
           <p class="sg-fm__lbl">Not built &mdash; do not show it as working</p>
           <ul class="sg-fm__orion is-no">${ORION.cannot.map(row).join('')}</ul>
-          <p class="sg-fm__whynote">The second list is the line that makes the demo land. Say it
-            as the question &mdash; &ldquo;would you want to know this?&rdquo; &mdash; not as
-            something the product does.</p>
+          <p class="sg-fm__whynote">The first list is real output: run
+            <code>node scripts/make_orion_demo.mjs</code> in the backend and upload the folder on
+            the Data page of an engineering application. The second list is what it cannot do
+            yet &mdash; ask it as &ldquo;would you want to know this?&rdquo;, not as something
+            the product does.</p>
         </article>`;
 }
 

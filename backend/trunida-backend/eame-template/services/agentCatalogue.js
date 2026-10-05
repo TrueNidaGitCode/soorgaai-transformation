@@ -90,7 +90,13 @@ export const ROLES = {
   // meeting/event/visit/consult are what a CRM calls the booked thing. Their
   // absence is why an appointment diary lost every Schedule watcher to a
   // lead list that merely happened to have more columns.
-  slot:     /slot|session|class|booking|appointment|meeting|event|visit|consult|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint/i,
+  /*
+   * And a tracker's words for it. Jira names a piece of work an issue and
+   * labels it with a key and a summary; none of those matched, so on a Jira
+   * project not one Schedule watcher was offered -- the records an
+   * engineering organisation actually runs on.
+   */
+  slot:     /slot|session|class|booking|appointment|meeting|event|visit|consult|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint|issue|summary|deliverable|work.?item|epic|story|feature/i,
   doc:      /document|certificate|licence|license|permit|policy|registration|insurance/i,
   /*
    * ── The fact a question depends on, not just its shape ───────────────────
@@ -137,6 +143,23 @@ export const ROLES = {
    * column holds a service name, never a wish to buy more of it.
    */
   intent:   /(^|[^a-z])intent([^a-z]|$)/i,
+  /*
+   * ── Plan against actual ──────────────────────────────────────────────────
+   *
+   * Two pairs, each a figure and the figure it is measured against: how much
+   * is done against how much the plan says should be, and the hours spent
+   * against the hours estimated. They are separate roles rather than one
+   * "number" role because the comparison is only meaningful between the two
+   * halves of a pair -- done against estimate is nonsense.
+   *
+   * `progress` matches a planned column too (planned_percent says "percent");
+   * PREFER ranks the plan's own column last so that, given both, progress
+   * takes the actual and `planned` the plan.
+   */
+  progress: /percent|progress|complet|(^|[^a-z])pct([^a-z]|$)|%/i,
+  planned:  /(plan|baseline|target|expected|forecast|scheduled)[a-z_ ]*(percent|progress|complet|pct|%)|(percent|progress|complet|pct)[a-z_ ]*(plan|baseline|target|expected|forecast)/i,
+  hours:    /hour|effort|spent|logged|man.?days|person.?days|time.?spent/i,
+  estimate: /estimat|budget(ed)?[_ ]?(hours|effort)|(planned|baseline|allocated|original)[_ ]?(hours|effort)/i,
 };
 
 const C = (over) => ({ over: 'rows', op: 'gt', value: 0, ...over });
@@ -305,6 +328,33 @@ export const CATALOGUE = [
     says: 'Scheduled, open, and nobody owns it',
     needs: ['slot', 'who', 'status'],
     question: '{slot} in {dataset} that is not done and has no {who} against it' },
+
+  /*
+   * ── Plan against actual ───────────────────────────────────────────────────
+   *
+   * The gap named above, closed. Each compares two columns on one row with
+   * the "below column" and "above column" operators, so the finding is
+   * arithmetic the code did rather than a judgement the model made.
+   *
+   * Ten points is the margin because a plan is an estimate: a task one point
+   * behind is on plan, and a board that reports it teaches somebody to stop
+   * reading the board. Milestone At Risk adds the due date, because fifteen
+   * points behind with three months to go is a conversation and fifteen
+   * points behind with ten days to go is a missed delivery.
+   */
+  { id: 'behind-plan', area: 'Schedule', name: 'Behind Plan',
+    says: 'Less done than the plan says should be done by now',
+    needs: ['slot', 'progress', 'planned'],
+    question: '{slot} in {dataset} whose {progress} is below the {planned} column by 10 or more' },
+  { id: 'milestone-at-risk', area: 'Schedule', name: 'Milestone At Risk',
+    says: 'Behind plan, with the due date under two weeks away',
+    needs: ['slot', 'progress', 'planned', 'due'],
+    question: '{slot} in {dataset} whose {progress} is below the {planned} column by 10 or more'
+      + ' and whose {due} is within the next 14 days' },
+  { id: 'over-estimate', area: 'Money', name: 'Over Estimate',
+    says: 'More hours spent than were estimated',
+    needs: ['slot', 'hours', 'estimate'],
+    question: '{slot} in {dataset} whose {hours} is above the {estimate} column' },
 
   /*
    * ── Where the record disagrees with what happened ─────────────────────────
@@ -496,6 +546,8 @@ const SEVERITY = {
     'cancelled-not-updated', 'contact-no-record',
     // An open deal going cold, which is the problem it was built for.
     'opportunity-gone-quiet',
+    // A delivery date about to be missed while the work is behind.
+    'milestone-at-risk',
   ],
   low: [
     'missing-detail', 'duplicate', 'nothing-new', 'stale-source',
@@ -588,7 +640,9 @@ const PREFER = {
   },
   // A count is never the thing that was booked.
   slot: {
-    good: /slot|cabin|room|booking|appointment|class|batch|shift/i,
+    // name/summary/title: on a plan the thing is called by its name, and
+    // task_id beside task_name is a number nobody can read on a board.
+    good: /slot|cabin|room|booking|appointment|class|batch|shift|name|summary|title/i,
     bad:  /^total|count|num|_no$|qty|quantity|remaining|completed/i,
     /*
      * A date is not the thing that was booked — but it is a better answer
@@ -659,9 +713,15 @@ const PREFER = {
      * reported "Knee rehab package" as the customer who had gone quiet.
      * Subject and Title are the same mistake on a task and a meeting.
      */
-    bad:  /^total|count|num|qty|address|street|house|flat|building|apartment|city|country|postal|zip|state|province|lane|road|deal_?name|opportunit[a-z]*_?name|subject|title/i,
+    bad:  /^total|count|num|qty|address|street|house|flat|building|apartment|city|country|postal|zip|state|province|lane|road|deal_?name|opportunit[a-z]*_?name|subject|title|task_?name|issue|summary|milestone|deliverable|feature|epic|project_?name/i,
   },
   due: { good: /due|deadline/i, bad: /^total|count/i },
+  // The actual figure, not the plan's, and never a date or a status.
+  progress: { bad: /plan|baseline|target|expect|forecast|date|time|status|stage/i },
+  planned: { bad: /date|time|status/i },
+  // Hours spent, not hours planned or left.
+  hours: { good: /spent|logged|actual/i, bad: /plan|estim|budget|baseline|original|allocat|remain/i },
+  estimate: { good: /estimat|budget/i, bad: /remain|spent|logged/i },
   amount: { good: /amount|balance|outstanding|total/i, bad: /count|qty|sessions/i },
 };
 

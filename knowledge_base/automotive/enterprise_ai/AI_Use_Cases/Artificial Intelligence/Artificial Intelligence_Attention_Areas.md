@@ -44,8 +44,8 @@ else.
 
 | Category | What it answers | Watchers |
 | --- | --- | --- |
-| Delivery | What is late or unfinished | no-progress, blocked-work, unassigned-work, promise-overdue, deadline-approaching, unconfirmed-order, late-delivery |
+| Delivery | What is late or unfinished | no-progress, blocked-work, unassigned-work, promise-overdue, deadline-approaching, unconfirmed-order, late-delivery, behind-plan, milestone-at-risk |
 | Quality | What is wrong or contradictory | repeat-complaint, missing-detail, duplicate, nothing-new, stale-source |
-| Cost | What is being spent | absent-but-attended, unusual-expense, overdue-invoice, never-invoiced, part-payment, renewal-due, price-change, cancelled-not-updated |
+| Cost | What is being spent | absent-but-attended, unusual-expense, overdue-invoice, never-invoiced, part-payment, renewal-due, price-change, cancelled-not-updated, over-estimate |
 | Adoption | Who has stopped using it | stopped-coming, gone-quiet, missing-attendance, no-show, unanswered-enquiry, new-joiner, no-show-then-contact, contact-no-record, promise-not-kept, opportunity-gone-quiet, asked-to-upgrade |
 | Risk | What would fail a review | expiring-soon, missing-document, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |

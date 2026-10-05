@@ -136,8 +136,10 @@ describe('a planner’s words reach them', () => {
 
   it('ranks the schedule watchers first, and starts them', () => {
     const plan = watcherPlan({ businessObjective: SAID });
-    expect(plan.order.slice(0, 4)).toEqual(
-      expect.arrayContaining(['blocked-work', 'no-progress', 'unassigned-work']),
+    // Five, not four: Milestone At Risk joined them, because the planner says
+    // the milestone is at risk in as many words.
+    expect(plan.order.slice(0, 5)).toEqual(
+      expect.arrayContaining(['blocked-work', 'no-progress', 'unassigned-work', 'milestone-at-risk']),
     );
     expect(plan.startHere).toContain('no-progress');
   });

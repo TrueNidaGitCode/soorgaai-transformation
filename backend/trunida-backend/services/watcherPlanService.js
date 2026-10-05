@@ -83,6 +83,16 @@ const TERMS = {
                            'dependencies', 'bottleneck', 'approval pending'],
   'unassigned-work':      ['unassigned', 'nobody assigned', 'no owner', 'unallocated',
                            'resource gap', 'resourcing'],
+  /*
+   * Plan against actual: the words a delivery head uses for "we are behind",
+   * "the date is at risk" and "we have spent more than we said".
+   */
+  'behind-plan':          ['behind plan', 'behind schedule', 'planned vs actual', 'planned versus actual',
+                           'percent complete', 'progress', 'off track', 'drift', 'quietly'],
+  'milestone-at-risk':    ['milestone', 'delivery date', 'customer milestone', 'commitment', 'committed date',
+                           'time-to-market', 'time to market', 'found out too late', 'too late'],
+  'over-estimate':        ['over budget', 'over estimate', 'hours exceed', 'effort overrun', 'cost overrun',
+                           'engineering hours', 'engineering cost', 'timesheet'],
 
   'unanswered-enquiry':   ['enquiry', 'inquiry', 'lead', 'unanswered', 'no reply', 'response time', 'respond', 'follow up', 'follow-up', 'followup', 'quotation', 'quote', 'proposal', 'going cold', 'gone cold', 'goes cold'],
   'gone-quiet':           ['gone quiet', 'inactive', 'lapsed', 'stopped buying', 'declining', 'disengaged', 'at risk'],

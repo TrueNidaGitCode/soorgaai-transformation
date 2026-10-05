@@ -22,11 +22,14 @@ const ui = readFileSync(new URL('../../../frontend/admin/sales.js', import.meta.
 const css = readFileSync(new URL('../../../frontend/admin/sales.css', import.meta.url), 'utf8');
 
 /** The clinics message, which is where the effort is going. */
-const clinics = ui.slice(ui.indexOf('const FIRST_MESSAGE'), ui.indexOf('const PITCH_SEGMENTS'));
+const clinics = ui.slice(ui.indexOf('const FIRST_MESSAGE'), ui.indexOf("'engineering': {"));
+/** Engineering, the second vertical: the same rule, its own two messages. */
+const engineering = ui.slice(ui.indexOf("'engineering': {"), ui.indexOf('const ENGINEERING_FIRST'));
 
 describe('the link is a token, not an address', () => {
   it('ends both messages with it', () => {
     expect((clinics.match(/Learn more: \{\{link\}\}/g) || []).length).toBe(2);
+    expect((engineering.match(/Learn more: \{\{link\}\}/g) || []).length).toBe(2);
   });
 
   it('leaves no bare address behind to be sent by accident', () => {

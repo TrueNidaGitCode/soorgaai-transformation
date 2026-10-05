@@ -45,7 +45,7 @@ else.
 | Category | What it answers | Watchers |
 | --- | --- | --- |
 | Retention | Learners disengaging | stopped-coming, missing-attendance, gone-quiet, no-show, repeat-complaint, no-show-then-contact |
-| Delivery | Sessions and staffing that did not happen | no-progress, blocked-work, unassigned-work, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
+| Delivery | Sessions and staffing that did not happen | no-progress, blocked-work, unassigned-work, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser, behind-plan, milestone-at-risk, over-estimate |
 | Growth | Enquiries and trials not converted | unanswered-enquiry, promise-overdue, new-joiner, contact-no-record, promise-not-kept, opportunity-gone-quiet, asked-to-upgrade |
 | Revenue | Subscriptions and invoices at risk | absent-but-attended, renewal-due, overdue-invoice, never-invoiced, part-payment, unusual-expense, price-change, unconfirmed-order, late-delivery, cancelled-not-updated |
 | Compliance | Records and documents that would not stand up | expiring-soon, deadline-approaching, missing-document, missing-detail, duplicate, nothing-new, stale-source |

@@ -176,15 +176,75 @@ function compare(v, op, n) {
 
 // ── Filtering ───────────────────────────────────────────────────────────────
 
-export const OPS = new Set(['is', 'is not', 'contains', 'is any of', 'empty', 'not empty', 'before', 'after', 'matches', 'matches none of']);
+export const OPS = new Set(['is', 'is not', 'contains', 'is any of', 'empty', 'not empty', 'before', 'after',
+  'matches', 'matches none of', 'below column', 'above column', 'within next days']);
 const ANY_SEP = '|';
 
-export function matchesAll(cells, columns, where) {
+/**
+ * A cell as a number, or null.
+ *
+ * Plans and timesheets write the same figure as 71, 71%, "71.0", "1,240" or
+ * "12h". A cell that is not a number in any of those forms is null, and a
+ * comparison against null never matches -- an unreadable cell must not become
+ * a finding about a project.
+ */
+export function numberOf(cell) {
+  const t = String(cell ?? '').trim().replace(/,/g, '').replace(/\s*(%|hrs?|hours?|h)$/i, '');
+  if (!t || !/^-?\d+(\.\d+)?$/.test(t)) return null;
+  return Number(t);
+}
+
+/**
+ * The other side of a column-to-column comparison: "planned_progress", or
+ * "planned_progress by 10" for a margin.
+ *
+ * ── Why a plan needed this ─────────────────────────────────────────────────
+ *
+ * Every other operator compares a cell with a value the planner wrote down.
+ * "Behind plan" is not a value: it is one column against another on the same
+ * row -- done against planned, hours spent against hours estimated -- and
+ * without it the one finding an engineering organisation cares about most
+ * could not be expressed at all. The margin is part of it because a project
+ * one point behind is on plan; "by 10" is how the question says so.
+ */
+function otherSide(val, columns) {
+  const m = String(val ?? '').trim().match(/^(.+?)(?:\s+by\s+(\d+(?:\.\d+)?)%?)?$/i);
+  if (!m) return null;
+  const idx = columns.indexOf(m[1].trim());
+  return idx < 0 ? null : { idx, by: m[2] ? Number(m[2]) : 0 };
+}
+
+export function matchesAll(cells, columns, where, now = new Date()) {
   return where.every(([col, op, val]) => {
     const i = columns.indexOf(col);
     const cell = norm(cells[i]);
     const v = norm(val);
     switch (op) {
+      /*
+       * One column against another on the same row: done below planned, hours
+       * above the estimate. Both sides must read as numbers.
+       */
+      case 'below column':
+      case 'above column': {
+        const other = otherSide(val, columns);
+        const a = numberOf(cells[i]);
+        const b = other ? numberOf(cells[other.idx]) : null;
+        if (a === null || b === null) return false;
+        return op === 'below column' ? a <= b - other.by && a < b : a >= b + other.by && a > b;
+      }
+      /*
+       * A date from today up to N days ahead: a milestone coming up. Not a
+       * window, because a window is applied to whichever date column a dataset
+       * has first, and a plan's first date is usually its start, not its due.
+       */
+      case 'within next days': {
+        const d = parseDate(cells[i], now);
+        const n = Number(val);
+        if (!d || !Number.isFinite(n) || n < 0) return false;
+        const today = startOfDay(now);
+        const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + n + 1);
+        return d >= today && d < end;
+      }
       case 'is':        return cell === v;
       case 'is not':    return cell !== v;
       case 'contains':  return v ? cell.includes(v) : false;

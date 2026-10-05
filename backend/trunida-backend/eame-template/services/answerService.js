@@ -163,8 +163,14 @@ const PLAN_RULES = [
   '',
   'THE OPERATIONS',
   '- select: rows from one dataset. "where" is [column, operator, value]; operators are',
-  '  is, is not, contains, is any of, matches, matches none of, empty, not empty, before, after.',
+  '  is, is not, contains, is any of, matches, matches none of, below column, above column,',
+  '  within next days, empty, not empty, before, after.',
   '  "is any of", "matches" and "matches none of" take several values separated by |.',
+  '  "below column" and "above column" compare a column with ANOTHER column on the same row, for',
+  '  done against planned or hours against estimate: ["percent_complete","below column","planned_percent by 10"]',
+  '  is at least 10 behind; the value is the other column name, with "by N" when the question gives a margin.',
+  '  "within next days" keeps a date from today up to N days ahead: ["due_date","within next days","14"].',
+  '  Use it for a deadline coming up; a window would be applied to a different date column.',
   '  "window" is a phrase like today, this week,',
   '  last week, this month, recently, last 30 days — the range is computed for you and applied',
   '  to that dataset\'s date column, so NEVER write a date into "where".',
@@ -538,7 +544,7 @@ async function execute(planned, kind, now = new Date()) {
       const range = step.window ? windowRange(step.window, now) : null;
       const scanned = all.rows.slice(0, SCAN_LIMIT);
       const rows = scanned.filter(r =>
-        matchesAll(r.cells, all.columns, step.where) && (!range || inWindow(r.cells[dateIdx], range, now)));
+        matchesAll(r.cells, all.columns, step.where, now) && (!range || inWindow(r.cells[dateIdx], range, now)));
       const named = await nameTheItems(asItems(rows, all.columns, step.entity), kind);
       const items = named.items;
       const g = groupFrom({

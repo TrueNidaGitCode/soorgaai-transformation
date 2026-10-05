@@ -44,9 +44,9 @@ else.
 
 | Category | What it answers | Watchers |
 | --- | --- | --- |
-| Schedule | What is slipping | no-progress, blocked-work, unassigned-work, promise-overdue, deadline-approaching, late-delivery, unconfirmed-order |
+| Schedule | What is slipping | no-progress, blocked-work, unassigned-work, promise-overdue, deadline-approaching, late-delivery, unconfirmed-order, behind-plan, milestone-at-risk |
 | Quality | What came back wrong | repeat-complaint, missing-detail, duplicate, no-show |
-| Cost | What is being spent and not recovered | absent-but-attended, unusual-expense, overdue-invoice, never-invoiced, part-payment, price-change, renewal-due, cancelled-not-updated |
+| Cost | What is being spent and not recovered | absent-but-attended, unusual-expense, overdue-invoice, never-invoiced, part-payment, price-change, renewal-due, cancelled-not-updated, over-estimate |
 | People | Who is missing, and who has not been set up | timesheet-chaser, leave-clash, new-joiner, unstaffed-session, stopped-coming, missing-attendance |
 | Customer | What a customer is still waiting for | unanswered-enquiry, gone-quiet, no-show-then-contact, contact-no-record, promise-not-kept, opportunity-gone-quiet, asked-to-upgrade |
 | Risk | What is out of date or unattended | expiring-soon, missing-document, nothing-new, stale-source, empty-slot, over-capacity |

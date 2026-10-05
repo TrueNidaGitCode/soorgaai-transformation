@@ -3863,6 +3863,49 @@ function renderFirstMessage(seg) {
           </div>
           <a class="sg-fm__go" href="#sg-deck">Read it below</a>
         </article>
+
+        <!--
+          The one-page proposal, as the PDF that was sent: a file, not a page
+          drawn here, because what matters is that this is exactly what the
+          customer holds. The notes under it are what the page says that the
+          product does not, checked against the catalogue on 4 October 2026.
+        -->
+        <article class="sg-fm__msg sg-fm__msg--deck sg-fm__msg--wide">
+          <div class="sg-fm__notes">
+          <p class="sg-fm__kind">One-page proposal</p>
+          <p class="sg-fm__subject"><span>For</span>The Wellness Co. &mdash; after the second interview.</p>
+          <div class="sg-fm__body">
+            <p>One page, built on the case that is true today: Rahul asked about
+              the 12-session package on the phone, the representative said
+              &ldquo;I&rsquo;ll check and get back to you&rdquo;, and nothing was
+              logged in LeadSquared. That is <b>Promise Not Kept</b>, and it joins
+              the call to the CRM exactly as drawn.</p>
+            <p><b>What the page lists that is not built.</b> &ldquo;Engagement is
+              declining&rdquo; and &ldquo;Customer stopped responding&rdquo; have no
+              check behind them. Say so if asked; do not demonstrate them.</p>
+            <p><b>What is built, with a condition.</b> &ldquo;Opportunity has no
+              recent meaningful activity&rdquo; is Opportunity Gone Quiet: open
+              opportunities with no activity in 21 days. Any LeadSquared activity
+              counts, so &ldquo;meaningful&rdquo; is more than it measures.
+              Promise Not Kept and upgrade interest need their calls recorded on a
+              phone system we read. Checks run every hour, which is what
+              &ldquo;continuously&rdquo; means.</p>
+          </div>
+          <a class="sg-fm__go" href="proposals/wellness-co-one-page-proposal.pdf" target="_blank" rel="noopener">Open the PDF</a>
+          <a class="sg-fm__go sg-fm__go--next" href="proposals/wellness-co-one-page-proposal.pdf"
+             download="SvargAI_Proposal_For_The_Wellness_Co.pdf">Download</a>
+          </div>
+          <!--
+            The page itself, so what is read here is what they hold. An image
+            rather than the PDF in a frame: vercel.json sends X-Frame-Options:
+            DENY on every path, so a framed PDF draws as an empty box. The
+            image is the PDF's own single page, lifted out byte for byte.
+          -->
+          <a class="sg-fm__pdf" href="proposals/wellness-co-one-page-proposal.pdf" target="_blank" rel="noopener">
+            <img src="proposals/wellness-co-one-page-proposal.jpg" loading="lazy"
+                 alt="The one-page proposal for The Wellness Co.: the promise was made on the phone and was not recorded in LeadSquared.">
+          </a>
+        </article>
       </div>
 
     </section>`;

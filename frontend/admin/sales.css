@@ -2930,6 +2930,27 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   border-bottom: 1px solid rgba(92, 197, 167, 0.4);
 }
 .sg-fm__go:hover { border-bottom-color: #5CC5A7; }
+.sg-fm__go--next { margin-left: 18px; }
+/* The one-page proposal: the full row, notes beside the page itself. */
+.sg-fm__msg--wide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 24px;
+  align-items: start;
+}
+.sg-fm__pdf {
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f2ec;
+}
+.sg-fm__pdf img { display: block; width: 100%; height: auto; }
+.sg-fm__pdf:focus-visible { outline: 2px solid #5CC5A7; outline-offset: 2px; }
+@media (max-width: 860px) {
+  .sg-fm__msg--wide { grid-template-columns: 1fr; }
+}
 
 .sg-deck { margin: 34px 0 10px; scroll-margin-top: 20px; }
 .sg-deck__h { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; color: #fff; }

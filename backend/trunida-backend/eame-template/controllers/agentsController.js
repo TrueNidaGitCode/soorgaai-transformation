@@ -7,7 +7,7 @@
  */
 import {
   listAgents, createAgent, setAgentEnabled, deleteAgent,
-  findingsCollection, SCHEDULES, adoptTimezone, noteLooked, switchedOffIds,
+  findingsCollection, SCHEDULES, adoptTimezone, noteLooked, switchedOffIds, usageSummary,
 } from '../services/agentService.js';
 import mongoose from 'mongoose';
 import fs from 'fs';
@@ -38,7 +38,10 @@ export function plan() {
   catch { return {}; }
 }
 
-const bad = (res, err) => res.status(400).json({ error: err.message || String(err) });
+// A watcher refused for the plan's room is a 403 with the plan's own sentence;
+// everything else that the request got wrong is a 400.
+const bad = (res, err) => res.status(err?.code === 'WATCHER_LIMIT' ? 403 : 400)
+  .json({ error: err.message || String(err), ...(err?.code ? { code: err.code } : {}) });
 
 /**
  * Which business category a watcher belongs to, for this industry.
@@ -464,6 +467,8 @@ export async function listAgentsHandler(req, res) {
         locked: categoryLimit() ? !activeCategories(plan()).includes(c.name) : false,
       })),
       coverage: coverageSummary(plan()),
+      // Active watchers and this month's evaluations, against the plan's numbers.
+      usage: await usageSummary().catch(() => null),
       /*
        * The systems this application is reading, as themselves.
        *
@@ -604,6 +609,6 @@ export async function startFromCatalogueHandler(req, res) {
     sendSignal('watcher_started', { watcherId: entry.id });
     return res.status(201).json({ agent });
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return bad(res, err);
   }
 }

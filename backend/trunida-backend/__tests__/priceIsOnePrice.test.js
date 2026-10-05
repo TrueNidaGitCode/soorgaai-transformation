@@ -107,3 +107,15 @@ describe('the tiers with no list price', () => {
     expect(page.enterprise.monthly).toBeNull();
   });
 });
+
+describe('the yearly toggle says what the yearly prices give', () => {
+  it('calls it two months free only while each yearly price is ten monthly ones', async () => {
+    const fs = await import('fs');
+    const page = fs.readFileSync(new URL('../../../frontend/pricing/pricing.html', import.meta.url), 'utf8');
+    const { PLANS } = await import('../services/entitlements.js');
+    if (page.includes('2 months free')) {
+      for (const k of ['pro', 'ultra']) expect(PLANS[k].priceInrYearly, k).toBe(PLANS[k].priceInrMonthly * 10);
+    }
+    expect(page).not.toMatch(/Save 20%/);
+  });
+});

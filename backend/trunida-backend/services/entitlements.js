@@ -61,13 +61,16 @@ const UNLIMITED = null;
  *   dataConnections      secondary — how many places records come from
  *   monitoringFrequency  tertiary  — how often those areas are checked
  *   seats                          — how many people can use it
+ *   activeWatchers                 — how many watchers may run at once
+ *   evaluationsMonthly             — how many watcher runs a month
  *
- * Watchers are deliberately absent. They are generated from the customer's
- * own business knowledge and data, so two customers with the same coverage
- * get different numbers of them, and charging for the difference would give
- * everybody a reason to switch watchers off -- in a product whose entire
- * promise is that nothing gets missed. Inside purchased coverage, watchers
- * are unlimited and always will be.
+ * The last two were added on 5 October 2026, when the pricing was rewritten
+ * to sell them. Until then watchers were deliberately unlimited, on the
+ * argument that rationing them gives a customer a reason to switch some off.
+ * That argument is why the allowances are generous for each tier and why a
+ * refusal is said on the screen with the plan's number in it -- see
+ * eame-template/services/coverage.js. Both are enforced inside the
+ * application, like coverage and seats.
  *
  * Model spend stays where it was: measured, capped per deployment, and never
  * shown to a customer. It is an operating cost, not a meter.
@@ -113,9 +116,11 @@ export const PLANS = {
     priceInrMonthly:       0,
     priceInrYearly:        0,
     // Monitor a small part of your business.
-    businessCategories:    2,
-    dataConnections:       2,
+    businessCategories:    1,
+    dataConnections:       1,
     monitoringFrequency:   'daily',
+    activeWatchers:        3,
+    evaluationsMonthly:    500,
     deploymentCostUsd:     2,
     // Hobby sees what its team asked for and cannot build it. The demonstration
     // is the blueprint and one working application; a build that rewrites a
@@ -124,19 +129,21 @@ export const PLANS = {
   },
   pro: {
     label: 'Pro',
-    priceInrMonthly:       2999,
-    priceInrYearly:        28999,
+    priceInrMonthly:       16999,
+    priceInrYearly:        169990,
     // Keep the core operations of your business under continuous watch.
     businessCategories:    3,
     dataConnections:       5,
     monitoringFrequency:   'daily',
+    activeWatchers:        25,
+    evaluationsMonthly:    15000,
     // One running application, like Hobby: what Pro buys is building every
     // opportunity inside the objective, not keeping several of them alive at
     // once. Hosting is the constraint, and a promise the platform cannot keep
     // is worse than a smaller one it can.
     deploymentCostUsd:     5,
     /*
-     * Three, not one.
+     * Five, and before that three, not one.
      *
      * Pro used to be a single account, on the argument that it is one person
      * running one objective and a team is Ultra. Coverage pricing moves that
@@ -146,19 +153,21 @@ export const PLANS = {
      * plan whose findings only one person can read is a plan whose findings
      * go unactioned.
      */
-    seats:                 3,
+    seats:                 5,
   },
   ultra: {
     label: 'Ultra',
-    priceInrMonthly:       16999,
-    priceInrYearly:        163999,
+    priceInrMonthly:       49999,
+    priceInrYearly:        499990,
     // Monitor your business end to end.
     businessCategories:    UNLIMITED,
     dataConnections:       10,
     monitoringFrequency:   'hourly',
+    activeWatchers:        100,
+    evaluationsMonthly:    60000,
     deploymentCostUsd:     5,
     // Where "we need the team in here" is answered.
-    seats:                 10,
+    seats:                 UNLIMITED,
   },
   enterprise: {
     label: 'Enterprise',
@@ -171,6 +180,9 @@ export const PLANS = {
     businessCategories:    UNLIMITED,
     dataConnections:       UNLIMITED,
     monitoringFrequency:   'custom',
+    // Custom monitoring capacity: set per account on the AccountPlan row.
+    activeWatchers:        UNLIMITED,
+    evaluationsMonthly:    UNLIMITED,
     // Not five. A custom tier on the same ceiling as Pro is a contract the
     // platform cannot keep; it is set per account alongside the coverage.
     deploymentCostUsd:     50,

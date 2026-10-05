@@ -86,6 +86,20 @@ const accountPlanSchema = new mongoose.Schema({
     applications:          { type: Number, default: null },
     launches:              { type: Number, default: null },
     deploymentCostUsd:     { type: Number, default: null },
+    /*
+     * The coverage a contract narrows or widens. billingController has
+     * accepted these since coverage pricing began, but they were never
+     * declared here, and a strict schema drops what it does not declare --
+     * so an Enterprise account's negotiated areas, sources and seats were
+     * silently not saved. Declared now, with the two counts added on
+     * 5 October 2026.
+     */
+    businessCategories:    { type: Number, default: null },
+    dataConnections:       { type: Number, default: null },
+    seats:                 { type: Number, default: null },
+    monitoringFrequency:   { type: String, default: null },
+    activeWatchers:        { type: Number, default: null },
+    evaluationsMonthly:    { type: Number, default: null },
   },
 
   /** Why an override exists, so the next person can tell a deal from a bug. */

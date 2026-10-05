@@ -224,7 +224,7 @@ describe('pricing, as the pricing page states it', () => {
 
   it('quotes the figures the pricing page quotes', () => {
     const page = read('../pricing/pricing.html');
-    for (const amount of ['2,999', '28,999', '16,999', '1,63,999']) {
+    for (const amount of ['16,999', '1,69,990', '49,999', '4,99,990']) {
       expect(deck, amount).toContain(amount);
       expect(page, amount).toContain(amount);
     }

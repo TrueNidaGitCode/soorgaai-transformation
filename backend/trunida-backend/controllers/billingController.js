@@ -58,13 +58,16 @@ export async function getMyPlan(req, res) {
        *
        * Named separately for the same reason seats are: this is the line the
        * account screen leads with, and "3 of 5 business areas" is the whole
-       * proposition. null is unlimited, and there is deliberately no watcher
-       * count here or anywhere else.
+       * proposition. null is unlimited. Active watchers and monthly
+       * evaluations joined it on 5 October 2026, when the pricing began to
+       * sell them.
        */
       coverage: {
         businessCategories: s.limits?.businessCategories ?? null,
         dataConnections: s.limits?.dataConnections ?? null,
         monitoringFrequency: s.limits?.monitoringFrequency || 'daily',
+        activeWatchers: s.limits?.activeWatchers ?? null,
+        evaluationsMonthly: s.limits?.evaluationsMonthly ?? null,
       },
     });
   } catch (err) {
@@ -137,7 +140,7 @@ export async function adminSetPlan(req, res) {
      * than a number and is handled separately below.
      */
     const clean = {};
-    for (const k of ['businessCategories', 'dataConnections', 'seats', 'deploymentCostUsd']) {
+    for (const k of ['businessCategories', 'dataConnections', 'seats', 'deploymentCostUsd', 'activeWatchers', 'evaluationsMonthly']) {
       if (overrides[k] === null) clean[k] = null;
       else if (Number.isFinite(Number(overrides[k]))) clean[k] = Number(overrides[k]);
     }

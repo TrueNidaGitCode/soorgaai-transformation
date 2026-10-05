@@ -40,25 +40,27 @@ afterEach(() => { for (const k of ENV) { if (saved[k] === undefined) delete proc
 const load = () => import('../eame-template/services/coverage.js?' + Math.random());
 
 describe('a plan sells coverage, never watchers', () => {
-  it('counts no watchers, anywhere', () => {
+  it('counts watchers and evaluations since 5 October 2026, and still gates by area first', () => {
     /*
-     * Asserted against the source because it is a promise about what the code
-     * does NOT do, and no input can demonstrate the absence of a limit.
+     * This test used to assert that nothing counted watchers. The pricing was
+     * rewritten deliberately to sell a number of active watchers and monthly
+     * evaluations, so what it pins now is that both are read from the plan,
+     * that a refusal names the plan's number, and that the business-area gate
+     * is still the first thing a start is asked.
      */
     const cov = read('../eame-template/services/coverage.js');
+    const svc = read('../eame-template/services/agentService.js');
     const ctl = read('../eame-template/controllers/agentsController.js');
 
-    // Nothing compares a number of watchers to a plan limit.
-    expect(cov).not.toMatch(/watcherLimit|maxWatchers|agentLimit|maxAgents/i);
-    expect(ctl).not.toMatch(/watcherLimit|maxWatchers|agentLimit|maxAgents/i);
-
-    // And the gate on starting one asks about its business area, not a count.
+    expect(cov).toContain("export function watcherLimit() { return limitOf('APP_WATCHER_LIMIT'); }");
+    expect(cov).toContain("export function evaluationLimit() { return limitOf('APP_EVALUATION_LIMIT'); }");
+    expect(svc).toContain('runs up to ${limit} watchers at once');
+    expect(svc).toMatch(/if \(!\(await takeEvaluation\(\)\)\)/);
     expect(ctl).toContain('if (!coversWatcher(plan(), entry.id))');
 
-    // Nor does the plan itself have anywhere to put such a limit.
     const plans = read('../services/entitlements.js');
-    expect(plans).not.toMatch(/watchers:\s*\d/);
-    expect(plans).toContain('businessCategories:');
+    expect(plans).toContain('activeWatchers:');
+    expect(plans).toContain('evaluationsMonthly:');
   });
 
   it('gives an unlimited plan everything, which is how old applications keep working', async () => {

@@ -231,8 +231,24 @@
         ? running + ' of ' + cat.length + ' watching &middot; ' + open + ' open right now'
         : 'Nothing is being watched yet';
     if (cov && cov.of && !running) line += ' &middot; nothing is watching yet';
+    var spentNow = view.usage && view.usage.evaluations && view.usage.evaluations.limit
+      && view.usage.evaluations.used >= view.usage.evaluations.limit;
     if (stopped) line += ' &middot; ' + stopped + (stopped === 1 ? ' has' : ' have') + ' stopped after three failures';
-    return '<div class="ag-chief' + (stopped ? ' is-bad' : running ? ' is-on' : '') + '">'
+    /*
+     * The plan's two counts, said where the owner looks: how many watchers of
+     * the allowance are on, and -- only when it matters -- that this month's
+     * evaluations are spent and when they resume. A watcher waiting for room
+     * or a month must never read as one with nothing to find.
+     */
+    var use = view.usage;
+    if (use && use.watchers && use.watchers.limit) {
+      line += ' &middot; ' + use.watchers.active + ' of ' + use.watchers.limit + ' watchers on';
+    }
+    var spent = use && use.evaluations && use.evaluations.limit && use.evaluations.used >= use.evaluations.limit;
+    if (spent) {
+      line += ' &middot; this month’s ' + use.evaluations.limit + ' checks are used &mdash; watchers resume on ' + use.evaluations.resumes;
+    }
+    return '<div class="ag-chief' + (stopped || spentNow ? ' is-bad' : running ? ' is-on' : '') + '">'
       + '<span class="ag-chief__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4.5V8M9.5 13.5h.01M14.5 13.5h.01M9.5 16.5h5"/><circle cx="12" cy="3.5" r="1.2"/></svg></span>'
       + '<h2 class="ag-chief__name">Chief of Agents</h2>'
       // It used to say "runs each watcher on its own schedule", from when
@@ -416,7 +432,7 @@
 
   // What the map is drawn from, kept so a click can redraw without asking
   // the server again.
-  var view = { catalogue: [], categories: [], agents: [], canManage: false, coverage: null, sources: [] };
+  var view = { catalogue: [], categories: [], agents: [], canManage: false, coverage: null, usage: null, sources: [] };
   var picked = '';
 
   function drawDetail() {
@@ -437,6 +453,7 @@
       view.categories = body.categories || [];
       view.canManage = !!body.canManage;
       view.coverage = body.coverage || null;
+      view.usage = body.usage || null;
       view.sources = body.sources || [];
       // The form below the map writes, so it belongs to the owner too.
       var aside = document.getElementById('ag-own');

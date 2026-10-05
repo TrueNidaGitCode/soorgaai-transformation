@@ -180,8 +180,8 @@ describe('margin, only where there is a price', () => {
     const plans = [{ userId: 'u1', plan: 'pro', status: 'active' }];
     const b = buildBom({ period: PERIOD, ledgerRows, deployments, users, plans, assumptions });
     const u1 = b.accounts.find((r) => r.userId === 'u1');
-    expect(u1.priceInrMonthly).toBe(2999);
-    expect(u1.marginInr).toBeCloseTo(2999 - u1.costInr, 8);
+    expect(u1.priceInrMonthly).toBe(16999);
+    expect(u1.marginInr).toBeCloseTo(16999 - u1.costInr, 8);
   });
 
   it('leaves it unknown on Hobby rather than reporting the cost as a loss', () => {
@@ -275,7 +275,7 @@ describe('the plan baseline travels with the consumption', () => {
 
   it('lists every tier with its price and what it buys', () => {
     const byKey = Object.fromEntries(b.plans.map((p) => [p.key, p]));
-    expect(byKey.pro.priceInrMonthly).toBe(2999);
+    expect(byKey.pro.priceInrMonthly).toBe(16999);
     expect(byKey.pro.dataConnections).toBe(5);
     expect(byKey.pro.deploymentCostUsd).toBe(5);
     expect(byKey.hobby.accounts).toBe(2);

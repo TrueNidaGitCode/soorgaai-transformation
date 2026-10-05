@@ -82,6 +82,8 @@ function planEnv(limits, dep) {
     ...(c?.categories ? { APP_CATEGORY_LIMIT: String(c.categories) } : {}),
     ...(c?.connections ? { APP_MAX_CONNECTIONS: String(c.connections) } : {}),
     ...(c?.frequency ? { APP_MONITORING: String(c.frequency) } : {}),
+    ...(c?.watchers ? { APP_WATCHER_LIMIT: String(c.watchers) } : {}),
+    ...(c?.evaluations ? { APP_EVALUATION_LIMIT: String(c.evaluations) } : {}),
   };
 }
 

@@ -206,8 +206,11 @@ describe('only what the data can support actually starts', () => {
     const svc = read('../eame-template/services/agentService.js');
     const fn = svc.slice(svc.indexOf('export async function autoStartWatchers'));
     expect(fn).toContain('await rememberSeeds([');
-    expect(fn).toContain("...wanted.map((c) => ({ kind: 'watcher', key: c.id })),");
-    expect(fn).toContain("...filled.map((name) => ({ kind: 'category', key: name })),");
+    // Offered is what the plan had room for: toStart. A watcher waiting for
+    // room was not offered, so it is not written down and starts once there is.
+    expect(fn).toContain("...toStart.map((c) => ({ kind: 'watcher', key: c.id })),");
+    expect(fn).toContain(".map((name) => ({ kind: 'category', key: name })),");
+    expect(fn).toContain('toStart.some((c) => categoryNameOf(categories, c.id) === name)');
     expect(fn).not.toMatch(/rememberSeeds\(\[\s*\.\.\.started/);
     // Upserted, so a restart mid-write cannot lose or duplicate a seed.
     expect(svc).toContain('upsert: true,');

@@ -70,6 +70,8 @@ export function coverageFrom(limits) {
     categories: limits.businessCategories ?? null,
     connections: limits.dataConnections ?? null,
     frequency: limits.monitoringFrequency || '',
+    watchers: limits.activeWatchers ?? null,
+    evaluations: limits.evaluationsMonthly ?? null,
   };
 }
 
@@ -207,6 +209,8 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     ...(coverage?.categories ? { APP_CATEGORY_LIMIT: String(coverage.categories) } : {}),
     ...(coverage?.connections ? { APP_MAX_CONNECTIONS: String(coverage.connections) } : {}),
     ...(coverage?.frequency ? { APP_MONITORING: String(coverage.frequency) } : {}),
+    ...(coverage?.watchers ? { APP_WATCHER_LIMIT: String(coverage.watchers) } : {}),
+    ...(coverage?.evaluations ? { APP_EVALUATION_LIMIT: String(coverage.evaluations) } : {}),
     // Named, so the refusal can say which plan it is rather than 'a plan'.
     ...(planLabel ? { APP_PLAN_LABEL: String(planLabel) } : {}),
     // The email that asked for this application runs it. Named here so the

@@ -1,19 +1,19 @@
 /**
  * What this application's plan bought, as the application itself sees it.
  *
- * ── Coverage, not counting ─────────────────────────────────────────────────
+ * ── Coverage, and since 5 October 2026 a count as well ─────────────────────
  *
- * A customer buys how much of their business is watched. They do not buy
- * watchers. Two clinics on the same plan will have different numbers of them,
- * because watchers are generated from each business's own knowledge and data
- * -- and charging for that difference would give every customer a reason to
- * switch watchers off, in a product whose whole promise is that nothing gets
- * missed.
+ * A customer buys how much of their business is watched: which BUSINESS
+ * CATEGORIES are covered, how many places records may come from, and how often
+ * the covered areas are checked.
  *
- * So nothing here counts watchers, and nothing here ever will. The only
- * question this module answers is which BUSINESS CATEGORIES are covered, how
- * many places records may come from, and how often the covered areas are
- * checked. Inside a covered category, watchers are unlimited.
+ * Until 5 October 2026 that was all, and this file said nothing here would
+ * ever count watchers, on the reasoning that rationing them gives a customer a
+ * reason to switch some off. The pricing was changed deliberately to sell a
+ * number of active watchers and a monthly number of monitoring evaluations as
+ * well, so both are read here. The reasoning has not gone away: a plan's
+ * watcher allowance should be generous for its tier, and a watcher refused
+ * for room is said plainly on the screen rather than silently not started.
  *
  * ── Why the application decides, and not Svarg ─────────────────────────────
  *
@@ -40,6 +40,10 @@ function limitOf(name) {
 
 export function categoryLimit() { return limitOf('APP_CATEGORY_LIMIT'); }
 export function connectionLimit() { return limitOf('APP_MAX_CONNECTIONS'); }
+/** How many watchers may be switched on at once. */
+export function watcherLimit() { return limitOf('APP_WATCHER_LIMIT'); }
+/** How many watcher runs a calendar month may make. */
+export function evaluationLimit() { return limitOf('APP_EVALUATION_LIMIT'); }
 
 /** 'daily', 'hourly', 'custom', or '' when the plan does not say. */
 export function monitoringFrequency() {
@@ -133,5 +137,7 @@ export function coverageSummary(plan) {
     categories: { covered: categoryLimit() ? active.length : cats.length, of: cats.length, active },
     connections: connectionLimit(),
     frequency: monitoringFrequency() || 'daily',
+    watchers: watcherLimit(),
+    evaluations: evaluationLimit(),
   };
 }

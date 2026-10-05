@@ -31,14 +31,17 @@ describe('seats are part of the plan', () => {
      * that each tier is worth more than the last, which is what "more
      * users/seats" on the pricing page promises.
      */
+    // null is unlimited, which is more than any number.
+    const people = (n) => (n === null ? Infinity : n);
     expect(PLANS.hobby.seats).toBe(1);
-    expect(PLANS.pro.seats).toBeGreaterThan(PLANS.hobby.seats);
-    expect(PLANS.ultra.seats).toBeGreaterThan(PLANS.pro.seats);
+    expect(people(PLANS.pro.seats)).toBeGreaterThan(people(PLANS.hobby.seats));
+    expect(people(PLANS.ultra.seats)).toBeGreaterThan(people(PLANS.pro.seats));
   });
 
   it('makes Ultra the answer to "we need the team in here"', () => {
     // A number a real team recognises, not a token increment.
-    expect(PLANS.ultra.seats).toBeGreaterThanOrEqual(5);
+    // Unlimited since 5 October 2026.
+    expect(PLANS.ultra.seats === null || PLANS.ultra.seats >= 5).toBe(true);
   });
 
   it('leaves Enterprise unlimited, for thirty coaches and four admins', () => {

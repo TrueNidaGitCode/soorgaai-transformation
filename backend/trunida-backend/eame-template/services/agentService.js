@@ -36,7 +36,7 @@
 import mongoose from 'mongoose';
 import { sendDigest } from './notifyService.js';
 import { SEVERITY_RANK } from './agentCatalogue.js';
-import { allowedSchedule } from './coverage.js';
+import { allowedSchedule, watcherLimit, evaluationLimit } from './coverage.js';
 import { sendSignal } from './tenantSignals.js';
 
 /** How often an agent may run, and how often the scheduler looks. */
@@ -460,6 +460,82 @@ export async function listAgents() {
   return docs.map(publicView);
 }
 
+/*
+ * ── The plan's two counts ──────────────────────────────────────────────────
+ *
+ * Active watchers: how many may be switched on at once. A watcher refused for
+ * room says so, with the plan's own number, rather than quietly not starting
+ * -- a missing watcher reads as "nothing to find", which is the one thing this
+ * product must never let anybody believe by accident.
+ *
+ * Monitoring evaluations: one per scheduled watcher run, counted by calendar
+ * month in UTC. When the month's allowance is spent, runs wait until the
+ * first of the next; nothing already found is touched.
+ *
+ * Both are absent on an application delivered before they existed, which
+ * means unlimited -- see coverage.js.
+ */
+export function activeWatcherCount() {
+  return agentsCollection().countDocuments({ enabled: { $ne: false } });
+}
+
+export class WatcherLimitError extends Error {
+  constructor(limit) {
+    const plan = process.env.APP_PLAN_LABEL ? `The ${process.env.APP_PLAN_LABEL} plan` : 'Your plan';
+    super(`${plan} runs up to ${limit} watchers at once, and ${limit} are on. Switch one off to start this one, or move to a plan that runs more.`);
+    this.code = 'WATCHER_LIMIT';
+    this.limit = limit;
+  }
+}
+
+/** How many more watchers may be switched on. Infinity when the plan has no cap. */
+export async function watcherRoom() {
+  const limit = watcherLimit();
+  if (!limit) return Infinity;
+  return Math.max(0, limit - await activeWatcherCount());
+}
+
+async function assertWatcherRoom() {
+  if ((await watcherRoom()) <= 0) throw new WatcherLimitError(watcherLimit());
+}
+
+export function evaluationMonth(now = new Date()) {
+  return `evaluations:${now.toISOString().slice(0, 7)}`;
+}
+
+export async function evaluationsUsed(now = new Date()) {
+  const doc = await mongoose.connection.collection('svarg_meta').findOne({ _id: evaluationMonth(now) }).catch(() => null);
+  return Number(doc?.n) || 0;
+}
+
+/**
+ * Take one evaluation from this month's allowance, or refuse.
+ *
+ * Atomic: the increment only happens while the count is under the limit, so
+ * two ticks racing at the edge cannot both spend the last one.
+ */
+export async function takeEvaluation(now = new Date()) {
+  const meta = mongoose.connection.collection('svarg_meta');
+  const _id = evaluationMonth(now);
+  const limit = evaluationLimit();
+  if (!limit) {
+    await meta.updateOne({ _id }, { $inc: { n: 1 } }, { upsert: true }).catch(() => {});
+    return true;
+  }
+  await meta.updateOne({ _id }, { $setOnInsert: { n: 0 } }, { upsert: true }).catch(() => {});
+  const r = await meta.updateOne({ _id, n: { $lt: limit } }, { $inc: { n: 1 } });
+  return r.modifiedCount === 1;
+}
+
+/** What the Watchers page says about both counts. */
+export async function usageSummary(now = new Date()) {
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return {
+    watchers: { active: await activeWatcherCount(), limit: watcherLimit() },
+    evaluations: { used: await evaluationsUsed(now), limit: evaluationLimit(), resumes: next.toISOString().slice(0, 10) },
+  };
+}
+
 export async function createAgent({
   name, question, schedule = 'daily', atHour = 7, tz = 'UTC', condition = null,
   // Which catalogue entry this came from, and how much it matters. Both are
@@ -483,6 +559,8 @@ export async function createAgent({
   if (!String(question || '').trim()) throw new Error('An agent needs a question to ask.');
   if (!SCHEDULES[schedule]) throw new Error(`Unknown schedule "${schedule}".`);
   if (condition && !OPS[condition.op]) throw new Error(`Unknown condition operator "${condition.op}".`);
+
+  await assertWatcherRoom();
 
   const doc = {
     name: clean.slice(0, 80),
@@ -521,6 +599,10 @@ export async function switchedOffIds() {
 
 export async function setAgentEnabled(id, enabled) {
   const _id = new mongoose.Types.ObjectId(String(id));
+  if (enabled) {
+    const now = await agentsCollection().findOne({ _id }, { projection: { enabled: 1 } });
+    if (now && now.enabled === false) await assertWatcherRoom();
+  }
   // Switching one back on clears the failures that stopped it — otherwise the
   // next single error would degrade it again immediately.
   const $set = enabled
@@ -945,8 +1027,22 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
     return { started: [], skipped: 'nothing new to start' };
   }
 
+  /*
+   * Only as many as the plan has room for, most severe first (wanted is
+   * already in that order). The rest are not recorded as offered, so they
+   * start on a later boot once there is room -- after an upgrade, or after
+   * the owner switches one off.
+   */
+  const room = await watcherRoom();
+  const deferred = wanted.slice(Number.isFinite(room) ? room : wanted.length);
+  const deferredIds = new Set(deferred.map((c) => c.id));
+  const toStart = wanted.filter((c) => !deferredIds.has(c.id));
+  if (deferred.length) {
+    console.log(`[agents] plan allows ${watcherLimit()} watchers at once; ${deferred.length} wait for room: ${deferred.map((c) => c.id).join(', ')}`);
+  }
+
   const started = [];
-  for (const c of wanted) {
+  for (const c of toStart) {
     try {
       await createAgent({
         name: c.name,
@@ -974,11 +1070,14 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
    * try again on every restart for the rest of its life.
    */
   await rememberSeeds([
-    ...wanted.map((c) => ({ kind: 'watcher', key: c.id })),
-    ...filled.map((name) => ({ kind: 'category', key: name })),
+    ...toStart.map((c) => ({ kind: 'watcher', key: c.id })),
+    // A category counts as filled only by a watcher that actually started in it.
+    ...filled
+      .filter((name) => !deferred.length || toStart.some((c) => categoryNameOf(categories, c.id) === name))
+      .map((name) => ({ kind: 'category', key: name })),
     // And everything the data supports, so what is possible today cannot be
-    // mistaken for newly possible tomorrow.
-    ...seen.map((id) => ({ kind: 'seen', key: id })),
+    // mistaken for newly possible tomorrow -- except what is waiting for room.
+    ...seen.filter((id) => !deferredIds.has(id)).map((id) => ({ kind: 'seen', key: id })),
   ]);
 
   if (started.length) console.log(`[agents] watching from delivery: ${started.join(', ')}`);
@@ -1490,6 +1589,10 @@ export function startAgentScheduler(ask, { catalogue = null } = {}) {
       // product somebody keeps and one they filter to a folder.
       const results = [];
       for (const a of due) {
+        if (!(await takeEvaluation())) {
+          console.log(`[agents] this month's ${evaluationLimit()} monitoring evaluations are used; ${due.length - results.length} watcher run(s) wait for next month`);
+          break;
+        }
         const r = await runAgent(a, ask);
         results.push({ ...r, name: a.name });
         if (r.ran) console.log(`[agents] ${a.name}: ${r.fired ? `${r.new.length} new, ${r.resolved.length} resolved` : 'nothing'}`);

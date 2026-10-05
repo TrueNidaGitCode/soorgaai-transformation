@@ -187,7 +187,9 @@ describe('an application that has never recorded what it could run', () => {
   });
 
   it('records it alongside the watchers and the categories on a normal run', () => {
-    expect(src).toContain("...seen.map((id) => ({ kind: 'seen', key: id })),");
+    // Everything possible except what is waiting for the plan's room, which
+    // must stay newly possible so it starts when there is room.
+    expect(src).toContain("...seen.filter((id) => !deferredIds.has(id)).map((id) => ({ kind: 'seen', key: id })),");
   });
 });
 

@@ -44,7 +44,8 @@ describe('the pricing page states the limits the gate enforces', () => {
   });
 
   it('states the connected data sources, and agrees with the gate', () => {
-    expect(card('Hobby')).toContain(`${PLANS.hobby.dataConnections} connected data sources`);
+    const one = (n) => (n === 1 ? '1 connected data source' : `${n} connected data sources`);
+    expect(card('Hobby')).toContain(one(PLANS.hobby.dataConnections));
     expect(card('Pro')).toContain(`${PLANS.pro.dataConnections} connected data sources`);
     expect(card('Ultra')).toContain(`${PLANS.ultra.dataConnections} connected data sources`);
   });
@@ -59,20 +60,24 @@ describe('the pricing page states the limits the gate enforces', () => {
   it('states how many people, and agrees with the gate', () => {
     expect(card('Hobby')).toContain(`${PLANS.hobby.seats} person`);
     expect(card('Pro')).toContain(`${PLANS.pro.seats} people`);
-    expect(card('Ultra')).toContain(`${PLANS.ultra.seats} people`);
+    // Unlimited is null on the plan and "Unlimited people" on the page.
+    expect(card('Ultra')).toContain(PLANS.ultra.seats === null ? 'Unlimited people' : `${PLANS.ultra.seats} people`);
   });
 
-  it('promises no number of watchers, on any tier', () => {
+  it('states the active watchers and monthly evaluations, and agrees with the gate', () => {
     /*
-     * The promise the whole model rests on. A page that put a watcher count
-     * on a plan would be selling the thing the product needs customers never
-     * to ration — and the Agent Map would become a picture of what they could
-     * afford rather than of what is being watched.
+     * Until 5 October 2026 this asserted that no tier promised a number of
+     * watchers. The pricing now sells both counts, and the application
+     * enforces both (coverage.js, agentService.js), so the page has to state
+     * the same numbers the gate holds.
      */
-    for (const plan of ['Hobby', 'Pro', 'Ultra', 'Enterprise']) {
-      expect(card(plan), plan).not.toMatch(/\d+\s+(watchers?|agents?)\b/i);
+    const n = (x) => x.toLocaleString('en-IN');
+    for (const [plan, key] of [['Hobby', 'hobby'], ['Pro', 'pro'], ['Ultra', 'ultra']]) {
+      expect(card(plan), plan).toContain(`Up to ${PLANS[key].activeWatchers} active watchers`);
+      expect(card(plan), plan).toContain(`${n(PLANS[key].evaluationsMonthly)} monitoring evaluations / month`);
     }
-    expect(card('Hobby')).toMatch(/Unlimited watchers/i);
+    expect(PLANS.enterprise.activeWatchers).toBeNull();
+    expect(card('Enterprise')).toContain('Custom monitoring capacity');
   });
 
   it('still sells each tier on something the one below does not have', () => {

@@ -292,3 +292,43 @@ describe('business areas, one box each', () => {
     expect(SRC).toContain("window.svargShowPanel('agents')");
   });
 });
+
+describe('the headline counts people, not findings', () => {
+  /*
+   * "4 things to look at" might be one patient four times. An owner works a
+   * morning person by person, so the headline says how many people the open
+   * findings name, and adds what is about no one person as "other items".
+   */
+  it('says how many people are worth a look', () => {
+    const h = health({ ...OK, open: [1, 2, 3, 4], counts: { high: 0, medium: 4, low: 0 },
+      people: [{ person: 'Rahul Sharma', findings: 3 }, { person: 'Meera Iyer', findings: 1 }] });
+    expect(h.line).toBe('2 people worth a look.');
+    expect(h.sub).toMatch(/4 findings open between them/);
+    // The note still counts findings, which is what the rows below add up to.
+    expect(h.note).toBe('4 things are open');
+  });
+
+  it('counts one person as one person', () => {
+    const h = health({ ...OK, open: [1, 2], counts: { high: 0, medium: 2, low: 0 },
+      people: [{ person: 'Rahul Sharma', findings: 2 }] });
+    expect(h.line).toBe('1 person worth a look.');
+  });
+
+  it('adds what is about no one person, so nothing open goes uncounted', () => {
+    const h = health({ ...OK, open: [1, 2, 3], counts: { high: 0, medium: 3, low: 0 },
+      people: [{ person: 'Rahul Sharma', findings: 2 }] });
+    expect(h.line).toBe('1 person worth a look. Plus 1 other item.');
+  });
+
+  it('says who needs you today when something is high priority', () => {
+    const h = health({ ...OK, open: [1, 2, 3], counts: { high: 1, medium: 2, low: 0 },
+      people: [{ person: 'A', findings: 1 }, { person: 'B', findings: 1 }, { person: 'C', findings: 1 }] });
+    expect(h.line).toBe('3 people need you today.');
+    expect(h.verdict).toBe('Needs attention');
+  });
+
+  it('falls back to things when no finding names a person', () => {
+    const h = health({ ...OK, open: [1, 2], counts: { high: 0, medium: 2, low: 0 }, people: [] });
+    expect(h.line).toBe('2 things to look at.');
+  });
+});

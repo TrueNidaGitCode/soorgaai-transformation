@@ -183,20 +183,43 @@
           : 'Nothing has been checked yet. The first check runs shortly.',
       };
     }
+    /*
+     * Who, not how many things.
+     *
+     * An owner reads a morning as people to deal with: "3 people worth a
+     * look" is a list they can work through, where "7 things" might be one
+     * patient four times. So the headline counts the people the open findings
+     * name -- the same list the people picker shows -- and a finding about no
+     * one person (a slot, a package type, a source) is added on as "other
+     * items" so nothing open goes uncounted. The note keeps the count of
+     * findings, which is what the rows below add up to.
+     */
+    var people = (body.people || []).filter(function (p) { return p && p.person; });
+    var named = people.reduce(function (n, p) { return n + (p.findings || 0); }, 0);
+    var others = Math.max(0, open - named);
+    var plus = others ? ' Plus ' + (others === 1 ? '1 other item.' : others + ' other items.') : '';
+    var found = open === 1 ? '1 finding' : open + ' findings';
     if (counts.high) {
       return {
         cls: 'is-bad', icon: ALERT, verdict: 'Needs attention',
         note: counts.high === 1 ? '1 high priority item' : counts.high + ' high priority items',
-        line: open === 1 ? '1 thing needs you today.' : open + ' things need you today.',
-        sub: 'Svarg is monitoring your business, and some of what it found is worth doing first.',
+        line: people.length
+          ? (people.length === 1 ? '1 person needs you today.' : people.length + ' people need you today.') + plus
+          : open === 1 ? '1 thing needs you today.' : open + ' things need you today.',
+        sub: 'Svarg is monitoring your business, and some of what it found is worth doing first'
+          + (people.length ? ' — ' + found + ' open between them.' : '.'),
       };
     }
     if (open) {
       return {
         cls: 'is-watch', icon: SHIELD, verdict: 'Worth a look',
         note: open === 1 ? '1 thing is open' : open + ' things are open',
-        line: open === 1 ? '1 thing to look at.' : open + ' things to look at.',
-        sub: 'Svarg is monitoring your business. Nothing urgent, but these are still open.',
+        line: people.length
+          ? (people.length === 1 ? '1 person worth a look.' : people.length + ' people worth a look.') + plus
+          : open === 1 ? '1 thing to look at.' : open + ' things to look at.',
+        sub: people.length
+          ? 'Svarg is monitoring your business. Nothing urgent — ' + found + ' open between them.'
+          : 'Svarg is monitoring your business. Nothing urgent, but these are still open.',
       };
     }
     return {

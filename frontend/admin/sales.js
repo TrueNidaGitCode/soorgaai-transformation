@@ -2334,130 +2334,156 @@ function renderIcpView() {
   const el = document.getElementById('sg-icp');
   if (!el) return;
 
+  /*
+   * ── The focus, rewritten on 6 October 2026 ───────────────────────────────
+   *
+   * This page used to sell "find problems before they become costly", with a
+   * problem statement about records disagreeing with what happened. That was
+   * broad enough to mean any costly business problem, which is the platform
+   * pitch the GTM below tells us not to make. The focus is now two business
+   * outcomes: keeping customers, and growing what existing customers spend.
+   * "Businesses are reactive by default" stays as WHY the problem exists; it is
+   * no longer the product category. The record disagreeing with reality stays
+   * as one way it shows -- and revenue already earned but never billed (a
+   * treated patient left marked no-show) counts as growth, by decision.
+   */
+
   /**
-   * The pitch, with its build state attached.
+   * The pitch, stage by stage, with its build state attached.
    *
    * "not yet" is not a criticism of the roadmap. It is the difference between
    * a demonstration and a promise, on a page somebody reads mid-call.
    */
   const SPINE = [
-    ['Detect', 'yes', 'Watchers run on a schedule and evaluate their condition in code.'],
-    ['Understand', 'part', 'A finding carries the records behind it, but not yet why it matters.'],
-    ['Act', 'no', 'Nothing a delivered application runs can send anything outward.'],
-    ['Learn', 'no', 'Findings are diffed into new, still true and resolved &mdash; but nothing changes its own behaviour from that yet.'],
+    ['Detect', 'yes', 'Watchers run on a schedule and evaluate their condition in code: who stopped coming, who went quiet, who asked to upgrade, whose package ran past what was sold.'],
+    ['Explain', 'part', 'A finding carries the records behind it. Why it matters, in the customer&rsquo;s terms, is not written yet.'],
+    ['Recommend', 'no', 'Nothing yet says which intervention to choose for which customer.'],
+    ['Act', 'part', 'A follow-up message is drafted from the finding&rsquo;s own facts. It is never sent; a person copies and sends it.'],
+    ['Measure', 'part', 'Findings are tracked to resolved, and the Reports page counts them weekly and monthly. Customers retained and revenue recovered are not measured yet.'],
+    ['Learn', 'no', 'Nothing changes its own behaviour from what happened yet.'],
   ];
 
-  const TODAY   = ['Data', 'Reports', 'Someone notices', 'Investigates', 'Acts'];
-  const INSTEAD = ['Data', 'Signals', 'Svarg detects', 'Explains', 'Acts early'];
+  const TODAY   = ['Customer activity', 'Data', 'Reports', 'Someone notices', 'Investigates', 'Acts'];
+  const INSTEAD = ['Customer activity', 'Signals', 'Svarg detects', 'Explains', 'Recommends', 'Acts', 'Measures'];
 
-  /** What must be true of a business for early detection to be worth money. */
+  /** What must be true of a business for retention and growth signals to be worth money. */
   const CRITERIA = [
-    'The problem recurs &mdash; it is not a one-off',
-    'The early signals already exist in their systems',
-    'Those signals sit in more than one source',
-    'A person connects the dots by hand today',
-    'It gets significantly more expensive when found late',
-    'There is a clear action once it is identified',
-    'The outcome can be measured',
+    'The problem recurs, because customers do &mdash; they buy, visit or renew repeatedly',
+    'The early signals already exist digitally &mdash; of a customer drifting, or ready to buy more',
+    'Those signals sit in more than one system',
+    'A person connects them by hand today, when anyone does',
+    'It gets more expensive when found late &mdash; a customer lost, a renewal missed',
+    'There is a clear action once the customer is identified',
+    'Whether it worked can be measured, in customers kept or revenue',
   ];
 
   /** Two qualifiers that are about us rather than them — and are how deals die. */
   const QUALIFIERS = [
     ['Buying access', 'Can we reach whoever approves a pilot?'],
-    ['Deployment friction', 'Can we be running on their data in days, not quarters?'],
+    ['Deployment friction', 'Can we be running on their data in days or weeks, not quarters?'],
   ];
 
   /** The shape to listen for, as a sequence, so it is recognisable in a call. */
   const IDEAL = [
-    'Multiple systems',
-    'Signals distributed across them',
-    'A human has to connect the dots',
-    'The problem is found late',
-    'Cost &middot; revenue &middot; customer &middot; operational impact',
+    'Recurring customers',
+    'Their behaviour leaves signals in several systems',
+    'A person joins those signals by hand',
+    'A customer drifts, or an opportunity passes, before anyone notices',
+    'A clear next action, and a number that moves',
   ];
 
   /*
-   * The Problem hypothesis was rewritten by the interviews, which is what this
-   * block is for.
-   *
-   * It used to say businesses discover problems too late. Two clinics were
-   * asked and neither described lateness: both described a RECORD that
-   * disagrees with what happened — a treated patient marked no-show, a call
-   * the CRM never hears about. Finding out late is what the gap costs them, so
-   * it belongs in the sentence as the consequence rather than the problem.
+   * We believe, and would test. The problem hypothesis now names the outcome
+   * (customers lost, growth missed) and keeps "reactive by default" as the
+   * cause; the earlier wording -- reality not reaching the business system --
+   * survives as the mechanism in the first sentence.
    */
   const HYPOTHESES = [
-    ['Problem', 'reality does not reach the business system: something happens, a signal of it exists in one of the tools they already run, and the record says otherwise. Finding out late is what that costs them &mdash; not what it is.'],
-    ['ICP', 'the organisations where this costs the most are mid-market, with high-volume recurring operational workflows, and a small team finding problems reactively.'],
-    ['Product', 'Svarg can watch those systems continuously and surface what is starting to go wrong, without the organisation replacing anything it already runs.'],
-    ['Business value', 'customers pay when a problem found early is measurably cheaper than the same problem found late &mdash; in rupees, hours or a customer who stayed.'],
+    ['Problem', 'businesses lose customers, and growth from the customers they keep, because they are reactive by default: customer behaviour leaves signals across the systems they already run, nobody joins them continuously, and the pattern is noticed after the customer has gone or the opportunity has passed.'],
+    ['ICP', 'the businesses where this costs the most have recurring customer relationships, meaningful value per customer, and enough digital customer activity that a drift or an opportunity can be seen in data they already hold.'],
+    ['Product', 'Svarg can watch customer signals across those systems, identify who needs attention and explain why &mdash; and, next, recommend the intervention, help carry it out and measure whether it worked.'],
+    ['Business value', 'customers pay when the difference is measurable: customers kept, churn reduced, unbilled work recovered, expansion revenue, a response that comes days earlier.'],
   ];
 
   /*
-   * Buyer, user and the person who signs are three different people.
-   *
-   * What each of them CARES about is written in the vocabulary of the problem
-   * being sold — being surprised, finding out late, firefighting. It used to
-   * be written in the vocabulary of the administration ICP: workload, staff
-   * productivity, coordination. Those are real concerns and the wrong ones to
-   * open on, because none of them is what the product now claims to fix.
+   * Buyer, user and the person who signs are three different people, and
+   * which titles they hold varies by company -- a clinic's buyer is its
+   * operations head, a SaaS company's is customer success, an engineering
+   * services firm's is its delivery head. The pains are written in the
+   * vocabulary of losing and growing customers, which is what is sold.
    */
   const PERSONAS = [
-    ['Primary &mdash; buyer', 'Operations Head',
-      'Being surprised &middot; escalations that arrive already late &middot; no view across systems &middot; the same fire twice &middot; explaining upwards what nobody caught'],
-    ['Secondary &mdash; economic', 'Founder / Business Owner',
-      'Revenue that leaked before anyone noticed &middot; customers lost quietly &middot; how much of this is happening that we cannot see'],
-    ['User', 'Operations Executive',
-      'Reads it every morning. Never the buyer, and the one who decides whether it survives week two &mdash; a list that is wrong twice is a list nobody opens again.'],
+    ['Buyer', 'Operations, Customer Success or Revenue head',
+      'Customers lost quietly &middot; unexpected churn &middot; expansion missed &middot; no single view of a customer across systems &middot; teams reacting too late'],
+    ['Economic buyer', 'Founder, business owner, business-unit or revenue leader',
+      'Revenue leakage &middot; churn &middot; customer lifetime value &middot; expansion revenue &middot; not knowing what is happening across the customer base'],
+    ['User', 'Operations, customer success, account management or the front desk',
+      'Too many customers to watch &middot; checking several systems by hand &middot; deciding whom to call &middot; repetitive follow-up &middot; finding out too late. Reads it every morning, and decides whether it survives week two.'],
   ];
 
   const GTM = [
-    ['Identify', 'Find a recurring problem that companies currently discover too late.'],
-    ['Prove', 'Connect the systems they already run, and show Svarg finds it earlier than their current process does.'],
-    ['Execute', 'Move past detection &mdash; recommend the intervention, then carry it out.'],
-    ['Repeat', 'Deploy the same problem, solved the same way, at a similar company.'],
-    ['Expand', 'Once Svarg owns one problem inside an organisation, take the adjacent ones.'],
+    ['Identify', 'Find one recurring retention or growth problem that companies discover too late.'],
+    ['Prove', 'Connect the systems they already use and show Svarg finds the at-risk customer or the opportunity earlier, or more reliably, than they do today.'],
+    ['Act', 'Move past detection: recommend the intervention, and then help carry it out.'],
+    ['Measure', 'Prove the outcome in their numbers: customers retained, churn reduced, revenue recovered, expansion revenue, conversion, response rate, time saved.'],
+    ['Repeat', 'Find the same problem at similar companies, solved the same way.'],
+    ['Expand', 'Once Svarg owns one retention or growth problem inside an organisation, take the adjacent ones.'],
   ];
 
   /*
-   * The matrix is the criteria list turned into questions, in the same order,
-   * one row per criterion. It used to be a second instrument with its own
-   * vocabulary — firmographics, operational intensity, team structure — left
-   * over from the administration ICP, which meant the page asked a prospect to
-   * be two different things on two different screens. One instrument, asked
-   * out loud, is worth more than two that half-agree.
+   * The validation instrument: the criteria above as questions, in the same
+   * order, plus the two about us. One instrument, asked out loud.
    */
   const MATRIX = [
-    ['Recurrence', 'Does this problem come back, or was it a one-off?', 'How many times this year'],
-    ['Signal availability', 'Does the information that would have warned you already exist?', 'Which system holds it'],
-    ['Fragmentation', 'Is it spread across more than one system or channel?', 'ERP + Excel + WhatsApp'],
+    ['Recurrence', 'Do customers come back &mdash; buy, visit or renew repeatedly?', 'How often, and how many customers'],
+    ['Signal availability', 'What would have warned you that a customer was drifting, or ready to buy more?', 'Which system holds it'],
+    ['Fragmentation', 'Is it spread across more than one system or channel?', 'CRM + phone + WhatsApp'],
     ['Manual effort', 'Who joins those up today, and how?', 'The person and the actual steps'],
-    ['Lateness', 'How late do you find out?', 'Days, weeks, or never'],
-    ['Cost of lateness', 'What does finding out late cost?', 'Rupees, hours, a lost customer'],
-    ['Actionability', 'Once you know, is the next action obvious?', 'The named action'],
-    ['Measurability', 'Could we show the improvement in a number?', 'The number, and who owns it'],
+    ['Lateness', 'How long after a customer changes do you notice?', 'Days, weeks, or at renewal'],
+    ['Cost of lateness', 'What does losing one customer, or missing one upgrade, cost?', 'Rupees per customer'],
+    ['Actionability', 'Once you know, what do you do?', 'The named intervention'],
+    ['Measurability', 'Could we show that it worked in a number?', 'The number, and who owns it'],
     ['Buying access', 'Can we reach whoever approves a pilot?', 'Name and role'],
     ['Deployment friction', 'Can we be running on your data in days?', 'Days / weeks / months'],
   ];
 
+  /**
+   * Scoring, grouped by what it answers, with reach as a gate.
+   *
+   * The old formula added everything and subtracted integration difficulty,
+   * so a strong enough problem could outscore a company nobody could reach.
+   * This page's own rule is that a perfect problem at a company we cannot
+   * reach or deploy into is not an opportunity -- so reach is a gate, not a
+   * term in the sum.
+   */
   const SCORE = [
-    ['A', 'Recurrence', 'How often does this problem come back?'],
-    ['B', 'Signal availability', 'Do the early signals already exist digitally?'],
-    ['C', 'Fragmentation', 'How many systems and channels hold them?'],
-    ['D', 'Manual effort', 'How much human dot-joining remains?'],
-    ['E', 'Cost of lateness', 'How much worse is it when found late?'],
-    ['F', 'Measurability', 'Can the improvement be shown in a number?'],
-    ['G', 'Accessibility', 'Can we reach whoever approves a pilot?'],
-    ['H', 'Deployment complexity', 'How hard is the integration and security?'],
+    ['A', 'Customer recurrence', 'Problem strength', 'Do customers interact or buy repeatedly?'],
+    ['B', 'Economic impact', 'Problem strength', 'What does a lost customer or a missed upgrade cost?'],
+    ['C', 'Signal availability', 'Observability', 'Do the signals already exist digitally?'],
+    ['D', 'Signal fragmentation', 'Observability', 'How many systems and channels hold them?'],
+    ['E', 'Manual effort', 'Observability', 'How much human dot-joining is there today?'],
+    ['F', 'Actionability', 'Actionability', 'Is the intervention clear once the customer is found?'],
+    ['G', 'Measurability', 'Actionability', 'Can the outcome be shown in a number?'],
+    ['H', 'Buying access', 'Reach (gate)', 'Can we reach whoever approves a pilot?'],
+    ['I', 'Deployment friction', 'Reach (gate)', 'Can we be running in days or weeks?'],
   ];
 
+  /**
+   * Where to look, as market hypotheses. None is a validated ICP: the point of
+   * early GTM is to find which problem-and-industry pair produces the
+   * strongest evidence. Engineering services is here as account retention --
+   * in a services firm the client is the customer, and a missed milestone is
+   * how an account, or the next statement of work, is lost.
+   */
   const CLUSTERS = [
-    ['A', 'Sports &amp; coaching', 'Sports academies &middot; coaching centres &middot; training businesses',
-      'One live application with real data. The recurring problem to test: a student drifts out and nobody notices in time.'],
+    ['A', 'Clinics &amp; wellness', 'Physiotherapy &middot; sports medicine &middot; wellness &middot; specialty clinics',
+      'Three interviews, one live application. Retention: a course abandoned part-way, a converted customer drifting over three months. Growth: packages renewed or upgraded, and treated sessions left unbilled.'],
     ['B', 'Distribution', 'Electronic component distributors &middot; industrial distributors &middot; B2B trading',
-      'The largest list and the least evidence. The recurring problem to test: an enquiry or quotation goes cold between email, WhatsApp and the ERP.'],
-    ['C', 'Operational services', 'Clinics &amp; wellness &middot; service centres &middot; specialty services',
-      'Knowledge base written, first demonstration run. The recurring problem to test: a course of treatment is abandoned part-way and is only noticed at renewal.'],
+      'No interviews. Growth: an enquiry or quotation goes cold between email, WhatsApp and the ERP. Retention: a repeat buyer quietly stops ordering.'],
+    ['C', 'Engineering services', 'Product, embedded and industrial engineering firms of 50&ndash;500 people',
+      'No interviews. Account retention: a client project slips while the committed date stands, and the account or the next statement of work is lost. Growth: the next phase not proposed in time.'],
+    ['D', 'Sports academies &amp; coaching', 'Academies &middot; coaching centres &middot; training businesses',
+      'One live application. Retention: a student drifts out and nobody notices before the fee renewal. Growth: renewals and upgrades to the next programme.'],
   ];
 
   /*
@@ -2469,6 +2495,10 @@ function renderIcpView() {
   const chain = (steps, mod) => `<ol class="sg-chain${mod ? ' sg-chain--' + mod : ''}">`
     + steps.map((s) => `<li>${s}</li>`).join('') + '</ol>';
 
+  const built = SPINE.filter(([, s]) => s === 'yes').length;
+  const part = SPINE.filter(([, s]) => s === 'part').length;
+  const not = SPINE.filter(([, s]) => s === 'no').length;
+
   el.innerHTML = `
     <section class="sg-who">
 
@@ -2479,11 +2509,12 @@ function renderIcpView() {
       </ol>
 
       <div class="sg-who__block sg-who__block--lead">
-        <p class="sg-who__label">The problem &mdash; <em>businesses are reactive by default</em></p>
-        <p class="sg-who__statement">Businesses already hold enormous amounts of data across CRM, ERP,
-          operational software, spreadsheets, email and chat. <b>The signals that a problem is starting
-          are scattered across those systems.</b> By the time somebody notices the pattern, the problem
-          has already happened.</p>
+        <p class="sg-who__label">The problem &mdash; <em>businesses lose customers and growth because they are reactive by default</em></p>
+        <p class="sg-who__statement">Customer behaviour creates signals in the systems a business
+          already uses &mdash; the CRM, the booking system, the phone, WhatsApp, the ledger.
+          <b>Those signals are fragmented, and nobody joins them continuously.</b> By the time the
+          business notices the pattern, the customer may already have gone, or the chance to grow
+          them may have passed.</p>
 
         <p class="sg-who__label">What happens today</p>
         ${chain(TODAY)}
@@ -2491,13 +2522,13 @@ function renderIcpView() {
         <p class="sg-who__label">What should happen</p>
         ${chain(INSTEAD, 'good')}
 
-        <p class="sg-who__statement sg-who__statement--quiet">Something happens, a signal of it exists
-          in one of the tools they already run, and <b>the record says otherwise</b> &mdash; because
-          nobody continuously connects the two. They find out late, and finding out late is what the
-          gap costs them.</p>
+        <p class="sg-who__statement sg-who__statement--quiet">One way it shows: something happens, a
+          signal of it exists in one of the tools they already run, and
+          <b>the record says otherwise</b> &mdash; a treated patient left marked no-show is revenue earned and never
+          billed, which is growth recovered from a customer already in the room.</p>
       </div>
 
-      <p class="sg-who__label">What Svarg sells &mdash; find problems before they become costly</p>
+      <p class="sg-who__label">What Svarg sells &mdash; keep the customers you have, and grow them</p>
       <ol class="sg-spine">
         ${SPINE.map(([verb, state, note]) => `
           <li class="sg-spine__step is-${state}">
@@ -2506,16 +2537,19 @@ function renderIcpView() {
             <p class="sg-who__note">${note}</p>
           </li>`).join('')}
       </ol>
-      <p class="sg-who__note"><b>Two of the four are not built.</b> This page is read during live
-        conversations, so it says so here rather than letting somebody find out in the room. Demonstrate
-        detect and understand; sell act and learn as what comes next, with a date.</p>
+      <p class="sg-who__note"><b>${built} of the ${SPINE.length} is built, ${part} are partly built,
+        and ${not} are not built.</b> This page is read during live conversations, so it says so here
+        rather than letting somebody find out in the room. Demonstrate detection and the evidence
+        behind it; sell recommend, act, measure and learn as what comes next, with a date.</p>
 
       <div class="sg-who__block sg-who__block--lead">
-        <p class="sg-who__label">ICP &mdash; <em>start where early detection has measurable value</em></p>
-        <p class="sg-who__statement">Mid-market organisations with <b>high-volume, recurring operational
-          workflows</b>, where emerging problems are currently found reactively.</p>
-        <p class="sg-who__note">We are not targeting businesses because they hold data or run several
-          systems. Nearly everybody does. We target them because of what the list below makes true.</p>
+        <p class="sg-who__label">ICP &mdash; <em>the customer relationship, not the company size</em></p>
+        <p class="sg-who__statement">Businesses and enterprises with <b>recurring customer
+          relationships, meaningful customer value, and enough digital customer activity</b> that
+          retention risks and growth opportunities can be detected from data they already hold.</p>
+        <p class="sg-who__note">SMB, mid-market and enterprise are useful labels for segmenting, not
+          the definition. The definition is the relationship, whether its signals can be seen, how
+          scattered they are, whether there is an action, and what it is worth &mdash; the list below.</p>
       </div>
 
       <p class="sg-who__label">What has to be true of them</p>
@@ -2526,34 +2560,38 @@ function renderIcpView() {
         <tbody>${QUALIFIERS.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody>
       </table>
       <p class="sg-who__note">A perfect problem at a company we cannot reach, or cannot deploy into
-        before the quarter ends, is not an opportunity. These two are how otherwise-good deals die.</p>
+        quickly, is not an opportunity. These two are how otherwise-good deals die.</p>
 
       <p class="sg-who__label">The shape to listen for</p>
       ${chain(IDEAL, 'down')}
-      <p class="sg-who__note">Better than &ldquo;SMB&rdquo;, &ldquo;mid-market&rdquo; or
-        &ldquo;enterprise&rdquo; as a definition, because every line of it is observable in a first
-        conversation &mdash; a size band is not.</p>
+      <p class="sg-who__note">Every line of it is observable in a first conversation &mdash; a size
+        band is not.</p>
 
       <div class="sg-who__block sg-who__block--lead">
         <p class="sg-who__label">How to say it &mdash; <em>one sentence a non-technical buyer finishes for you</em></p>
-        <p class="sg-who__statement">Reality doesn&rsquo;t always make it into the business system.</p>
-        <p class="sg-who__note">Then the product, also in one sentence: <b>Svarg runs several agents
-          that keep comparing the signals across the systems you already use, spot where reality and
-          the record disagree, and put it in front of the person who can fix it.</b></p>
-        <p class="sg-who__note">Both sentences are earned &mdash; two clinics described exactly this
-          and neither was prompted with it. Two words in the second one are doing more work than the
-          product does, and this page does not let them pass unmarked. <b>&ldquo;The systems you
-          already use&rdquo;</b> means whatever Svarg can read: an upload, a database connection, or
-          Zoho CRM, LeadSquared, Clinicea, cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira. The CRM and the
-          phone connectors are new and were the two gaps this paragraph used to name. LeadSquared was
+        <p class="sg-who__statement">Svarg connects the systems you already use to find the customers
+          you are at risk of losing and the customers you could grow &mdash; and tells your team what
+          to do next.</p>
+        <p class="sg-who__note">What it is not: another CRM, another dashboard, another reporting
+          tool, a churn-prediction model, a lead-scoring tool, a chatbot, or &ldquo;AI for every
+          business problem&rdquo;. The CRM stores the customer; analytics explains what happened;
+          automation runs rules somebody wrote. Svarg is <b>an intelligence and action layer on top
+          of them</b>: it understands customer signals, identifies who needs attention, explains why,
+          and &mdash; as it is built out &mdash; recommends, helps act and measures the outcome. The
+          agents that do it are explained afterwards, if anyone asks.</p>
+        <p class="sg-who__note">Three phrases in that sentence do more work than the product does, and
+          this page does not let them pass unmarked. <b>&ldquo;The systems you already use&rdquo;</b>
+          means whatever Svarg can read: an upload, a database connection, or
+          Zoho CRM, LeadSquared, Clinicea, cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira. LeadSquared was
           built from its published API for The Wellness Co. and has not yet read a real account, so
           say it connects, not that it has been proven to. Clinicea, Vesoma&rsquo;s clinic system, is
-          the same: built, unproven, and it needs Clinicea&rsquo;s paid API add-on; another CRM or
-          a different phone provider is still an export or a database, and that is the first thing to
-          establish rather than the last. <b>&ldquo;Put it in front of&rdquo;</b> is a morning email
-          &mdash; true, and the whole of it. Act is drafted and never sent; joining signals ACROSS
-          agents, which is what &ldquo;comparing the signals&rdquo; sounds like, is still not built.
-          See the spine above, and the Next column on the presentation.</p>
+          the same: built, unproven, and it needs Clinicea&rsquo;s paid API add-on; another CRM or a
+          different phone provider is still an export or a database. <b>&ldquo;Tells your team&rdquo;</b>
+          is a morning email and the board &mdash; true, and the whole of it.
+          <b>&ldquo;What to do next&rdquo;</b> is the finding and a drafted follow-up that a person
+          sends; recommending the intervention is not built. And joining signals ACROSS agents into one
+          customer, which is what &ldquo;connects the systems&rdquo; sounds like, is still not built
+          beyond the two-system watchers. See the spine above.</p>
       </div>
 
       <p class="sg-who__label">What we believe, and would test</p>
@@ -2564,8 +2602,11 @@ function renderIcpView() {
             <p><span class="sg-who__we">We believe</span> ${body}</p>
           </div>`).join('')}
       </div>
+      <p class="sg-who__note"><b>Evidence would be</b> several companies independently describing the
+        same retention or growth problem, the signals already existing digitally, the problem found
+        late today, the intervention clear, and the improvement measurable in money.</p>
 
-      <p class="sg-who__label">Persona &mdash; buyer, user and owner are three people</p>
+      <p class="sg-who__label">Persona &mdash; buyer, user and owner are three people, and the titles vary</p>
       <div class="sg-who__grid">
         ${PERSONAS.map(([role, who, cares]) => `
           <div class="sg-who__card">
@@ -2576,9 +2617,10 @@ function renderIcpView() {
       </div>
 
       <div class="sg-who__block sg-who__block--lead">
-        <p class="sg-who__label">GTM &mdash; <em>win one problem, then expand</em></p>
+        <p class="sg-who__label">GTM &mdash; <em>win one customer problem, then expand</em></p>
         <p class="sg-who__statement">Svarg does not enter the market as
-          &ldquo;AI for every business problem&rdquo;.</p>
+          &ldquo;AI for every business problem&rdquo;. It starts with one measurable retention or
+          growth problem in one repeatable customer segment.</p>
         <ol class="sg-gtm">
           ${GTM.map(([name, body], i) => `
             <li><span class="sg-who__k">${i + 1}</span>
@@ -2587,29 +2629,29 @@ function renderIcpView() {
       </div>
 
       <p class="sg-who__label">The motion</p>
-      ${chain(['Industry', 'recurring problem', 'evidence', 'pilot', 'measurable outcome'], 'good')}
+      ${chain(['One retention or growth problem', 'evidence', 'pilot', 'measured outcome', 'the same problem at a similar company'], 'good')}
       <p class="sg-who__label">Rather than</p>
       ${chain(['Industry', 'generic AI pitch', 'demo', 'custom project'], 'bad')}
 
       <div class="sg-who__block sg-who__block--lead">
         <p class="sg-who__label">The opening question</p>
-        <p class="sg-who__statement sg-who__ask">&ldquo;What problems in your business do you usually
-          discover only after they have already happened?&rdquo;</p>
-        <p class="sg-who__note">It opens the conversation on business impact rather than on AI, and the
-          answer is the qualification &mdash; a prospect who cannot name one is not in the ICP, however
-          well the firmographics fit.</p>
+        <p class="sg-who__statement sg-who__ask">&ldquo;Which customers do you usually realise
+          you&rsquo;re losing only after it&rsquo;s too late?&rdquo;</p>
+        <p class="sg-who__note">Then, as the follow-up: &ldquo;And where do you feel you&rsquo;re
+          missing chances to grow the customers you already have?&rdquo; It opens on customers and
+          money rather than on AI, and the answer is the qualification &mdash; a prospect who cannot
+          name either is not in the ICP, however well the firmographics fit.</p>
       </div>
 
       <div class="sg-who__card sg-who__card--no">
         <h3>Not this &mdash; four problems to walk away from</h3>
-        <p>A problem that happened once. A problem whose warning signs were never written down
-          anywhere. A problem nobody can act on once they know. A problem whose improvement cannot
-          be shown in a number.</p>
+        <p>A customer problem that happened once. One whose warning signs were never written down
+          anywhere. One nobody can act on once they know. One whose improvement cannot be shown in a
+          number. And not a problem outside retention and growth, however costly &mdash; the platform
+          may reach those later, and using that to widen the wedge now is how it stops being one.</p>
         <p class="sg-who__note">Each fails one of the seven, and each is a pilot that ends with
-          everyone agreeing it was interesting. The exclusion used to be written by function
-          &mdash; no sales, no engineering, no marketing &mdash; which this page can no longer say:
-          a quotation going cold between the inbox and the ERP is a sales workflow, and it is
-          cluster B&rsquo;s test problem.</p>
+          everyone agreeing it was interesting. A quotation going cold between the inbox and the ERP
+          is a sales workflow, and it is in: it is growth from a customer already asking.</p>
       </div>
 
       <details class="sg-who__more">
@@ -2624,21 +2666,22 @@ function renderIcpView() {
       <details class="sg-who__more">
         <summary>Scoring a prospect &mdash; 1 to 5 on each</summary>
         <table class="sg-who__matrix">
-          <tbody>${SCORE.map(([k, name, q]) =>
-            `<tr><th><span class="sg-who__k">${k}</span> ${name}</th><td>${q}</td></tr>`).join('')}</tbody>
+          <tbody>${SCORE.map(([k, name, group, q]) =>
+            `<tr><th><span class="sg-who__k">${k}</span> ${name}</th><td>${q}</td><td class="sg-who__ev">${group}</td></tr>`).join('')}</tbody>
         </table>
-        <p class="sg-who__formula">Fit = A + B + C + D + E + F + G &minus; H</p>
-        <p class="sg-who__note">Not a scientific formula and not pretending to be one. It is a
-          learning tool: its value is that two people score the same prospect differently and then
-          have to say why.</p>
+        <p class="sg-who__formula">Fit = (A + B) + (C + D + E) + (F + G) &mdash; counted only when H and I are both 3 or more</p>
+        <p class="sg-who__note">How strong the problem is, how observable, how actionable &mdash; and
+          whether Svarg can reach and deploy into the customer at all, as a gate rather than a term in
+          the sum. Not a scientific formula and not pretending to be one: its value is that two people
+          score the same prospect differently and then have to say why.</p>
       </details>
 
       <details class="sg-who__more">
-        <summary>Where to look first &mdash; three clusters, and the problem to test in each</summary>
-        <p class="sg-who__note"><b>Do not choose the industry first. Choose the recurring problem
-          first.</b> A cluster is only somewhere to go looking for one; it is not the target. Start
-          with two or three, find the recurring problem inside each, and see whether the same problem
-          appears at company after company.</p>
+        <summary>Where to look first &mdash; market hypotheses, not validated ICPs</summary>
+        <p class="sg-who__note"><b>Do not choose the industry first. Choose the recurring retention or
+          growth problem first</b>, then use industries as places to test whether the same problem
+          repeats. None of these is a validated ICP; the evidence column on the Target Audience tab is
+          where one becomes one.</p>
         <div class="sg-who__clusters">
           ${CLUSTERS.map(([k, name, list, why]) => `
             <div class="sg-who__cluster">
@@ -2651,15 +2694,16 @@ function renderIcpView() {
         <p class="sg-who__label">What would actually count as validation</p>
         <ul class="sg-who__bar">
           <li class="weak">&ldquo;Ten companies said AI is interesting.&rdquo; &mdash; evidence of nothing</li>
-          <li>8 of 12 academies described the same problem, found late</li>
-          <li>9 of 12 had it, 6 called it painful, 4 agreed to a pilot, 2 paid</li>
-          <li class="best">7 of 10 distributors had essentially the same problem in a different
+          <li>8 of 12 clinics described customers drifting out unnoticed, found late</li>
+          <li>9 of 12 had it, 6 called it costly, 4 agreed to a pilot, 2 paid &mdash; and the pilot kept customers it would have lost</li>
+          <li class="best">7 of 10 distributors had essentially the same retention problem in a different
             industry &mdash; which would mean the problem travels, and the industry never mattered</li>
         </ul>
       </details>
 
     </section>`;
 }
+
 
 /* ── The B2B playbook ───────────────────────────────────────────────────────
  *
@@ -3162,24 +3206,20 @@ const VERTICALS = [
   {
     id: 'clinics',
     name: 'Clinics &amp; Wellness',
-    hypothesis: 'Reality does not reach the business system. Something happens &mdash; a patient is '
-      + 'treated, a customer calls &mdash; a signal of it exists somewhere, and the record says '
-      + 'otherwise. Revenue leakage is one consequence of that gap, and was mistaken for the '
-      + 'definition of it.',
-    note: 'The hypothesis was widened, and WHY it was widened matters more than the wording: '
-      + 'Vesoma alone carries two versions of it. A patient is treated and the booking still says '
-      + 'no-show; a patient cancels by phone and the booking still says no-show. The same gap, '
-      + 'opposite facts, and only the first one loses money &mdash; so the gap is the pattern and '
-      + 'revenue was one consequence of it. That generalisation comes from the FIRST company, not '
-      + 'from the second, which is the difference between reading the evidence and widening a '
-      + 'hypothesis to fit the newest conversation. Two honest caveats: the cancellation variant is '
-      + 'our inference from the systems Vesoma described, not something they reported; and widening '
-      + 'is not free, so the bar moves with it. A gap alone no longer passes &mdash; the hypothesis '
-      + 'is a gap that costs something. The Wellness Co.&rsquo;s second interview then described a '
-      + 'different problem: the record is right &mdash; the opportunity really is open &mdash; and '
-      + 'the customer drifts away regardless. That does not fit this hypothesis, so it is not '
-      + 'counted toward it. Whether to widen it again to take that in is an open decision, and by '
-      + 'this note&rsquo;s own rule not one to make on the strength of the newest conversation alone.',
+    hypothesis: 'Clinics and wellness businesses lose clients part-way through a course of '
+      + 'treatment, and growth from the clients they keep, because the signals sit across the booking system, '
+      + 'the phone and WhatsApp and nobody joins them. The cost is revenue: a client who stops, a package not '
+      + 'renewed, a treated session never billed.',
+    note: 'Narrowed on 6 October 2026, by decision, from &ldquo;reality does not reach '
+      + 'the business system&rdquo; to retention and growth; the earlier wording survives as the mechanism. What '
+      + 'carries it: Vesoma &mdash; a treated patient left marked no-show is revenue earned and never billed, '
+      + 'which now counts as growth; a package used past what was sold is a renewal or upgrade signal; a client '
+      + 'stopping mid-course is retention. The Wellness Co. &mdash; a converted customer drifting over three '
+      + 'months &mdash; is retention exactly, and is now the same category as Vesoma rather than a different '
+      + 'problem; whether it costs them anything is still unasked. iSPAN: last-minute cancellations sit near '
+      + 'retention; lead conversion is acquisition, outside the wedge. Two honest caveats: the cancellation '
+      + 'variant at Vesoma is our inference from the systems they described, not something they reported; and '
+      + 'the same category is not the same problem until the cost has been asked.',
   },
   /*
    * Engineering & Project Operations replaced Automotive on 5 October 2026.
@@ -3197,18 +3237,18 @@ const VERTICALS = [
   {
     id: 'engineering',
     name: 'Engineering &amp; Project Operations',
-    hypothesis: 'Untested. A project slips quietly: the schedule, engineering activity, testing and '
-      + 'customer commitments are each recorded somewhere and each looks fine on its own, and '
-      + 'nobody connects them until the delivery date has already moved.',
-    note: 'Nothing here is filled in, and nothing should be until somebody has been asked. A '
-      + 'plausible example typed in advance is indistinguishable from evidence by the third '
-      + 'conversation. It is run as three experiments below, because a product-engineering firm, '
-      + 'a plant-engineering firm and a manufacturer may describe three different problems. What '
-      + 'the product can read in a plan and in Jira: work behind its planned progress, a milestone '
-      + 'at risk (behind plan with the due date under two weeks away), hours over the estimate, work '
-      + 'that stopped moving, work that is blocked, and work nobody owns. What it cannot yet: tell '
-      + 'that a milestone date was never moved while the work slipped, or join several of those '
-      + 'findings into one project at risk.',
+    hypothesis: 'Untested. Account retention: in an engineering services firm the '
+      + 'client is the customer, and the account &mdash; or the next statement of work &mdash; is lost when a '
+      + 'project slips while the committed date stands, because nobody joins the schedule, the work and the '
+      + 'testing in time.',
+    note: 'Nothing here is filled in, and nothing should be until somebody has been '
+      + 'asked. Reframed on 6 October 2026 as account retention, so it sits inside the wedge: a missed '
+      + 'milestone matters because of the client it costs. Run as three experiments below, because a '
+      + 'product-engineering firm, a plant-engineering firm and a manufacturer may describe three different '
+      + 'ways of losing a client. What the product can already read in a plan and in Jira: work behind its '
+      + 'planned progress, a milestone at risk, hours over the estimate, work blocked or unowned. What it '
+      + 'cannot yet: tell that a committed date was never moved while the work slipped, or join those findings '
+      + 'into one client account at risk.',
   },
 ];
 
@@ -3569,18 +3609,18 @@ function renderAudience() {
   const EXPERIMENTS = {
     engineering: [
       { id: 'A', name: 'Product &amp; embedded engineering',
-        hypothesis: 'Projects quietly drift because requirements, development, testing and customer '
-          + 'commitments live in different places.',
+        hypothesis: 'A client account is put at risk when a project quietly drifts, because requirements, '
+          + 'development, testing and customer commitments live in different places.',
         companies: ['Celstream', 'Zettaone', 'Brigosha', 'IAST Software', 'Sloki', 'Merraky',
           'BLR Labs'] },
       { id: 'B', name: 'Industrial &amp; project engineering',
-        hypothesis: 'A delay becomes visible only after several dependent activities have already '
-          + 'slipped. The strongest of the three for SvargAI.',
+        hypothesis: 'The client learns of a delay only after several dependent activities have already '
+          + 'slipped, and the next phase goes elsewhere. The strongest of the three for SvargAI.',
         companies: ['Sidvin Outotec', 'Utthunga', 'MEC Concepts', 'Merritt Innovative',
           'Symmetric Technologies'] },
       { id: 'C', name: 'Manufacturing + engineering',
-        hypothesis: 'Orders, production, quality, materials and delivery commitments fall out of '
-          + 'sync. Possibly the larger market of the three.',
+        hypothesis: 'Repeat orders are lost when orders, production, quality and delivery commitments '
+          + 'fall out of sync. Possibly the larger market of the three.',
         companies: ['RDMC', 'Mechano Engineering', 'Raj Engineering Industries',
           'other Peenya manufacturers'] },
     ],
@@ -3614,11 +3654,11 @@ function renderAudience() {
    * finding out earlier changes anything, and the fifth the value.
    */
   const FIVE = [
-    'What is something that goes wrong repeatedly?',
-    'How do you normally find out that it happened?',
-    'Where would the information needed to spot it earlier be?',
-    'If you knew about it earlier, what would you do?',
-    'What does one such incident roughly cost you?',
+    'Which customers do you usually realise you\u2019re losing only after it\u2019s too late?',
+    'How do you find out today, and how long after it starts?',
+    'Where would the warning signs have been?',
+    'If you had known earlier, what would you have done?',
+    'What does losing one customer cost you, or missing one renewal?',
   ];
 
   /**
@@ -3780,9 +3820,11 @@ function renderAudience() {
       <ol class="sg-ta__asks">
         ${FIVE.map((q) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
       </ol>
-      <p class="sg-ta__note">The same five for everybody, so the answers can be compared. The
-        first two answer whether it happens, the third whether the information exists, the
-        fourth whether knowing earlier changes anything, and the fifth what it is worth.</p>
+      <p class="sg-ta__note">The same five for everybody, so the answers can be compared, and all
+        about customers. The first two answer whether it happens, the third whether the signals
+        exist, the fourth whether knowing earlier changes anything, and the fifth what it is worth.
+        Growth is the follow-up: &ldquo;And where do you feel you&rsquo;re missing chances to grow
+        the customers you already have?&rdquo;</p>
 
       ${ASKS.length ? `
       <p class="sg-ta__label">Still open from the interviews so far</p>
@@ -3817,9 +3859,10 @@ function renderAudience() {
       ${audienceVertical === 'clinics' ? `
       <div class="sg-ta__wedge">
         <p class="sg-ta__label">Draft wedge &mdash; not locked</p>
-        <p>Svarg helps <em>clinic and wellness operators</em> detect <em>revenue leakage from
-          activity that does not match the record</em> before <em>it is written off as a bad
-          month</em>.</p>
+        <p>Svarg helps <em>clinic and wellness operators</em> find <em>the clients they are about to
+          lose and the revenue they are leaving with the ones they keep</em> &mdash; a course abandoned,
+          a package not renewed, a treated session never billed &mdash; before <em>it is written off
+          as a bad month</em>.</p>
         <p class="sg-ta__note">It stays a draft until the table has more than one full column.
           The customer supplied the raw material for this sentence; nobody invented it in a
           room. And it stays NARROWER than the hypothesis above on purpose &mdash; a hypothesis
@@ -3905,31 +3948,38 @@ const FIRST_MESSAGE = {
    * interviewed, so unlike the clinic message there is no "a company told
    * us" to attribute: nothing here claims an example, a customer or a result.
    */
+  /*
+   * Account retention since 6 October 2026: in a services firm the client is
+   * the customer, and a slipping project is how a client account -- or the
+   * next statement of work -- is lost. The message opens on the client, and
+   * the project is how it happens.
+   */
   'engineering': {
-    subject: 'When a project starts slipping, how early do you know?',
+    subject: 'When a client project starts slipping, how early do you know?',
     email: [
       'Hi [Name],',
-      'When a project starts slipping, how early do you usually know?',
-      'I&rsquo;m exploring a problem across engineering companies: the schedule, the engineering '
-        + 'work, testing and customer commitments are all recorded in different places. Each one '
-        + 'looks fine in isolation, but nobody continuously connects them &mdash; so a project can go '
-        + 'quietly off track until the delivery date is already affected.',
+      'When a client project starts slipping, how early do you usually know &mdash; before the client does, or after?',
+      'I&rsquo;m exploring a problem across engineering services companies: the schedule, the '
+        + 'engineering work, testing and the commitments made to the client are all recorded in '
+        + 'different places. Each one looks fine in isolation, but nobody continuously connects them '
+        + '&mdash; so a project can go quietly off track until the client notices, and the next phase '
+        + 'goes elsewhere.',
       'SvargAI runs AI agents on top of the systems a team already uses and looks for those '
         + 'signals early. Before anything else, I&rsquo;d like to understand how it happens at '
-        + '[Company]: which problems in your projects do you usually discover only after they have '
-        + 'affected the delivery date, and where does the information that would have warned you '
+        + '[Company]: which client projects do you usually realise are at risk only after the '
+        + 'delivery date is affected, and where does the information that would have warned you '
         + 'actually live?',
       'Would you be open to a 15-minute call?',
       'Learn more: {{link}}',
     ],
     sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
     short: [
-      'Hi [Name] &mdash; when a project starts slipping, how early do you usually know?',
-      'I&rsquo;m talking to engineering companies about projects that drift quietly: the schedule, '
-        + 'engineering work, testing and customer commitments live in different systems, and nobody '
-        + 'connects them until the delivery date moves.',
-      'What problems in your projects do you usually discover only after they have hit the '
-        + 'delivery date? Happy to have a short chat.',
+      'Hi [Name] &mdash; when a client project starts slipping, how early do you usually know?',
+      'I&rsquo;m talking to engineering services companies about client projects that drift '
+        + 'quietly: the schedule, engineering work, testing and client commitments live in different '
+        + 'systems, and nobody connects them until the client notices.',
+      'Which client projects do you usually realise are at risk only after the delivery date has '
+        + 'moved? Happy to have a short chat.',
       'Learn more: {{link}}',
     ],
   },
@@ -4217,10 +4267,11 @@ function renderOrion() {
           <p class="sg-fm__kind">Reverse demo</p>
           <p class="sg-fm__subject"><span>When</span>In the first call, after they describe a slip of their own.</p>
           <div class="sg-fm__body">
-            <p><b>Project Orion &mdash; delivery risk.</b> Seen from where a Chief of
-              Engineering Operations sits: schedule, cost, quality and customer commitments,
-              each in its own system. Orion is invented &mdash; say so. It is a picture of the
-              problem, not a customer.</p>
+            <p><b>Project Orion &mdash; a client account at risk.</b> Seen from where a delivery
+              head sits: the client&rsquo;s milestone, the schedule, the hours and the testing,
+              each in its own system. What is at stake is the client and the next phase, not the
+              project plan. Orion is invented &mdash; say so. It is a picture of the problem, not a
+              customer.</p>
           </div>
           <p class="sg-fm__lbl">It can show this today</p>
           <ul class="sg-fm__orion is-yes">${ORION.can.map(row).join('')}</ul>
@@ -4241,7 +4292,7 @@ function renderEngineeringFirst() {
       <p class="sg-fm__sub">From the researched list, in the order to contact them. Write to the
         COO, Head of Engineering, Delivery Head, PMO head or founder &mdash; not a project
         manager. The goal is not ten sales: it is whether five to eight of them describe the same
-        &ldquo;we found out too late&rdquo; problem.</p>
+        &ldquo;the client found out before we did&rdquo; problem.</p>
       <ol class="sg-fm__ten">
         ${ENGINEERING_FIRST.map(([co, exp, why]) => `
           <li><b>${co}</b><span class="sg-fm__exp">Experiment ${exp}</span><em>${why}</em></li>`).join('')}
@@ -4296,22 +4347,29 @@ let deckFacts = null;
  * complete list nobody finishes. Each names a real watcher by its catalogue
  * id, and an id the catalogue no longer has is dropped before it is drawn.
  */
+/*
+ * Retention and growth, since 6 October 2026: the patients a clinic is
+ * about to lose, and the revenue it is leaving with the ones it keeps. The
+ * slide used to show every kind of check -- appointments, payments,
+ * follow-ups -- under a count of the whole catalogue, which sold breadth the
+ * ICP now says not to sell. Two in each group, still.
+ */
 const CLINIC_WATCHERS = [
-  { group: 'Patients', items: [
-    ['unanswered-enquiry', 'Enquiry with no reply'],
+  { group: 'Retention — drifting away', items: [
+    ['stopped-coming', 'Stopped coming mid-treatment'],
     ['gone-quiet', 'Patient gone quiet'],
   ] },
-  { group: 'Appointments', items: [
+  { group: 'Retention — warning signs', items: [
     ['no-show', 'Patient did not turn up'],
-    ['empty-slot', 'Empty appointment slot'],
+    ['repeat-complaint', 'Complained more than once'],
   ] },
-  { group: 'Payments', items: [
-    ['overdue-invoice', 'Payment overdue'],
-    ['part-payment', 'Only part paid'],
+  { group: 'Growth — ready for more', items: [
+    ['asked-to-upgrade', 'Asked about upgrading'],
+    ['renewal-due', 'Package ending with sessions left'],
   ] },
-  { group: 'Follow-ups', items: [
-    ['promise-overdue', 'Promised a call back, not made'],
-    ['stopped-coming', 'Stopped coming mid-treatment'],
+  { group: 'Growth — revenue left behind', items: [
+    ['absent-but-attended', 'Treated, but never billed'],
+    ['package-overused', 'Package used past what was sold'],
   ] },
 ];
 
@@ -4323,8 +4381,9 @@ const DECK = [
     cover: true,
     title: 'Your Clinic Has All the Information.',
     titleAccent: 'Nobody Sees the Full Picture.',
-    sub: 'SvargAI connects the dots across your existing systems — so your team knows '
-      + 'exactly what needs attention, and why. No new software to learn. No workflows to replace.',
+    sub: 'SvargAI connects your existing systems to find the patients you are about to lose and '
+      + 'the revenue you are leaving behind — and tells your team who needs attention, and why. '
+      + 'No new software to learn. No workflows to replace.',
     hub: ['CRM', 'Calendar', 'Phone', 'Staff', 'Payments'],
   },
   {
@@ -4347,7 +4406,7 @@ const DECK = [
     n: '02',
     kicker: 'What it does',
     title: 'SvargAI Watches Your Clinic While Your Team Runs It',
-    sub: 'No new system to learn. Nothing to replace.',
+    sub: 'For the patients you could lose, and the ones you could grow. Nothing to replace.',
     live: 'watchers',
   },
   {
@@ -4548,10 +4607,13 @@ function deckWatchers() {
     group: g.group,
     items: g.items.filter(([id]) => !f || known.has(id)).map(([, said]) => said),
   })).filter((g) => g.items.length);
+  // Counted from what is drawn, which was checked against the live catalogue
+  // above -- the whole catalogue's total would count invoices and suppliers.
+  const shown = groups.reduce((n, g) => n + g.items.length, 0);
 
   return `
-    ${f ? `<p class="sg-deck__count"><b>${f.watchers.total}</b> checks available today</p>
-      <p class="sg-deck__countsub">across your clinic — <b>you choose what to watch.</b></p>` : ''}
+    ${f ? `<p class="sg-deck__count"><b>${shown}</b> retention and growth checks available today</p>
+      <p class="sg-deck__countsub">for your clinic — <b>you choose what to watch.</b></p>` : ''}
     <div class="sg-deck__groups">
       ${groups.map((g) => `
         <section>

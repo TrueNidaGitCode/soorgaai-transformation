@@ -458,8 +458,12 @@ describe('the wider hypothesis kept its bar', () => {
   const clinics = new Function(`return ${literal(js, 'VERTICALS')};`)()
     .find((v) => v.id === 'clinics');
 
-  it('names the gap, and still names a consequence', () => {
-    expect(clinics.hypothesis).toMatch(/does not reach the business system/i);
+  it('names the customers at stake, and still names a consequence', () => {
+    // Retention and growth since 6 October 2026: clients lost part-way, and
+    // growth from the ones kept. The gap is the mechanism, kept in the note.
+    expect(clinics.hypothesis).toMatch(/lose clients/i);
+    expect(clinics.hypothesis).toMatch(/growth/i);
+    expect(clinics.note).toMatch(/reality does not reach/i);
     // A gap alone is not the hypothesis. Something has to be at stake in it,
     // or every disconnected pair of systems in the world qualifies.
     expect(clinics.hypothesis).toMatch(/consequence|cost|revenue/i);
@@ -518,7 +522,8 @@ describe('four questions lead, and the playbook is the detail', () => {
 
   it('interviews with five questions, the same for everybody', () => {
     expect(FIVE).toHaveLength(5);
-    expect(FIVE.join(' ')).toMatch(/goes wrong repeatedly[\s\S]*find out[\s\S]*information[\s\S]*knew about it earlier[\s\S]*cost/);
+    // About customers, since the focus became retention and growth.
+    expect(FIVE.join(' ')).toMatch(/customers do you usually realise you.re losing[\s\S]*find out[\s\S]*warning signs[\s\S]*known earlier[\s\S]*cost/);
   });
 
   it('fills a column only for a company that was interviewed, and invents nothing for a new vertical', () => {

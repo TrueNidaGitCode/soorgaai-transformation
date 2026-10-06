@@ -156,9 +156,9 @@ describe('one hypothesis, argued once', () => {
   it('leads with the problem, not with the customer profile', () => {
     // Problem -> ICP -> GTM. The ICP only means anything as "where the problem
     // in the first block costs money".
-    const problem = view.indexOf('businesses are reactive by default');
-    const icp = view.indexOf('start where early detection has measurable value');
-    const gtm = view.indexOf('win one problem, then expand');
+    const problem = view.indexOf('businesses lose customers and growth because they are reactive by default');
+    const icp = view.indexOf('the customer relationship, not the company size');
+    const gtm = view.indexOf('win one customer problem, then expand');
     expect(problem).toBeGreaterThan(-1);
     expect(icp).toBeGreaterThan(problem);
     expect(gtm).toBeGreaterThan(icp);
@@ -196,15 +196,21 @@ describe('one hypothesis, argued once', () => {
   it('keeps the two qualifiers that are about us, in both instruments', () => {
     // A perfect problem at a company we cannot reach is not an opportunity —
     // and these were the rows most easily lost in a rewrite.
-    expect(view.match(/Buying access/g) || []).toHaveLength(2);
-    expect(view.match(/Deployment friction/g) || []).toHaveLength(2);
+    // Three since the scoring names them too, as the reach gate.
+    expect((view.match(/Buying access/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect((view.match(/Deployment friction/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect(view).toMatch(/counted only when H and I are both 3 or more/);
   });
 });
 
 describe('what the page admits about itself', () => {
   it('marks every pitched verb with whether it is built', () => {
     const view = icpView();
-    for (const [verb, state] of [['Detect', 'yes'], ['Understand', 'part'], ['Act', 'no'], ['Learn', 'no']]) {
+    // Six stages since 6 October 2026. Act is partly built: a follow-up is
+    // drafted from the finding and never sent. Measure counts resolved
+    // findings, not customers kept.
+    for (const [verb, state] of [['Detect', 'yes'], ['Explain', 'part'], ['Recommend', 'no'],
+      ['Act', 'part'], ['Measure', 'part'], ['Learn', 'no']]) {
       expect(view, verb).toMatch(new RegExp(`\\['${verb}', '${state}'`));
     }
   });
@@ -216,7 +222,9 @@ describe('what the page admits about itself', () => {
      * test fails — and updating it is the point at which somebody checks that
      * the claim is now true.
      */
-    expect(icpView()).toMatch(/Two of the four are not built/);
+    // Counted from the spine itself, so the sentence cannot drift from it.
+    expect(icpView()).toContain('${built} of the ${SPINE.length} is built, ${part} are partly built,');
+    expect(icpView()).toContain('and ${not} are not built.');
   });
 });
 
@@ -238,15 +246,16 @@ describe('what the page admits about itself', () => {
 describe('the problem, as two interviews described it', () => {
   const view = icpView();
 
-  it('states the gap between what happened and what the record says', () => {
-    expect(view).toMatch(/reality does not reach the business system/i);
-    // Lateness stays, as the consequence. It was the problem before, and a
-    // page that keeps both framings as the problem argues with itself.
-    expect(view).toMatch(/Finding out late is what that costs them/);
+  it('names the outcome, keeps the cause, and keeps the record gap as one way it shows', () => {
+    // Retention and growth since 6 October 2026. Reactive-by-default stays as
+    // why; the record disagreeing with what happened stays as one way it shows,
+    // and unbilled delivered work counts as growth, by decision.
+    expect(view).toMatch(/lose customers, and growth from the customers they keep, because they are reactive by default/);
+    expect(view).toMatch(/revenue earned and never\s+billed, which is growth/);
   });
 
   it('carries the one sentence a buyer repeats back', () => {
-    expect(view).toMatch(/Reality doesn&rsquo;t always make it into the business system\./);
+    expect(view).toMatch(/to find the customers\s+you are at risk of losing and the customers you could grow/);
   });
 
   it('never ships that sentence without what it may not claim', () => {

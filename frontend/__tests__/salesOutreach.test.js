@@ -157,7 +157,8 @@ describe('the engineering pitch claims nothing it has not got', () => {
   const eng = js.slice(js.indexOf("'engineering': {"), js.indexOf('const ENGINEERING_FIRST'));
 
   it('opens on the question, not on "AI for engineering"', () => {
-    expect(eng).toMatch(/When a project starts slipping, how early do you/);
+    // Account retention since 6 October 2026: the client, then the project.
+    expect(eng).toMatch(/When a client project starts slipping, how early do you/);
     expect(eng).not.toMatch(/AI platform for engineering|AI for engineering/i);
   });
 

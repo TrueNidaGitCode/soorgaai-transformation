@@ -126,24 +126,27 @@ describe('the screen keeps TAM, ICP and persona apart', () => {
      * observed in a conversation and a recurring, late-found problem can.
      */
     for (const a of ['The problem recurs', 'The early signals already exist',
-      'A person connects the dots by hand', 'The outcome can be measured']) {
+      'A person joins those signals by hand', 'can be measured, in customers kept or revenue']) {
       expect(view, a).toContain(a);
     }
   });
 
   it('separates buyer, economic buyer and user', () => {
-    expect(view).toContain('Operations Head');
-    expect(view).toContain('Founder / Business Owner');
-    expect(view).toContain('Operations Executive');
-    expect(view).toContain('Never the buyer');
-    // Described by what they fear rather than by the work they administer.
-    expect(view).toContain('Being surprised');
+    // Retention and growth since 6 October 2026: the people who own the
+    // customer, not only operations.
+    expect(view).toContain('Operations, Customer Success or Revenue head');
+    expect(view).toContain('Founder, business owner, business-unit or revenue leader');
+    expect(view).toContain('Operations, customer success, account management or the front desk');
+    // The user is not the buyer, but decides whether it is still used.
+    expect(view).toContain('decides whether it survives week two');
+    // Described by what they lose rather than by the work they administer.
+    expect(view).toContain('Customers lost quietly');
   });
 
   it('carries the instruments used during a conversation', () => {
     expect(view).toContain('Fragmentation');
     expect(view).toContain('Deployment friction');
-    expect(view).toContain('A + B + C + D + E + F + G');
+    expect(view).toContain('(A + B) + (C + D + E) + (F + G)');
   });
 
   it('is honest that the score is a learning tool, not a measurement', () => {
@@ -165,7 +168,7 @@ describe('the screen keeps TAM, ICP and persona apart', () => {
      * exclusion is now about the SHAPE of a problem, and each excluded one
      * fails one of the seven criteria above it.
      */
-    expect(view).toContain('A problem that happened once');
+    expect(view).toContain('A customer problem that happened once');
     expect(view).not.toContain('<p>Sales workflows.');
   });
 

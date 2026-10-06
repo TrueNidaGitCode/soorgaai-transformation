@@ -3242,6 +3242,14 @@ function renderPlaybook() {
  * eleven to listen, two to say what Svarg is — and the last two only if the
  * eleven produced something.
  *
+ * Rewritten 6 October 2026 for Retention & Growth: the goal is to find out
+ * whether the business already has a recurring customer retention or growth
+ * problem that it discovers too late. The opener asks about customers, the
+ * key question asks when they realise a customer was drifting or an
+ * opportunity had passed, and the page ends on the matrix every interview
+ * fills, the interviewer's mental model, the two patterns to expect and the
+ * one rule.
+ *
  * The questions are written to be read out loud word for word, so they are
  * rendered as speech rather than as bullet points. What each one is FOR is set
  * beside it in small type, because the answer has to be written into the ICP
@@ -3266,6 +3274,14 @@ function renderInterview() {
 
   const note = (t) => `<p class="sg-iv__note">${t}</p>`;
 
+  const label = (t) => `<p class="sg-iv__label">${t}</p>`;
+
+  /** Things to listen for, as chips: recognised in the room, never read out. */
+  const chips = (items) => `<ul class="sg-iv__costs">${items.map((c) => `<li>${c}</li>`).join('')}</ul>`;
+
+  /** What a good answer sounds like — heard, not said. */
+  const heard = (items) => `<div class="sg-iv__heard">${items.map((h) => `<p>&lsquo;${h}&rsquo;</p>`).join('')}</div>`;
+
   /**
    * One question, with the matrix row it fills.
    *
@@ -3283,112 +3299,200 @@ function renderInterview() {
       </div>
     </div>`;
 
-  /**
-   * What late discovery is allowed to cost — rupees are not the only answer.
-   *
-   * Written so the same list works for a clinic, a distributor and an academy:
-   * a customer lost is a patient, a buyer or a student depending on who is in
-   * the room, and naming one of them would make the other two read it as
-   * somebody else's script.
+  /*
+   * The lists below are written so the same script works in any business: a
+   * customer is whoever is in front of you, and naming one trade's customer
+   * would make every other room hear it as somebody else's script.
    */
-  const COSTS = ['Lost customers', 'Lost revenue', 'Unused capacity', 'Staff hours',
-    'Work delivered late', 'Customer dissatisfaction', 'Extra administrative work'];
+  const KEEP_TRACK = ['Customers becoming inactive', 'Customers not returning', 'Missed appointments',
+    'Declining usage', 'Complaints', 'Renewals', 'Customers asking for more',
+    'Customers not buying additional services', 'Follow-ups', 'Customers going quiet',
+    'Buying intent', 'Customers who should be contacted', 'Customers who may leave'];
+
+  const SIGNALS = ['Attendance dropped', 'Usage declined', 'Appointments missed', 'Complaints increased',
+    'Payment behaviour changed', 'Response time changed', 'Fewer purchases', 'Fewer enquiries',
+    'More support requests', 'Increased product usage', 'Repeated requests', 'Communication stopped',
+    'Asked about another service'];
+
+  const SOURCES = ['CRM', 'ERP', 'Appointment system', 'Attendance system', 'Billing', 'Email', 'Phone',
+    'WhatsApp', 'Support system', 'Spreadsheets', 'Product usage', 'Multiple databases'];
+
+  const DETECTED = ['The manager checks the report.', 'Someone calls them.', 'The sales person notices.',
+    'The front office checks the list.', 'We review it every week.', 'Someone tells me.',
+    'I look at the CRM and then check another system.'];
+
+  const ACTIONS = ['We would call them.', 'We would speak to the customer.', 'We would offer another service.',
+    'We would assign someone to follow up.', 'We would intervene before they stop coming.',
+    'We would offer an upgrade.', 'We would resolve the complaint.', 'We would change their plan.'];
+
+  const FREQUENCY = ['Daily', 'Weekly', 'Monthly', 'Several customers every month', '10&ndash;20 customers',
+    'A meaningful percentage', 'Every renewal cycle', 'Whenever demand increases'];
+
+  /** What late discovery is allowed to cost — rupees are not the only answer. */
+  const COSTS_KEEP = ['Lost customers', 'Lost renewals', 'Lost revenue', 'Unused capacity',
+    'Reduced lifetime value', 'Staff time spent recovering customers', 'Customer dissatisfaction',
+    'Refunds', 'Lost future purchases'];
+  const COSTS_GROW = ['Missed upgrades', 'Missed cross-sells', 'Lost expansion revenue', 'Missed opportunities',
+    'Under-utilisation', 'Sales-team time', 'Delayed purchases', 'Customers buying elsewhere'];
 
   const BLOCKS = [
     {
       from: '0', to: '2', title: 'Set the context',
       body: rule('Do not pitch Svarg yet.')
         + say('I&rsquo;ll keep this very short. I&rsquo;m working on a product that helps '
-            + 'businesses identify problems earlier using signals they already have. Before I show '
-            + 'you anything, I wanted to understand how your <em class="sg-iv__slot">[team]</em> '
-            + 'currently identifies things that need attention.')
-        + note('The blank is the only thing that changes between businesses &mdash; whatever they '
-             + 'call the team in front of you: operations, the front office, the service desk, the '
-             + 'branch. Everything else in the fifteen minutes is asked word for word of everybody.')
-        + ask('What are the biggest things your team has to keep track of every day?')
-        + beat('Let them answer.'),
+            + 'businesses identify customer problems and opportunities earlier using signals they '
+            + 'already have. Before I show you anything, I wanted to understand how your '
+            + '<em class="sg-iv__slot">[team]</em> currently keeps track of customers who need attention.')
+        + note('The blank is the only thing that changes between businesses &mdash; operations, '
+             + 'customer success, the front office, sales, the branch team, the service team. '
+             + 'Everything else in the fifteen minutes is asked word for word of everybody.')
+        + ask('What are the biggest things your team has to keep track of about your customers every day?')
+        + beat('Let them answer. Do not explain retention, do not explain churn, and do not give '
+             + 'examples unless they genuinely cannot answer.')
+        + label('Listen for') + chips(KEEP_TRACK),
     },
     {
-      from: '2', to: '7', title: 'Find the problem',
+      from: '2', to: '7', title: 'Find the customer problem',
       body: rule('Three questions. Not four.')
-        + ask('What tends to go wrong most often?', {
-          n: '1', tests: 'Recurrence',
-          after: '<p class="sg-iv__note">If they give you several, take the one that sounds most '
-               + 'frequent or most costly and leave the rest.</p>',
+        + ask('What tends to happen with customers most often that you wish you could catch earlier?', {
+          n: '1', tests: 'Recurrence &middot; Problem',
+          after: '<p class="sg-iv__note">It joins the problem to early detection on purpose. If they '
+               + 'give several, take the one that sounds most frequent, most costly or most important '
+               + 'to them &mdash; and stay with it.</p>',
         })
-        + ask('Which of these do you usually realise only after the problem has already happened?', {
+        + ask('Which of these do you usually realise only after the customer has already started '
+            + 'drifting away &mdash; or after the opportunity to grow them has already passed?', {
           n: '2', tests: 'Lateness', key: true,
+          after: '<p class="sg-iv__note">You want the <b>moment of discovery</b>, not their opinion '
+               + 'about churn. Retention: the customer disengages, and it is noticed after they stop '
+               + 'coming. Growth: the customer shows intent, and it is noticed after the opportunity '
+               + 'is gone. If you hear &ldquo;sometimes customers churn&rdquo;, ask: &ldquo;When do you '
+               + 'usually realise?&rdquo;</p>',
         })
         + ask('Can you give me a recent example of when that happened?', {
           n: '3', tests: 'Cost of lateness',
         })
-        + beat('Now stop talking and listen. You are after a real incident, not an opinion.'),
+        + beat('Now stop talking. A real customer, a real event, a real sequence: what happened, when '
+             + 'it started, when they noticed, what they did, what happened to the customer.')
+        + note('If they cannot remember an actual example, write that down. <b>An incident is stronger '
+             + 'evidence than a belief.</b>'),
     },
     {
-      from: '7', to: '11', title: 'Follow the one problem',
-      body: rule('One problem, three follow-ups. Do not go back and ask about the others.')
+      from: '7', to: '11', title: 'Follow the one customer problem',
+      body: rule('One problem. Do not go back to the others they mentioned &mdash; investigate the mechanism.')
         + `<p class="sg-iv__sub">A &mdash; Signals</p>`
         + ask('Before you realised there was a problem, was there any information that could have '
             + 'indicated it earlier?', { tests: 'Signal availability' })
+        + label('Listen for actual signals') + chips(SIGNALS)
+        + note('You are looking for <b>the business already had the evidence</b>. If the answer is '
+             + '&ldquo;no, there was no way to know&rdquo;, that matters &mdash; do not force the '
+             + 'qualification.')
         + ask('Where was that information?', { tests: 'Fragmentation' })
-        + note('These two are the hypothesis itself: signals that already existed, sitting in more '
-             + 'than one place. A no to the first ends the qualification honestly.')
+        + chips(SOURCES)
+        + note('The strongest answer sounds like: &ldquo;The attendance was in one system, complaints '
+             + 'were in another, and the sales team knew the customer had stopped responding.&rdquo; '
+             + 'That is the problem Svarg is looking for.')
         + `<p class="sg-iv__sub">B &mdash; Current detection</p>`
-        + ask('Who usually notices it, and how do they find out?', { tests: 'Manual effort' })
-        + note('You are listening for a person joining the dots by hand. If a system already tells '
-             + 'them, there is nothing here to replace.')
+        + ask('Who usually notices this, and how do they find out?', { tests: 'Manual effort' })
+        + heard(DETECTED)
+        + note('The strongest signal is <b>a person manually joining several pieces of information</b>. '
+             + 'If their system already says &ldquo;customer X is at risk&rdquo;, ask what happens after '
+             + 'the system tells them. There may still be a problem, but it is a different one &mdash; '
+             + 'do not manufacture it.')
         + `<p class="sg-iv__sub">C &mdash; Action</p>`
-        + ask('If you knew about it earlier, what would you do differently?', { tests: 'Actionability' })
-        + note('<b>The most important answer of the fifteen minutes.</b> Detection with no '
-             + 'intervention behind it is a dashboard, and nobody buys one twice.'),
+        + ask('If you knew about this earlier, what would you do differently?', { tests: 'Actionability' })
+        + heard(ACTIONS)
+        + note('<b>One of the most important answers of the fifteen minutes.</b> &ldquo;We would '
+             + 'know&rdquo; is not enough: detection is worth something only with an action behind it '
+             + '&mdash; detect, decide, act, outcome.'),
     },
     {
-      from: '11', to: '13', title: 'Quantify it',
-      body: rule('Two questions, and do not push for rupees.')
+      from: '11', to: '13', title: 'Quantify the problem',
+      body: rule('Two questions, and do not push for rupees &mdash; or ask them to invent numbers.')
         + ask('How often does this happen?', { tests: 'Recurrence' })
+        + label('Any of these is an answer') + chips(FREQUENCY)
         + ask('What does it cost you when you discover it late?', { tests: 'Cost of lateness &middot; Measurability' })
-        + `<p class="sg-iv__label">Any of these is an answer</p>`
-        + `<ul class="sg-iv__costs">${COSTS.map((c) => `<li>${c}</li>`).join('')}</ul>`
-        + note('Measurable impact is the point, not a currency. A number they already track beats '
-             + 'a rupee figure they invent for you on the call.'),
+        + beat('Let them describe the impact before anybody mentions money.')
+        + `<div class="sg-iv__pair">
+             <div><p class="sg-iv__label">Retention</p>${chips(COSTS_KEEP)}</div>
+             <div><p class="sg-iv__label">Growth</p>${chips(COSTS_GROW)}</div>
+           </div>`
+        + note('The strongest answer is one they already measure: &ldquo;We lose around 15 customers a '
+             + 'month&rdquo; beats &ldquo;it probably costs us a lot&rdquo;.'),
     },
     {
       from: '13', to: '15', title: 'Introduce Svarg',
-      body: rule('Only if the eleven minutes produced something. If they did not, thank them and '
-               + 'stop &mdash; a pitch into nothing teaches you nothing.')
+      body: rule('Only if the eleven minutes produced something. No recurring problem, no early signal '
+               + 'or no action: thank them and stop &mdash; a pitch into nothing teaches you nothing '
+               + 'about the market.')
         + say('What you&rsquo;re describing is actually very close to the problem we&rsquo;re '
             + 'exploring with Svarg.')
-        + `<p class="sg-iv__label">Then thirty seconds, no more</p>`
+        + label('Then thirty seconds, no more')
         + say('Svarg looks at signals across the systems you&rsquo;re already using, identifies '
-            + 'patterns that indicate something is starting to go wrong, explains why it thinks '
-            + 'there&rsquo;s a problem, and helps the team take action earlier.')
-        + note('Detect and explain can be demonstrated today. &ldquo;Helps the team take action&rdquo; '
-             + 'means a person acts on what it found &mdash; nothing is sent outward yet, and the ICP '
-             + 'tab says so in the same words. Do not let the sentence grow in the room.')
-        + `<p class="sg-iv__label">Then tie it to what they just told you</p>`
+            + 'patterns that indicate a customer may be at risk or that there may be an opportunity '
+            + 'to grow the customer, explains why it thinks that, and helps the team act earlier.')
+        + label('Stop. Do not add')
+        + chips(['AI agents', 'Autonomous workflows', 'Dozens of models', 'Dashboards',
+          'Technical architecture', 'Integrations', 'Future roadmap'])
+        + note('Detect, explain and the recommended step can be demonstrated today. &ldquo;Helps the team '
+             + 'act&rdquo; means a drafted message and a next step that a person takes &mdash; '
+             + 'nothing is sent outward yet, and the ICP tab says so in the same words. Do not let the '
+             + 'sentence grow in the room.')
+        + label('Then tie it to what they just told you')
         + say('In your case, if the problem is <em class="sg-iv__slot">X</em>, and the signals are '
             + 'coming from <em class="sg-iv__slot">A + B + C</em>, the idea would be for Svarg to '
             + 'identify that pattern before your team normally discovers it.')
-        + `<p class="sg-iv__label">One closing question</p>`
+        + note('Not a generic demo: their own incident, their customer, their signals, their workflow.')
+        + label('One closing question')
         + '<p class="sg-iv__close">&ldquo;Would it be useful if we looked at this specific problem'
         + ' using your actual workflow?&rdquo;</p>'
-        + rule('Do not turn the last two minutes into a product demo.'),
+        + rule('Then stop. Do not turn the last two minutes into a product demo.'),
     },
   ];
+
+  /*
+   * The matrix every interview fills. Rows named as the ICP tab names them
+   * where the two overlap; Problem, Incident, Buyer/User and Access are what
+   * the interviewer records beside them.
+   */
+  const MATRIX = [
+    ['Problem', 'What specific customer problem occurs?'],
+    ['Recurrence', 'How often does it happen?'],
+    ['Lateness', 'When do they realise?'],
+    ['Incident', 'Can they describe a recent real case?'],
+    ['Signal availability', 'Did warning signals exist beforehand?'],
+    ['Fragmentation', 'Where do those signals live?'],
+    ['Manual effort', 'Who connects the dots today?'],
+    ['Actionability', 'What would they do if they knew earlier?'],
+    ['Cost of lateness', 'What happens when they discover it late?'],
+    ['Measurability', 'Can the impact be measured?'],
+    ['Buyer / User', 'Who owns the problem and the action?'],
+    ['Access', 'Can you get to the required systems and data?'],
+    ['Deployment friction', 'How difficult would it be to connect?'],
+  ];
+
+  const CHAIN = ['Customer behaviour changes', 'A signal appears', 'The signal exists somewhere in the business',
+    'Nobody connects it', 'The customer keeps drifting, or the opportunity keeps disappearing',
+    'The business notices later', 'There was a clear action they could have taken earlier',
+    'Late discovery has a measurable economic impact'];
+
+  const seq = (steps) => `<ol class="sg-iv__chain">${steps.map((s) => `<li>${s}</li>`).join('')}</ol>`;
 
   el.innerHTML = `
     <section class="sg-iv">
       <div class="sg-iv__lead">
+        <p class="sg-iv__kicker">Svarg ICP Interview &mdash; Retention &amp; Growth</p>
         <p class="sg-iv__headline">Two minutes to set up, eleven to listen, two to say what Svarg is.</p>
         <p class="sg-iv__note">The failure mode of this conversation is always the same one: the
           seller starts explaining. The clock is there to stop that. Read the questions as written
-          &mdash; each one fills a row of the validation matrix on the ICP tab, and a question whose
-          purpose you have forgotten comes back as an opinion instead of an incident.</p>
-        <p class="sg-iv__note"><b>One script, every business.</b> Nothing below names an industry,
-          and only the opening blank changes from meeting to meeting. That is what makes the answers
-          comparable: the same questions asked of a clinic, a distributor and an academy are how you
-          find out whether the problem is the same one &mdash; which is the whole test on the
-          playbook tab.</p>
+          &mdash; each one fills a row of the validation matrix, and a question whose purpose you have
+          forgotten comes back as an opinion instead of evidence.</p>
+        <p class="sg-iv__note"><b>The goal is not to convince them Svarg is useful.</b> It is to find
+          out whether they already have a <b>recurring customer retention or growth problem that they
+          discover too late.</b></p>
+        <p class="sg-iv__note"><b>One script, every business.</b> Nothing spoken below names an
+          industry, and only the opening blank changes from meeting to meeting. That is what makes the
+          answers comparable &mdash; which is the whole test on the playbook tab.</p>
       </div>
 
       <ol class="sg-iv__blocks">
@@ -3401,6 +3505,57 @@ function renderInterview() {
             <div class="sg-iv__body">${b.body}</div>
           </li>`).join('')}
       </ol>
+
+      <div class="sg-iv__part">
+        <h3>What you are actually measuring</h3>
+        <p class="sg-iv__note">Every interview should produce the same matrix.</p>
+        <table class="sg-iv__matrix">
+          <thead><tr><th>Dimension</th><th>What you need to learn</th></tr></thead>
+          <tbody>${MATRIX.map(([d, w]) => `<tr><td>${d}</td><td>${w}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+
+      <div class="sg-iv__part">
+        <h3>The interviewer&rsquo;s mental model</h3>
+        <div class="sg-iv__pair">
+          <div><p class="sg-iv__label">Not</p><p class="sg-iv__not">I need to prove Svarg solves retention.</p></div>
+          <div><p class="sg-iv__label">But</p><p class="sg-iv__but">I need to discover whether this business has a
+            recurring customer problem it could have detected earlier.</p></div>
+        </div>
+        ${label('The chain you are listening for')}
+        ${seq(CHAIN)}
+        <p class="sg-iv__note">That is the Svarg opportunity.</p>
+      </div>
+
+      <div class="sg-iv__part">
+        <h3>The two kinds of interview to expect</h3>
+        <p class="sg-iv__note">Do not force a business into retention or growth during the opening. Let
+          the interview show which it is.</p>
+        <div class="sg-iv__pair">
+          <div class="sg-iv__kind is-keep"><p class="sg-iv__label">Retention</p>
+            ${seq(['The customer is drifting', 'Signals exist', 'Nobody connects them', 'Found too late',
+              'An intervention could have saved them', 'Measurable value'])}</div>
+          <div class="sg-iv__kind is-grow"><p class="sg-iv__label">Growth</p>
+            ${seq(['The customer shows expansion intent', 'Signals exist', 'Nobody connects them',
+              'The opportunity is missed', 'An intervention could have created revenue', 'Measurable value'])}</div>
+        </div>
+        <p class="sg-iv__note">Both fit the same mechanism: <b>find important customer signals earlier, and
+          help the business act on them.</b></p>
+      </div>
+
+      <div class="sg-iv__part sg-iv__part--rule">
+        <h3>The one rule</h3>
+        <p class="sg-iv__rule">If you hear yourself explaining Svarg before minute 13: stop.</p>
+        <p class="sg-iv__note">The first eleven minutes are for discovering whether the problem exists.
+          The quality of the pitch at minute 13 depends entirely on what you learned in minutes 2&ndash;11.</p>
+        <ul class="sg-iv__provides">
+          <li>The customer provides the problem.</li>
+          <li>The customer provides the evidence.</li>
+          <li>The customer provides the signals.</li>
+          <li>The customer provides the action.</li>
+          <li><b>You only provide Svarg.</b></li>
+        </ul>
+      </div>
     </section>`;
 }
 

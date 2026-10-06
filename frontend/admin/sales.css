@@ -2670,8 +2670,90 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   color: rgba(255, 255, 255, 0.92);
 }
 
+/* ── Retention & Growth additions (6 October 2026) ────────────────────────
+   Chips stay chips (sg-iv__costs). Heard answers are set in single quotes
+   and smaller, because they are recognised in the room, not read out. */
+
+.sg-iv__kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+.sg-iv__body > .sg-iv__costs { margin-bottom: 12px; }
+.sg-iv__heard { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 4px; }
+.sg-iv__heard p { margin: 0; font-size: 0.84rem; font-style: italic; color: rgba(255, 255, 255, 0.6); }
+.sg-iv__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+.sg-iv__pair .sg-iv__label { margin-top: 0; }
+
+.sg-iv__part { margin-top: 32px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.sg-iv__part h3 { margin: 0 0 10px; font-size: 1.1rem; font-weight: 700; color: #fff; }
+.sg-iv__matrix { width: 100%; margin-top: 12px; border-collapse: collapse; }
+.sg-iv__matrix th {
+  padding: 0 12px 8px 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sg-iv__matrix td {
+  padding: 8px 12px 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.75);
+  vertical-align: top;
+}
+.sg-iv__matrix td:first-child { width: 34%; font-weight: 600; color: #fff; }
+
+.sg-iv__not, .sg-iv__but {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.sg-iv__not {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+}
+.sg-iv__but { border: 1px solid rgba(92, 197, 167, 0.4); background: rgba(92, 197, 167, 0.07); color: rgba(255, 255, 255, 0.92); }
+
+.sg-iv__chain { margin: 0; padding: 0; list-style: none; display: grid; gap: 18px; }
+.sg-iv__chain li {
+  position: relative;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+.sg-iv__chain li + li::before {
+  content: '\2193';
+  position: absolute;
+  top: -18px;
+  left: 16px;
+  font-size: 0.8rem;
+  line-height: 18px;
+  color: rgba(255, 255, 255, 0.3);
+}
+.sg-iv__chain li:last-child { border-color: rgba(92, 197, 167, 0.45); color: #5CC5A7; }
+.sg-iv__kind.is-keep .sg-iv__label { color: #93C5FD; }
+.sg-iv__kind.is-grow .sg-iv__label { color: #5CC5A7; }
+
+.sg-iv__provides { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.sg-iv__provides li { font-size: 0.92rem; color: rgba(255, 255, 255, 0.75); }
+.sg-iv__provides b { color: #5CC5A7; }
+
 @media (max-width: 620px) {
   .sg-iv__block { padding-left: 0; border-left: 0; }
+  .sg-iv__pair { grid-template-columns: 1fr; }
   .sg-iv__clock { position: static; flex-direction: row; gap: 6px; width: auto; padding: 5px 11px; margin-bottom: 8px; display: inline-flex; }
   .sg-iv__head { display: flex; flex-direction: column; align-items: flex-start; }
 }

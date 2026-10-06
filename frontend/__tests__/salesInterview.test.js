@@ -137,8 +137,11 @@ describe('fifteen minutes, and the clock is the content', () => {
   });
 
   it('keeps the three questions of the middle block, and marks the one that matters', () => {
-    expect(view).toContain('What tends to go wrong most often?');
-    expect(view).toContain('Which of these do you usually realise only after the problem has already happened?');
+    // About customers since 6 October 2026 (Retention & Growth). Long questions
+    // are joined literals in the source, so rejoin before matching.
+    const joined = view.replace(/'\s*\+\s*'/g, '');
+    expect(joined).toContain('What tends to happen with customers most often that you wish you could catch earlier?');
+    expect(joined).toContain('Which of these do you usually realise only after the customer has already started drifting away &mdash; or after the opportunity to grow them has already passed?');
     expect(view).toContain('Can you give me a recent example of when that happened?');
     // The key flag belongs to exactly one question in the whole script.
     expect(view.match(/key: true/g) || []).toHaveLength(1);
@@ -151,14 +154,14 @@ describe('fifteen minutes, and the clock is the content', () => {
     for (const q of [
       'was there any information that could have indicated it earlier?',
       'Where was that information?',
-      'Who usually notices it, and how do they find out?',
+      'Who usually notices this, and how do they find out?',
       'what would you do differently?',
     ]) expect(joined, q).toContain(q);
   });
 
   it('accepts impact in something other than rupees', () => {
     expect(view).toContain('do not push for rupees');
-    for (const c of ['Lost customers', 'Unused capacity', 'Staff hours']) expect(view, c).toContain(c);
+    for (const c of ['Lost customers', 'Unused capacity', 'Staff time', 'Missed upgrades']) expect(view, c).toContain(c);
   });
 
   it('is one script for every business, with one blank in it', () => {
@@ -208,7 +211,7 @@ describe('what the page admits while somebody is reading it aloud', () => {
      * so the caveat is spoken here too — otherwise the one screen that is
      * read out loud is the one screen that overstates.
      */
-    expect(view).toContain('helps the team take action earlier');
+    expect(view).toContain('helps the team act earlier');
     expect(view).toMatch(/nothing is sent outward yet/);
   });
 

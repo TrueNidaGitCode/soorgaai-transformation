@@ -21,6 +21,42 @@ import { isOwner } from './accessController.js';
 import { activeCategories, categoryLimit, coversWatcher, allowedSchedule, coverageSummary } from '../services/coverage.js';
 import { draftFollowUp } from '../services/draftService.js';
 import { ACTIONS, customersIn, guidanceFor, kindOf, learnFrom } from '../services/customerSpine.js';
+import { analysesFor, fingerprint, refreshAnalyses, standardFor } from '../services/customerAnalysis.js';
+
+/**
+ * Lay the AI's analysis over a customer's card.
+ *
+ * Every line the reader acts on — why, next step, what will show it worked,
+ * what has been learnt — becomes the AI's, about this customer. The STATES
+ * (done, waiting, partly) stay counted in code from what the team marked and
+ * what the watcher saw, because they are measurements, not writing. Without
+ * an analysis the card keeps the written playbook and says so.
+ */
+function withAnalysis(c, doc, fp, stats) {
+  const ai = doc && doc.analysis;
+  const hasHistory = (c.watcherIds || []).some(w => Object.keys(stats[w] || {}).length);
+  if (!ai) {
+    c.source = 'standard';
+    // Reading them now, or tried for this exact state and could not.
+    c.pending = !doc || doc.failedFingerprint !== fp;
+    return c;
+  }
+  const s = c.stages;
+  s.explain = { state: 'done', line: ai.explain };
+  s.recommend = { state: 'done', line: ai.recommend.step, why: ai.recommend.why };
+  if (s.measure.state !== 'done') s.measure = { state: s.measure.state, line: ai.measure };
+  s.learn = { state: hasHistory ? 'done' : 'waiting', line: ai.learn || s.learn.line };
+  if (ai.kind === 'retention' || ai.kind === 'growth') c.kinds = [ai.kind];
+  else if (ai.kind === 'both') c.kinds = ['retention', 'growth'];
+  c.recommend = { action: ai.recommend.action, label: ai.recommend.step, learnt: false, evidence: null };
+  c.message = ai.act;
+  c.source = 'ai';
+  c.current = doc.fingerprint === fp;
+  // Out of date and the re-read failed: the earlier reading, said as such.
+  c.earlier = !c.current && doc.failedFingerprint === fp;
+  c.writtenAt = doc.at;
+  return c;
+}
 import { sendSignal } from '../services/tenantSignals.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -151,6 +187,8 @@ export async function listFindingsHandler(req, res) {
      */
     const example = String(req.query.example || '') === '1';
     const onlyKind = { 'evidence.simulated': example ? true : { $ne: true } };
+    // Which set of AI analyses the board reads: the demonstration's or the business's.
+    const demo = example;
 
     /*
      * A watcher that has been switched off takes its findings with it.
@@ -256,7 +294,22 @@ export async function listFindingsHandler(req, res) {
        * code from the findings and this business's own outcomes; see
        * customerSpine.
        */
-      customers: customersIn(rows, won.map(withPerson), stats),
+      customers: await (async () => {
+        const wonViews = won.map(withPerson);
+        const list = customersIn(rows, wonViews, stats);
+        const docs = await analysesFor(demo, list);
+        let stale = false;
+        for (const c of list) {
+          const fp = fingerprint(rows.filter(r => r.person === c.person), wonViews.filter(r => r.person === c.person));
+          const doc = docs.get(c.person);
+          withAnalysis(c, doc, fp, stats);
+          if (!doc || doc.fingerprint !== fp) stale = true;
+        }
+        // Somebody is looking and a customer has changed since the AI last
+        // read them: read them again, in the background.
+        if (stale) refreshAnalyses();
+        return list;
+      })(),
       /*
        * Whether this application holds any of the customer's own records.
        *
@@ -348,7 +401,33 @@ export async function getFindingHandler(req, res) {
     const f = await findingsCollection().findOne({ _id });
     if (!f) return res.status(404).json({ error: 'No such finding.' });
     const stats = await outcomeStats({ 'evidence.simulated': f.evidence?.simulated ? true : { $ne: true } });
-    return res.json({ finding: findingView(f), guidance: guidanceFor(f, stats) });
+    const v = findingView(f);
+    const book = await phoneBook().catch(() => new Map());
+    v.person = personForFinding(v, book);
+    const g = guidanceFor(f, stats);
+    g.source = 'standard';
+    g.measure = standardFor([v]).measure;
+    /*
+     * The AI's reading of this customer, when there is one. It is about the
+     * customer rather than this one finding, which is the point: the step it
+     * recommends already accounts for everything else open for them.
+     */
+    const doc = v.person ? (await analysesFor(!!f.evidence?.simulated, [{ person: v.person }])).get(v.person) : null;
+    const ai = doc && doc.analysis;
+    if (ai) {
+      g.source = 'ai';
+      g.why = ai.explain;
+      g.recommend = { action: ai.recommend.action, label: ai.recommend.step, why: ai.recommend.why, learnt: false, evidence: null };
+      g.measure = ai.measure;
+      g.learn = ai.learn;
+      g.draft = ai.act;
+      if (ai.kind === 'retention' || ai.kind === 'growth') g.kind = ai.kind;
+      // The step it chose is always one the team can mark.
+      if (!g.steps.some(s => s.action === ai.recommend.action)) {
+        g.steps.unshift({ action: ai.recommend.action, label: ACTIONS[ai.recommend.action] });
+      }
+    }
+    return res.json({ finding: v, guidance: g });
   } catch {
     return res.status(404).json({ error: 'No such finding.' });
   }

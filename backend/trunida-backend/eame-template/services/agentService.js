@@ -781,6 +781,12 @@ export async function runAgent(agent, ask) {
      * briefings about patients who do not exist. Nothing about the finding
      * was wrong — the finding was about a made-up person, correctly.
      */
+    // Somebody's findings changed: the AI re-reads those customers. See
+    // customerAnalysis; registered by server.js so this file imports nothing
+    // that imports it back.
+    if ((change.new.length || change.resolved.length) && findingsChanged) {
+      try { findingsChanged(); } catch { /* the run already succeeded */ }
+    }
     return { ran: true, fired, simulated: !!result?.simulated, ...change };
   } catch (err) {
     const message = String(err.message || err);
@@ -1650,6 +1656,9 @@ export function startAgentScheduler(ask, { catalogue = null } = {}) {
  */
 let tickNow = null;
 let startNewlyPossible = null;
+let findingsChanged = null;
+/** Called after a watcher run that opened or resolved something. */
+export function onFindingsChanged(fn) { findingsChanged = fn; }
 let lookTimer = null;
 
 export function onLookNow(fn) { startNewlyPossible = fn; }

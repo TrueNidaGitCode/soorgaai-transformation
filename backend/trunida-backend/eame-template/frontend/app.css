@@ -3045,3 +3045,6 @@ body {
 .fg__measure { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ch-dim); }
 .cs__stage.is-part .cs__dot { background: linear-gradient(90deg, var(--ch-accent) 50%, transparent 50%); border-color: var(--ch-accent); }
 .cs__stage.is-part .cs__sstate { color: var(--ch-accent); }
+/* Who wrote the card: the AI about this customer, or the standard guidance. */
+.cs__by { font-size: 11.5px; color: var(--ch-faint); }
+.cs__by.is-ai { color: var(--ch-accent); }

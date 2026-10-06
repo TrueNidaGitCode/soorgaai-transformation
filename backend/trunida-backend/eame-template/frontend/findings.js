@@ -534,18 +534,30 @@
       var v = s[key];
       return v && v.line ? '<p class="cs__line"><span>' + label + '</span>' + esc(v.line) + '</p>' : '';
     };
+    /*
+     * Who wrote the card. The AI, about this customer — or, until it has
+     * read them (or when it cannot), the standard guidance, said as such.
+     */
+    var by = c.source === 'ai'
+      ? '<span class="cs__by is-ai">Written by AI' + (c.earlier ? ' &middot; earlier reading' : c.current === false ? ' &middot; re-reading' : '') + '</span>'
+      : '<span class="cs__by">' + (c.pending ? 'Standard guidance &middot; AI is reading this customer' : 'Standard guidance &middot; AI unavailable') + '</span>';
+    var why = s.recommend && s.recommend.why
+      ? '<p class="cs__line"><span>Why this step</span>' + esc(s.recommend.why) + '</p>' : '';
     return '<article class="cs__card cs__card--' + esc(c.severity) + (person === c.person ? ' is-picked' : '') + '">'
       + '<header class="cs__top">'
       +   '<button type="button" class="cs__name" data-person="' + esc(c.person) + '">' + esc(c.person) + '</button>'
       +   '<span class="cs__tags">' + tags + '</span>'
+      +   by
       +   (c.top ? '<button type="button" class="cs__open" data-open="' + esc(c.top) + '">Open &rsaquo;</button>' : '')
       + '</header>'
       + '<ol class="cs__spine">' + chips + '</ol>'
       + line('detect', 'Found')
       + line('explain', 'Why it matters')
       + line('recommend', 'Next step')
+      + why
       + line('act', 'Done so far')
-      + line('measure', 'Result')
+      + line('measure', s.measure && s.measure.state === 'done' ? 'Result' : 'Will show it worked')
+      + (c.source === 'ai' ? line('learn', 'Learnt so far') : '')
       + '</article>';
   }
 
@@ -953,16 +965,24 @@
     if (!d.guide) return;
     if (!g) { d.guide.hidden = true; return; }
     d.guide.hidden = false;
-    d.guide.dataset.won = g.won || '';
-    d.kind.textContent = g.kind === 'retention' ? 'Retention — keeping this customer'
+    d.guide.dataset.measure = g.measure || '';
+    var kind = g.kind === 'retention' ? 'Retention — keeping this customer'
       : g.kind === 'growth' ? 'Growth — revenue from this customer' : '';
-    d.kind.hidden = !d.kind.textContent;
+    // Who wrote this, said on its face: the AI about this customer, or the
+    // standard guidance while it has not (or could not).
+    var by = g.source === 'ai' ? 'Written by AI' : 'Standard guidance — AI analysis not available yet';
+    d.kind.textContent = kind ? kind + ' · ' + by : by;
+    d.kind.hidden = false;
     d.explain.textContent = g.why || '';
     d.recommend.textContent = (g.recommend && g.recommend.label) || '';
     var ev = g.recommend && g.recommend.evidence;
-    d.learnt.textContent = g.recommend && g.recommend.learnt && ev
-      ? 'Chosen from your results: worked ' + ev.worked + ' of ' + ev.tried + ' times.'
-      : '';
+    d.learnt.textContent = g.source === 'ai'
+      ? [g.recommend && g.recommend.why, g.learn].filter(Boolean).join(' ')
+      : g.recommend && g.recommend.learnt && ev
+        ? 'Chosen from your results: worked ' + ev.worked + ' of ' + ev.tried + ' times.'
+        : '';
+    // The AI's message, ready to edit. Svarg never sends it.
+    if (g.draft) { d.drafttext.value = g.draft; d.draftbox.hidden = false; }
     var done = f.acted && f.acted.action;
     d.steps.innerHTML = (g.steps || []).map(function (s) {
       var on = s.action === done;
@@ -973,12 +993,13 @@
   }
 
   function measureLine(state, actedAt, wins) {
-    var won = d.guide.dataset.won || 'the watcher stops finding it';
+    // What "worked" looks like is the AI's sentence; whether it happened is
+    // checked against the records on every watcher run.
+    var expect = d.guide.dataset.measure || '';
     d.measure.textContent = state === 'resolved'
       ? (wins ? 'Resolved after the team acted.' : 'Resolved.')
-      : actedAt
-        ? 'Marked ' + ago(actedAt) + '. Svarg checks on every run and counts it as worked once ' + won + '.'
-        : 'Once you mark a step, Svarg checks on every run and counts it as worked once ' + won + '.';
+      : (actedAt ? 'Marked ' + ago(actedAt) + '. ' : '')
+        + 'Svarg checks the records on every run. ' + expect;
   }
 
   // ── Wiring ────────────────────────────────────────────────────────────────

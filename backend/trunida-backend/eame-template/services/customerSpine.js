@@ -347,6 +347,9 @@ export function spineFor(person, open = [], resolved = [], stats = {}, now = Dat
     severity: top ? top.severity : 'medium',
     findings: sorted.length,
     top: top ? top.id : '',
+    // What the AI's analysis is matched against: see customerAnalysis.
+    openIds: sorted.map(f => f.id),
+    watcherIds: [...new Set(sorted.map(f => f.watcherId).filter(Boolean))],
     recommend: rec,
     stages,
   };

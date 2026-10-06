@@ -244,6 +244,24 @@ try {
   await F.updateOne({ _id: ins.insertedIds[0] }, { $set: { state: 'resolved', resolvedAt: new Date() }, $push: { outcomes: { action: 'call', actedAt: new Date(), resolvedAt: new Date() } } });
   const won = (await j('/api/agents/findings', { headers: H })).body?.customers?.find(c => c.person === 'Meera Iyer');
   check('Measure counts it once the finding resolved after the team acted', won?.stages?.measure?.state === 'done', JSON.stringify(won?.stages?.measure));
+  /*
+   * The AI's analysis. This application has no model behind it, so the
+   * refresh the board triggered must fail and leave the labelled playbook in
+   * place -- then a stored analysis must take over every written line.
+   */
+  check('without an AI answer the card says it is the standard guidance', won?.source === 'standard', JSON.stringify({ source: won?.source, pending: won?.pending }));
+  const A = conn.collection('svarg_customer_analyses');
+  await A.updateOne({ _id: 'own|Meera Iyer' }, { $set: { person: 'Meera Iyer', simulated: false, fingerprint: 'older', at: new Date(), error: '', analysis: {
+    kind: 'growth', explain: 'Meera has used sessions her package did not cover.', learn: 'Nothing recorded here yet.',
+    recommend: { action: 'offer', step: 'Offer Meera the next package when she is in.', why: 'She is already using more than she bought.' },
+    act: 'Hi Meera, would you like to move to the next package?', measure: 'A paid package for Meera appears in the records.',
+  } } }, { upsert: true });
+  const ai = (await j('/api/agents/findings', { headers: H })).body?.customers?.find(c => c.person === 'Meera Iyer');
+  check('a stored AI analysis writes the card, and the states stay counted', ai?.source === 'ai' && ai.current === false && ai.stages.recommend.line === 'Offer Meera the next package when she is in.'
+    && ai.stages.explain.line.startsWith('Meera has used') && ai.stages.measure.state === 'done', JSON.stringify({ s: ai?.source, r: ai?.stages?.recommend?.line, m: ai?.stages?.measure?.state }));
+  const g2 = (await j('/api/agents/findings/' + String(ins.insertedIds[1]), { headers: H })).body?.guidance;
+  check('the finding page carries the AI\'s step and message', g2?.source === 'ai' && g2.recommend.action === 'offer' && /next package/.test(g2.draft || ''), JSON.stringify(g2 && { s: g2.source, a: g2.recommend?.action }));
+  await A.deleteMany({ _id: 'own|Meera Iyer' });
   await F.deleteMany({ key: /^e2e-spine/ });
   await conn.close();
 } catch (err) { check('customer spine', false, err.stack); }

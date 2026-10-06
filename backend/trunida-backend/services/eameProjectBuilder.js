@@ -291,6 +291,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/agentCatalogue.js':        { template: 'services/agentCatalogue.js' },
     'services/draftService.js':          { template: 'services/draftService.js' },
     'services/customerSpine.js':         { template: 'services/customerSpine.js' },
+    'services/customerAnalysis.js':      { template: 'services/customerAnalysis.js' },
     'services/notifyService.js':         { template: 'services/notifyService.js' },
     'services/transcribeService.js':     { template: 'services/transcribeService.js' },
     'services/callSignalService.js':     { template: 'services/callSignalService.js' },

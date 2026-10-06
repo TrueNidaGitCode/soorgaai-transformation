@@ -113,6 +113,7 @@ export const FIXED_PATHS = [
   'services/agentCatalogue.js',
   'services/draftService.js',
   'services/customerSpine.js',
+  'services/customerAnalysis.js',
   'services/notifyService.js',
   // Audio in, text out, across the gateway: this container holds no provider
   // key, so a recording it cannot read is a recording nobody reads.

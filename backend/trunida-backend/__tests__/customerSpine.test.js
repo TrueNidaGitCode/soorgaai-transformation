@@ -174,8 +174,10 @@ describe('wired into the delivered app', () => {
   });
 
   it('serves the customers, the guidance and a step that sends nothing', () => {
-    expect(ctl).toMatch(/customers: customersIn\(rows, won\.map\(withPerson\), stats\)/);
-    expect(ctl).toMatch(/guidance: guidanceFor\(f, stats\)/);
+    // The AI's analysis is laid over these since 6 October 2026; see
+    // customerAnalysis.test.js.
+    expect(ctl).toMatch(/const list = customersIn\(rows, wonViews, stats\)/);
+    expect(ctl).toMatch(/const g = guidanceFor\(f, stats\)/);
     expect(routes).toMatch(/'\/findings\/:id\/acted'/);
     // Learning from the demonstration would teach the business wrong.
     expect(ctl).toMatch(/outcomeStats\(onlyKind\)/);

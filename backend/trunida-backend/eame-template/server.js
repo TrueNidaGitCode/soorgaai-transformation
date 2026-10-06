@@ -26,7 +26,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets, indexWithOwnCounts } from './services/connectorService.js';
-import { startAgentScheduler, autoStartWatchers, rebindWatchers, onLookNow } from './services/agentService.js';
+import { startAgentScheduler, autoStartWatchers, rebindWatchers, onLookNow, onFindingsChanged } from './services/agentService.js';
+import { refreshAnalyses } from './services/customerAnalysis.js';
 import { catalogueFor } from './services/agentCatalogue.js';
 import { activeCategories, categoryLimit } from './services/coverage.js';
 // Cob's reading of which watchers matter here. Read from the same place the
@@ -313,6 +314,12 @@ async function start() {
   // The same start, when a source connects -- so its watchers run now, not at
   // the next restart. See requestLookNow in agentService.
   onLookNow(startNewlyPossibleWatchers);
+  // Findings changed: the AI re-reads the customers they are about.
+  onFindingsChanged(() => { refreshAnalyses(); });
+  // And once after boot, so a fresh deploy has its customers read without
+  // waiting for somebody to open the board. Cheap when nothing changed: each
+  // customer is compared by fingerprint and skipped.
+  setTimeout(() => { refreshAnalyses(); }, 60 * 1000).unref?.();
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

@@ -382,7 +382,9 @@ describe('a claim is not evidence', () => {
     const v2 = data('COMPANIES')[0];
     // eslint-disable-next-line no-new-func
     const qualify = new Function(`return ${SHARED};`)().map(([k]) => k);
-    expect(qualify.filter((k) => v2[k][0] !== 'yes')).toEqual([]);
+    // Except the eighth, added after the interview on 6 October 2026: it was
+    // never asked, so it stays empty with its question rather than inferred.
+    expect(qualify.filter((k) => v2[k][0] !== 'yes')).toEqual(['measurable']);
   });
 
   it('keeps the wedge a draft while only one column is full', () => {

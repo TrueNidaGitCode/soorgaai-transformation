@@ -107,15 +107,16 @@ describe('class names the playbook owns', () => {
 describe('ten steps, and the order is the content', () => {
   const view = fn('renderPlaybook');
 
+  // Steps 1 and 8 renamed on 6 October 2026, for Retention & Growth.
   const TITLES = [
-    'Find the Acute Problem',
+    'Find the Acute Retention/Growth Problem',
     'Find the Acute ICP',
     'Separate Acute ICP from Vanity Users',
     'Embed Yourself in the ICP',
     'Run Reverse Problem Sessions',
     'Build the Smallest Possible Solution',
     'Run Design-Partner Pilots',
-    'Prove the Economic Value',
+    'Prove Economic Value',
     'Validate Repeatability',
     'Convert the Niche into a Product Wedge',
   ];
@@ -168,7 +169,7 @@ describe('ten steps, and the order is the content', () => {
      */
     const wedge = view.slice(view.indexOf('sg-pb__wedge'));
     expect(wedge.match(/<em>/g) || []).toHaveLength(3);
-    for (const slogan of ['AI platform for enterprises', 'Proactive AI']) {
+    for (const slogan of ['AI platform for enterprises', 'AI for proactive business intelligence']) {
       expect(view, slogan).toContain(slogan);
     }
     expect(view.indexOf('sg-pb__wedge')).toBeLessThan(view.indexOf('AI platform for enterprises'));

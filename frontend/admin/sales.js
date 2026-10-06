@@ -2714,6 +2714,12 @@ function renderIcpView() {
  * kill it, and the two are deliberately adjacent: a belief with no test beside
  * it hardens into a fact nobody checked.
  *
+ * Rewritten 6 October 2026 for Retention & Growth. It opens on the thesis
+ * (businesses are reactive by default; the signals are scattered and nobody
+ * connects them early enough), then the same ten steps, then what the steps
+ * produce: the product evolution, the motion, the strategic rule and the
+ * final principle.
+ *
  * It is written as ten numbered steps because the order is the content. Step 9
  * — the same problem at five companies — is worthless before step 2 has found
  * the problem in the customer's own words, and step 6 builds the wrong thing
@@ -2727,20 +2733,20 @@ function renderIcpView() {
 /**
  * The ten steps, by name.
  *
- * Shared for the same reason the seven conditions are: the playbook renders
- * them as its steps and the target audience table renders them as its rows,
- * and a step called something slightly different on the second screen is a
- * second step. The order is the order they are run in.
+ * Shared for the same reason the conditions are: the playbook renders them as
+ * its steps and the target audience table renders them as its rows, and a step
+ * called something slightly different on the second screen is a second step.
+ * The order is the order they are run in.
  */
 const PLAYBOOK_STEPS = [
-  'Find the Acute Problem',
+  'Find the Acute Retention/Growth Problem',
   'Find the Acute ICP',
   'Separate Acute ICP from Vanity Users',
   'Embed Yourself in the ICP',
   'Run Reverse Problem Sessions',
   'Build the Smallest Possible Solution',
   'Run Design-Partner Pilots',
-  'Prove the Economic Value',
+  'Prove Economic Value',
   'Validate Repeatability',
   'Convert the Niche into a Product Wedge',
 ];
@@ -2755,8 +2761,12 @@ const PLAYBOOK_STEPS = [
  * They were written twice and drifted immediately: "Signals are spread across
  * multiple systems" became "Signals in more than one place" on the table, and
  * a condition that is worded differently in two places is two conditions. The
- * whole value of the table is that five companies answered the SAME seven
- * questions, so the seven live here, once.
+ * whole value of the table is that five companies answered the SAME
+ * questions, so they live here, once.
+ *
+ * Eight since 6 October 2026: "The outcome can be measured" joined, because a
+ * retention or growth problem whose result cannot be counted cannot be sold
+ * as arithmetic (step 8).
  *
  * The keys are the table's column data; the order is the order they are asked
  * in, and the table depends on it.
@@ -2769,6 +2779,7 @@ const ACUTE_CONDITIONS = [
   ['late', 'The problem is discovered too late'],
   ['cost', 'Late discovery has a measurable cost'],
   ['action', 'There is a clear action once detected'],
+  ['measurable', 'The outcome can be measured'],
 ];
 
 function renderPlaybook() {
@@ -2787,94 +2798,210 @@ function renderPlaybook() {
 
   const label = (t) => `<p class="sg-pb__label">${t}</p>`;
 
+  /** Two lists side by side: retention on the left, growth on the right. */
+  const pair = (left, right) => `<div class="sg-pb__pair">
+      <div class="sg-pb__side is-keep"><h4>Retention</h4>${left}</div>
+      <div class="sg-pb__side is-grow"><h4>Growth</h4>${right}</div>
+    </div>`;
+
+  /** What exists today, said beside the stage it limits. */
+  const today = (t) => `<p class="sg-pb__today"><b>Today</b> ${t}</p>`;
+
   // The filter itself; the keys beside each one belong to the table.
   const ACUTE = ACUTE_CONDITIONS.map(([, condition]) => condition);
 
+  const HYPOTHESES_KEEP = [
+    'Customers gradually reduce usage and nobody notices.',
+    'Customers stop attending or engaging before they actually leave.',
+    'Customers miss appointments or sessions repeatedly and eventually disappear.',
+    'Complaints or unresolved issues accumulate before the customer churns.',
+    'Customers approach renewal with declining engagement, and the team finds the risk too late.',
+    'Customers go inactive across several systems, and nobody connects those signals.',
+  ];
+  const HYPOTHESES_GROW = [
+    'Existing customers show they are ready for an upgrade, cross-sell or expansion, and nobody notices.',
+    'Customers under-use a product or service they could buy more of.',
+    'A customer&rsquo;s engagement or demand is rising, and the sales team does not act.',
+    'Buying intent appears across CRM, communication and usage data but is never connected.',
+  ];
+
+  const ASK = [
+    'How do you know a customer is becoming inactive?',
+    'How do you know a customer is likely to leave?',
+    'How do you know an existing customer is ready to buy more?',
+    'What signals do you look at, and where do they live?',
+    'Who checks them, and how often?',
+    'What happens when nobody checks?',
+    'How early could you realistically know?',
+    'What does a lost customer cost?',
+    'What happens after you identify the problem &mdash; how are customers contacted today?',
+    'What software is involved?',
+  ];
+
   const BUCKETS = [
     ['&#128293;', 'Acute', 'fire', [
-      'Problem happens frequently',
-      'Existing manual workaround',
-      'Clear financial or operational impact',
-      'Strong urgency',
+      'Experiences the problem frequently',
+      'Already has a workaround',
+      'Feels the economic impact',
+      'Someone is responsible for the problem',
       'Wants to solve it now',
+      'Has the signals, and can act once it is detected',
+      'Willing to test with real data',
     ]],
     ['&#128993;', 'Adjacent', 'amber', [
-      'Problem exists',
-      'Interesting use case',
-      'But low frequency or low urgency',
+      'The problem exists, but',
+      'frequency is low or impact moderate',
+      'the workaround is acceptable',
+      'nobody owns it strongly; little urgency',
+      'May become customers later &mdash; do not build the company around them',
     ]],
     ['&#128308;', 'Vanity', 'red', [
-      'Likes AI and likes Svarg',
-      'Wants experimentation',
-      'Requests custom features',
-      'But does not have the core problem acutely',
+      'Likes AI and likes the Svarg concept',
+      'Wants dashboards and experimentation',
+      'Asks for many custom features',
+      'Enjoys interesting customer insights',
+      'Excellent feedback, zero revenue',
     ]],
   ];
 
   const WHERE = ['LinkedIn', 'WhatsApp groups', 'Slack &amp; Discord', 'Reddit',
-    'Industry communities', 'Conferences and events', 'Professional associations'];
+    'Industry associations', 'Conferences and trade events', 'Customer-success communities',
+    'Sales and revenue communities', 'Operations communities', 'Vertical-specific communities'];
 
   const LISTEN = [
-    'We keep having this problem&hellip;',
-    'Our team spends hours doing&hellip;',
-    'We only realise this when&hellip;',
-    'Our current software doesn&rsquo;t&hellip;',
+    'We keep losing customers because&hellip;',
+    'We only realise they are unhappy when&hellip;',
+    'Nobody follows up after&hellip;',
+    'We have no idea which customers are going cold.',
+    'Our team spends hours checking&hellip;',
+    'The CRM has the data, but&hellip;',
+    'We know there is an opportunity, but&hellip;',
+    'By the time we know, it is too late.',
+    'The customer suddenly stopped coming.',
   ];
 
-  const SHOWME = [
-    'Where they get the information',
-    'Which systems they check',
-    'What signals they look for',
-    'How they connect the signals',
-    'Who investigates',
-    'What happens next',
-    'What action they take',
+  const CAPTURE = ['Exact language', 'Workflow', 'Systems used', 'Signals available',
+    'Current workaround', 'Person responsible', 'Consequence', 'Timing', 'Action taken'];
+
+  const LOOK = ['CRM', 'Attendance', 'App usage', 'Payments', 'Support', 'WhatsApp', 'Email',
+    'Phone calls', 'Appointments', 'Spreadsheets'];
+
+  const TODAY_FLOW = ['Customer activity', 'Signals appear', 'Stored in different systems',
+    'Someone notices one signal', 'Someone checks another system', 'Someone connects the dots',
+    'Customer is identified', 'Someone decides what to do', 'Customer is contacted', 'Outcome happens'];
+
+  /*
+   * The product workflow, with what is built today beside each stage. The
+   * pasted playbook says "do not pretend this exists before it does"; these
+   * lines are that rule applied to our own page. Same states as the ICP tab.
+   */
+  const WORKFLOW = [
+    ['Connect', 'Connect the systems the customer already uses: CRM, appointments, usage, payments, support, communication.',
+      '', 'Zoho CRM, LeadSquared, Clinicea, Jira, WhatsApp Business, phone systems, a database and file uploads.'],
+    ['Detect', 'Find customers showing the pattern.',
+      'Customer attendance dropped 40% over the last month.',
+      'Watchers run on a schedule and evaluate their condition in code.'],
+    ['Explain', 'Show why Svarg believes this customer needs attention.',
+      'Attendance dropped from 8 sessions a month to 3. Last interaction 18 days ago. Two recent appointments missed.',
+      'The AI writes why it matters for each customer, from the records behind the finding.'],
+    ['Recommend', 'Tell the team what should happen.',
+      'Contact the customer this week and check whether they are facing an issue.',
+      'The AI writes the next step for each customer, from what has worked in that business.'],
+    ['Act', 'Eventually: notify the right person, create a task, draft the message, trigger a workflow, update the CRM.',
+      '',
+      'Partly. Svarg drafts the message, notifies the owner in a morning digest and records the step the team took. It does not send, create tasks or update the CRM.'],
+    ['Measure', 'Did the action work? Returned, renewed, upgraded, bought another service, stayed active &mdash; or churned anyway.',
+      '',
+      'Partly. A step counts as worked when the records stop showing the problem. Rupees retained are not measured yet.'],
   ];
 
   const PILOT = [
-    'Connect the systems they already run',
-    'Configure the detection',
-    'Run it against real data',
-    'Identify actual problems',
-    'Take action',
-    'Measure what happened',
+    'Connect real systems',
+    'Use real customer data',
+    'Run the detection continuously',
+    'Identify actual customers',
+    'Have the customer take actual action',
+    'Measure what happens',
   ];
 
-  const ECONOMICS = [
-    ['How was the problem detected?', 'How early was it detected?'],
-    ['How much human effort?', 'What action was taken?'],
-    ['How long did detection take?', 'How much effort was saved?'],
-    ['What was the impact?', 'What outcome changed?'],
-  ];
+  const METRICS_KEEP = ['Customers detected at risk', 'How early they were detected', 'Number acted on',
+    'Action rate', 'Recovery or save rate', 'Revenue retained', 'False positives', 'Time saved by the team'];
+  const METRICS_GROW = ['Opportunities detected', 'Customers identified', 'Outreach or action rate',
+    'Expansion conversion', 'Incremental revenue', 'Cross-sell or upgrade revenue', 'False positives', 'Time saved'];
 
-  const SAME = ['Same buyer', 'Similar workflow', 'Similar data signals',
-    'Similar intervention', 'Similar ROI'];
+  const ECON_KEEP = [
+    ['Customers monitored', '200', '200'],
+    ['Customers showing risk', 'Unknown', '32'],
+    ['Average detection time', 'After disengagement', '18 days earlier'],
+    ['Customers acted on', '8', '27'],
+    ['Customers recovered', '3', '14'],
+    ['Revenue at risk identified', 'Unknown', '&#8377;X'],
+    ['Revenue retained', 'Unknown', '&#8377;Y'],
+  ];
+  const ECON_GROW = [
+    ['Existing customers monitored', '500', '500'],
+    ['Expansion opportunities', 'Mostly manual', '47'],
+    ['Opportunities acted on', '12', '38'],
+    ['Conversions', 'X', 'Y'],
+    ['Incremental revenue', '&#8377;X', '&#8377;Y'],
+  ];
+  const table = (rows) => `<table class="sg-pb__econ">
+      <thead><tr><th>Metric</th><th>Before Svarg</th><th>With Svarg</th></tr></thead>
+      <tbody>${rows.map(([m, b, w]) => `<tr><td>${m}</td><td>${b}</td><td>${w}</td></tr>`).join('')}</tbody>
+    </table>`;
+
+  const SAME = ['Same customer problem', 'Same business process', 'Similar signals', 'Similar buyer',
+    'Similar user', 'Similar intervention', 'Similar economic value', 'Similar deployment pattern'];
+
+  const WEDGES = [
+    ['Retention', 'Svarg helps multi-location clinics identify patients drifting away from treatment before they disappear, using appointment, attendance and CRM signals.'],
+    ['Retention', 'Svarg helps coaching academies identify students whose engagement is declining before they drop out, using attendance, communication and payment signals.'],
+    ['Growth', 'Svarg helps service businesses identify existing customers ready for additional services before the opportunity is missed.'],
+    ['B2B', 'Svarg helps distributors identify accounts and quotations going cold before revenue is lost, using CRM, ERP and communication signals.'],
+  ];
 
   const STEPS = [
     {
       title: PLAYBOOK_STEPS[0],
-      aim: 'Identify the problem that hurts enough to buy.',
+      aim: 'Start with one specific customer problem that hurts enough to buy.',
       target: '5&ndash;7 problem hypotheses',
-      body: label('Look for problems where') + list(ACUTE, 'check')
-        + `<p class="sg-pb__note">These are the seven conditions the ICP tab already qualifies on.
-           A problem that fails one of them is not a smaller opportunity &mdash; it is a pilot that
-           ends with everybody agreeing it was interesting.</p>`,
+      body: label('Do not start with')
+        + say('We want to solve customer retention.', false)
+        + say('We want to help businesses grow.', false)
+        + `<p class="sg-pb__note">Both are too broad. Generate hypotheses, then find the one that is both
+           frequent and economically painful &mdash; you do not need to pursue all of them.</p>`
+        + label('Problem hypotheses')
+        + pair(list(HYPOTHESES_KEEP), list(HYPOTHESES_GROW))
+        + label('A strong problem usually has') + list(ACUTE, 'check')
+        + pair(seq(['Customer starts drifting', 'Nobody notices', 'Customer leaves']),
+          seq(['Customer shows a buying signal', 'Nobody notices', 'Opportunity disappears']))
+        + `<p class="sg-pb__rule">These conditions are not merely product requirements. <b>They are ICP
+           qualification criteria.</b> If most are missing, the problem may be interesting but is unlikely
+           to become a strong Svarg business.</p>`,
     },
     {
       title: PLAYBOOK_STEPS[1],
-      aim: 'Identify who experiences that problem most intensely.',
+      aim: 'Find who experiences one of those problems most intensely.',
       target: '30&ndash;40 interviews',
-      body: label('For each problem, follow one line')
-        + seq(['Who', 'What workflow', 'What problem', 'Why too late', 'Cost', 'Action'])
-        + label('Do not start with')
+      body: label('Do not start with')
         + say('Our ICP is mid-market companies.', false)
-        + label('Aim for')
-        + say('Companies with <b>X workflow</b> where <b>Y problem</b> happens frequently, '
-            + 'currently detected by <b>Z person</b> using <b>A, B and C systems</b>.', true),
+        + label('Follow one line')
+        + seq(['Who', 'Customer workflow', 'Problem', 'Why too late', 'Economic impact', 'Action'])
+        + `<p class="sg-pb__note">Not thirty generic interviews: test specific hypotheses with the people
+           who own or live the workflow.</p>`
+        + label('Ask') + list(ASK)
+        + label('The ICP should eventually sound like')
+        + say('Companies with <b>X recurring customer workflow</b>, where <b>Y retention or growth problem</b> '
+            + 'happens frequently, and <b>Z person</b> currently detects it manually using <b>A, B and C systems</b>.', true)
+        + label('For example')
+        + say('Multi-location service businesses where customers gradually disengage from a recurring service, '
+            + 'with signals spread across CRM, appointment and communication systems, currently detected '
+            + 'manually by operations or customer-success teams.', true)
+        + label('Not') + say('SMB service businesses.', false),
     },
     {
       title: PLAYBOOK_STEPS[2],
-      aim: 'Sort every interview into one of three buckets, before the roadmap does it for you.',
+      aim: 'Not everyone interested in Svarg is the customer. Sort every conversation into three buckets.',
       body: '<div class="sg-pb__buckets">'
         + BUCKETS.map(([dot, name, tone, points]) => `
             <div class="sg-pb__bucket is-${tone}">
@@ -2882,100 +3009,173 @@ function renderPlaybook() {
               ${list(points)}
             </div>`).join('')
         + '</div>'
-        + `<p class="sg-pb__rule"><b>Build for &#128293;.</b> Do not let Adjacent or Vanity define
-           the roadmap &mdash; they are the pleasant conversations, which is exactly why they are
-           the dangerous ones.</p>`,
+        + `<p class="sg-pb__rule"><b>Build for &#128293; Acute.</b> The question is not whether they like
+           Svarg.</p>`
+        + say('Are they already paying a cost because they discover this customer problem too late?', true),
     },
     {
       title: PLAYBOOK_STEPS[3],
-      aim: 'Understand the problem in the customer&rsquo;s own language.',
-      body: label('Find where they already spend time') + list(WHERE)
-        + '<p class="sg-pb__rule">Do not sell initially.</p>'
+      aim: 'Spend time where target customers already talk about their work.',
+      body: label('Where') + list(WHERE)
+        + '<p class="sg-pb__rule">Initially, do not sell. Listen.</p>'
         + label('Listen for')
         + `<div class="sg-pb__heard">${LISTEN.map((l) => `<p>&ldquo;${l}&rdquo;</p>`).join('')}</div>`
-        + `<p class="sg-pb__note">Capture the exact language, the workflow and the workaround. The
-           words they use are what the product has to say back to them.</p>`,
+        + label('Capture') + list(CAPTURE)
+        + `<p class="sg-pb__note">Do not translate their problem into AI language too early. Understand the
+           <b>business language</b> first.</p>`,
     },
     {
       title: PLAYBOOK_STEPS[4],
-      aim: 'Watch how the problem is found today, before showing anything.',
-      body: label('Do not open with a demonstration. Ask')
-        + say('Show me how you currently discover this problem.', true)
-        + label('Let them show you') + list(SHOWME)
-        + label('Then introduce Svarg &mdash; as a replacement for one thing')
+      aim: 'Watch how the problem is found today, before showing Svarg.',
+      body: pair(say('Show me how you currently know that a customer is at risk of leaving.', true),
+          say('Show me how you currently find existing customers who are ready to buy more.', true))
+        + label('Then watch where they look') + list(LOOK)
+        + label('Do not accept') + say('We usually know.', false)
+        + label('Ask') + say('Show me.', true)
+        + label('Map the current process')
+        + seq(TODAY_FLOW, 'down')
+        + `<p class="sg-pb__note">The opportunity for Svarg is the manual gap in this process.</p>`
+        + label('Then introduce Svarg')
         + `<div class="sg-pb__swap">
-             <p class="sg-pb__swap-from">A human manually connects the signals</p>
-             <p class="sg-pb__swap-to">Svarg detects &rarr; explains &rarr; recommends &rarr; enables action</p>
-           </div>`,
+             <p class="sg-pb__swap-from">Today, your team manually connects these signals.</p>
+             <p class="sg-pb__swap-to">Svarg continuously connects them for you.</p>
+           </div>`
+        + seq(['Signals', 'Detect', 'Explain', 'Recommend', 'Act', 'Measure'], 'good'),
     },
     {
       title: PLAYBOOK_STEPS[5],
-      aim: 'One problem, one workflow, one measurable outcome.',
-      body: '<p class="sg-pb__rule">Do not build the whole platform for the first ICP.</p>'
-        + seq(['Signals', 'Detect emerging problem', 'Explain why', 'Recommend action',
-          'Execute or notify', 'Measure outcome'], 'down')
-        + label('Every requested feature goes through one question')
-        + say('Does this solve the same problem for more than one ICP customer?', true)
-        + `<p class="sg-pb__note">If it does not, it is a custom request. Custom requests are revenue
-           and they are not product; calling them product is how a platform becomes an agency.</p>`,
+      aim: 'One problem, one customer segment, one owner, one measurable outcome.',
+      body: '<p class="sg-pb__rule">Do not build a broad &ldquo;Customer Intelligence Platform&rdquo;.</p>'
+        + label('For example') + say('Detect customers whose engagement is declining before they disappear.', true)
+        + label('Not') + say('AI-powered customer retention.', false)
+        + label('The product workflow')
+        + `<ol class="sg-pb__flow">${WORKFLOW.map(([stage, what, eg, now]) => `
+            <li>
+              <h4>${stage}</h4>
+              <p>${what}</p>
+              ${eg ? `<p class="sg-pb__eg">${eg}</p>` : ''}
+              ${today(now)}
+            </li>`).join('')}</ol>`
+        + `<p class="sg-pb__rule"><b>Do not pretend a stage exists before it does.</b> Detection is the
+           strongest foundation; say the rest as it is.</p>`,
     },
     {
       title: PLAYBOOK_STEPS[6],
-      aim: 'The same problem, at several companies, against real data.',
+      aim: 'Three to five companies with the same customer problem &mdash; not five interested in Svarg.',
       target: '3&ndash;5 companies',
-      body: label('For each') + list(PILOT)
-        + label('The objective is not')
-        + say('The customer liked the demo.', false)
+      body: label('Pilot structure') + list(PILOT)
+        + label('The objective is not') + say('The customer liked the demo.', false)
         + label('It is')
-        + say('Svarg found something the customer would otherwise have discovered later.', true),
+        + say('Svarg found a customer at risk, or a growth opportunity, that the business would otherwise '
+            + 'have discovered later &mdash; or missed entirely.', true)
+        + pair(list(METRICS_KEEP, 'check'), list(METRICS_GROW, 'check'))
+        + `<p class="sg-pb__rule">Do not optimise for the number of &ldquo;insights&rdquo;.
+           <b>Optimise for customer outcomes.</b></p>`,
     },
     {
       title: PLAYBOOK_STEPS[7],
-      aim: 'Capture the before and the after, in the customer&rsquo;s own numbers.',
-      body: `<table class="sg-pb__econ">
-           <thead><tr><th>Before Svarg</th><th>With Svarg</th></tr></thead>
-           <tbody>${ECONOMICS.map(([b, w]) => `<tr><td>${b}</td><td>${w}</td></tr>`).join('')}</tbody>
-         </table>`
-        + seq(['Earlier detection', 'Earlier action', 'Measurable business impact'], 'good')
-        + `<p class="sg-pb__note">This is the sales story. Not the architecture and not the model
-           &mdash; the arithmetic of one problem found sooner.</p>`,
+      aim: 'The sales story becomes arithmetic.',
+      body: label('Not')
+        + `<div class="sg-pb__nots">
+             <p>&ldquo;Our AI is sophisticated.&rdquo;</p>
+             <p>&ldquo;We have 40 agents.&rdquo;</p>
+             <p>&ldquo;We use advanced models.&rdquo;</p>
+           </div>`
+        + label('Instead')
+        + say('You were losing or missing <b>X</b>. We identified <b>Y</b> earlier. Your team acted on '
+            + '<b>Z</b>. The resulting value was <b>&#8377;N</b>.', true)
+        + label('Retention example') + table(ECON_KEEP)
+        + label('Growth example') + table(ECON_GROW)
+        + `<p class="sg-pb__note">Illustrative &mdash; the real numbers come from pilots. Be conservative with
+           attribution: if Svarg found an opportunity and the customer did not act, do not count its whole
+           value as revenue Svarg generated.</p>`,
     },
     {
       title: PLAYBOOK_STEPS[8],
-      aim: 'The same problem at company after company. This is the gate.',
+      aim: 'Does the same problem repeat across companies? This is where a company and a consulting project part.',
       body: `<div class="sg-pb__repeat">
            ${['A', 'B', 'C', 'D', 'E'].map((c) => `
-             <div class="sg-pb__co"><span>Company ${c}</span><p>same problem</p></div>`).join('')}
+             <div class="sg-pb__co"><span>Company ${c}</span><p>same problem &middot; signals &middot; owner &middot; intervention</p></div>`).join('')}
          </div>`
-        + label('And ideally') + list(SAME, 'check')
-        + `<p class="sg-pb__note">Then there is the beginning of a real niche ICP. Before this point
-           there are customers; after it there is a market.</p>`,
+        + label('Look for') + list(SAME, 'check')
+        + `<p class="sg-pb__note">If every company needs a completely different solution, it may be an AI
+           consulting business rather than a product.</p>`
+        + label('The key question')
+        + say('Can we solve this problem for the next customer without rebuilding Svarg?', true),
     },
     {
       title: PLAYBOOK_STEPS[9],
-      aim: 'One sentence, specific enough to be wrong.',
-      body: `<p class="sg-pb__wedge">Svarg helps <em>specific customer</em> detect
-           <em>specific problem</em> before <em>specific costly outcome</em>.</p>`
+      aim: 'Only after steps 1&ndash;9: one sentence, specific enough to be wrong.',
+      body: `<p class="sg-pb__wedge">Svarg helps <em>specific customer segment</em> identify
+           <em>specific retention or growth problem</em> before <em>specific costly outcome</em>,
+           using signals already available across their existing systems.</p>`
         + label('Not')
         + `<div class="sg-pb__nots">
              <p>&ldquo;AI platform for enterprises.&rdquo;</p>
-             <p>&ldquo;Connect your data.&rdquo;</p>
-             <p>&ldquo;Proactive AI.&rdquo;</p>
+             <p>&ldquo;AI for proactive business intelligence.&rdquo;</p>
+             <p>&ldquo;Connect your data and find insights.&rdquo;</p>
            </div>`
-        + `<p class="sg-pb__note">Those can stay part of the platform story. The customer-facing
-           wedge is the specific one, and its three blanks are filled from steps 1, 2 and 8
-           &mdash; not from a whiteboard.</p>`,
+        + label('Examples, not assumptions about the final ICP')
+        + `<div class="sg-pb__wedges">${WEDGES.map(([k, w]) => `
+            <p><span class="sg-pb__tag">${k}</span>${w}</p>`).join('')}</div>`
+        + `<p class="sg-pb__note">The real wedge is filled from steps 1&ndash;9 &mdash; not from a whiteboard.</p>`,
     },
+  ];
+
+  /*
+   * What the ten steps produce. Each stage carries today's state, from the
+   * same facts as the ICP tab's spine, so the page read before a call never
+   * promises a stage that is not there.
+   */
+  const EVOLUTION = [
+    ['Detect', 'Something is happening.', 'Customer engagement dropped significantly.', 'Built.'],
+    ['Understand', 'This is why it matters.', 'Reduced usage, two missed appointments, no reply to the last interaction.', 'Built &mdash; written by the AI per customer.'],
+    ['Recommend', 'This is what you should do.', 'Contact the customer and check whether something is preventing them.', 'Built &mdash; written by the AI per customer.'],
+    ['Act', 'Let Svarg help execute it.', 'Create task &rarr; draft message &rarr; update CRM &rarr; notify owner.', 'Partly &mdash; drafts and records; does not send, create tasks or update the CRM.'],
+    ['Learn', 'Did the action work?', 'Customer returned &rarr; risk resolved. Or no response &rarr; escalate.', 'Partly &mdash; counts which steps worked; no customer has enough outcomes yet.'],
+  ];
+
+  const MOTION = [
+    ['Identify', 'Find an acute retention or growth problem.'],
+    ['Prove', 'Show it happens repeatedly and that early signals exist.'],
+    ['Detect', 'Use existing business data to find the customer earlier.'],
+    ['Understand', 'Explain why that customer needs attention.'],
+    ['Recommend', 'Tell the team what to do.'],
+    ['Act', 'Help execute the intervention.'],
+    ['Measure', 'Measure the customer or revenue outcome.'],
+    ['Repeat', 'Solve the same problem for more companies.'],
+    ['Productize', 'Turn the repeated workflow into a repeatable product.'],
+    ['Expand', 'Once the wedge is strong, move into adjacent retention and growth problems.'],
+  ];
+
+  const LADDER = [
+    ['Retention', 'Customer disengagement', 'Coaching academies', 'Student attendance',
+      'Attendance + payment + communication', 'Intervention', 'Student retained'],
+    ['Retention', 'Missed appointments', 'Same or adjacent segment', 'Appointments',
+      'Appointment + CRM + communication', 'Intervention', 'Customer retained'],
+    ['Growth', 'Existing customer expansion', 'Same segment', 'Usage',
+      'Usage + purchase history + engagement', 'Cross-sell', 'Revenue increased'],
   ];
 
   el.innerHTML = `
     <section class="sg-pb">
       <div class="sg-pb__lead">
-        <p class="sg-pb__aim">The ICP tab says what we believe. This is what would prove it.</p>
-        <p class="sg-pb__note">Ten steps, read in order &mdash; the order is the content. Finding the
-          same problem at five companies means nothing until step 2 has found that problem in the
-          customer&rsquo;s own words, and step 6 builds the wrong thing if step 3 let an enthusiastic
-          non-buyer into the roadmap.</p>
+        <p class="sg-pb__kicker">Svarg B2B Playbook &mdash; Retention &amp; Growth</p>
+        <p class="sg-pb__thesis">Businesses are reactive by default.</p>
+        <p class="sg-pb__note">They have customer data across CRM, communication tools, operational
+          systems, payments, attendance, usage, support and spreadsheets. The problem is not that they
+          have no data. It is that <b>important customer signals are scattered, and nobody continuously
+          connects them early enough.</b></p>
+        <div class="sg-pb__pair">
+          <div class="sg-pb__side is-keep"><h4>Retention</h4><p>Customers start drifting away, and the
+            business notices too late.</p></div>
+          <div class="sg-pb__side is-grow"><h4>Growth</h4><p>Existing customers show buying or expansion
+            signals, and the business misses the opportunity.</p></div>
+        </div>
+        ${seq(['Data', 'Signals', 'Detection', 'Understanding', 'Recommendation', 'Action', 'Measurement'], 'good')}
+        <p class="sg-pb__note">Not a churn predictor and not a CRM: <b>an intelligence and action layer on
+          top of the systems businesses already use.</b> The ICP tab says what we believe; the ten steps
+          below are what would prove it, read in order &mdash; the order is the content.</p>
       </div>
 
       <ol class="sg-pb__steps">
@@ -2992,6 +3192,46 @@ function renderPlaybook() {
             <div class="sg-pb__body">${s.body}</div>
           </li>`).join('')}
       </ol>
+
+      <div class="sg-pb__part">
+        <h3>The Svarg product evolution</h3>
+        <ol class="sg-pb__evo">${EVOLUTION.map(([stage, line, eg, now]) => `
+          <li>
+            <h4>${stage}</h4>
+            <p class="sg-pb__evo-line">&ldquo;${line}&rdquo;</p>
+            <p class="sg-pb__eg">${eg}</p>
+            ${today(now)}
+          </li>`).join('')}</ol>
+        <p class="sg-pb__note">Over time Svarg gets better at knowing <b>which signals matter, which
+          customers matter, what action works and when to act.</b></p>
+      </div>
+
+      <div class="sg-pb__part">
+        <h3>The overall motion</h3>
+        <ol class="sg-pb__motion">${MOTION.map(([word, line]) => `
+          <li><b>${word}</b><span>${line}</span></li>`).join('')}</ol>
+      </div>
+
+      <div class="sg-pb__part">
+        <h3>The strategic rule</h3>
+        <p class="sg-pb__rule"><b>Do not sell &ldquo;Retention + Growth&rdquo; as the first product.</b>
+          It is the strategic territory; the product wedge is much narrower.</p>
+        ${seq(['Territory', 'Problem', 'ICP', 'Workflow', 'Signal', 'Action', 'Outcome'])}
+        ${LADDER.map((row, i) => `
+          ${label(i === 0 ? 'For example' : 'Then, once that works')}
+          ${seq(row, i === LADDER.length - 1 ? 'good' : '')}`).join('')}
+        <p class="sg-pb__note">That is how Svarg becomes <b>horizontal without starting horizontal.</b></p>
+      </div>
+
+      <div class="sg-pb__part sg-pb__part--final">
+        <h3>The final principle</h3>
+        ${say('Find a market that needs AI.', false)}
+        ${say('Find a recurring customer problem where businesses already have the signals, discover the '
+          + 'problem too late, lose money because of that delay, and have a clear action they could take '
+          + 'if they knew earlier.', true)}
+        <p class="sg-pb__note">Then make Svarg the system that continuously closes that gap.</p>
+        ${seq(['Data', 'Signals', 'Svarg', 'Early detection', 'Better action', 'Better customer outcome'], 'good')}
+      </div>
     </section>`;
 }
 
@@ -3384,6 +3624,10 @@ function renderAudience() {
         + 'price is known and the count is countable'],
       action: ['yes', 'The HOD has the record corrected by hand. A correction, not a collection '
         + '&mdash; whether the money follows is a separate question'],
+      // Added to step 1 on 6 October 2026, after the interview: not asked, so
+      // left empty with the question that closes it, never inferred.
+      measurable: ['', 'Not asked. A corrected record is countable; whether anybody would count the '
+        + 'money that follows it was not discussed'],
       same: ['yes', 'The gap, and priced: a treated patient left marked no-show, a package used '
         + 'past the entitlement. Here it costs revenue'],
       buyer: ['yes', 'HOD'],
@@ -3686,6 +3930,8 @@ function renderAudience() {
        */
       ['frequency', 'How often does a call fail to reach the CRM &mdash; and who notices when it does?'],
       ['cost', 'What is lost when it happens: a follow-up, a booking, or a customer?'],
+      // Step 1's eighth condition, unasked at Vesoma.
+      ['measurable', 'If a corrected record turned into a collected bill, where would you see it &mdash; and who would count it?'],
     ],
     /*
      * A vertical nobody has spoken to has no follow-ups, because there is

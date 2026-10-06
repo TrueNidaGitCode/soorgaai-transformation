@@ -2307,8 +2307,130 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   text-decoration-color: rgba(255, 255, 255, 0.2);
 }
 
+/* ── Retention & Growth additions (6 October 2026) ────────────────────────
+   The thesis lead, the retention/growth pairs, the product workflow with
+   what is built today, and the four closing parts. */
+
+.sg-pb__kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+.sg-pb__thesis { margin: 0 0 10px; font-size: 1.5rem; font-weight: 700; line-height: 1.25; color: #fff; text-wrap: balance; }
+.sg-pb__lead .sg-pb__note + .sg-pb__note { margin-top: 12px; }
+.sg-pb__lead .sg-pb__pair { margin-top: 14px; }
+
+.sg-pb__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 14px; }
+.sg-pb__side {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.sg-pb__side h4 {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sg-pb__side.is-keep h4 { color: #93C5FD; }
+.sg-pb__side.is-grow h4 { color: #5CC5A7; }
+.sg-pb__side p { margin: 0; font-size: 0.88rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+.sg-pb__side .sg-pb__say { margin: 0; }
+.sg-pb__side .sg-pb__seq { margin: 0; }
+
+.sg-pb__flow { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; }
+.sg-pb__flow li {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.sg-pb__flow h4, .sg-pb__evo h4 { margin: 0 0 4px; font-size: 0.92rem; font-weight: 700; color: #fff; }
+.sg-pb__flow p { margin: 0 0 4px; font-size: 0.86rem; line-height: 1.5; color: rgba(255, 255, 255, 0.72); }
+.sg-pb__eg {
+  margin: 4px 0 6px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(92, 197, 167, 0.35);
+  font-size: 0.84rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+}
+.sg-pb__today { margin: 6px 0 0; font-size: 0.8rem; line-height: 1.5; color: rgba(255, 190, 120, 0.85); }
+.sg-pb__today b {
+  margin-right: 6px;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 190, 120, 1);
+}
+
+.sg-pb__wedges { display: grid; gap: 6px; margin-bottom: 12px; }
+.sg-pb__wedges p { margin: 0; font-size: 0.88rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+.sg-pb__tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border: 1px solid rgba(92, 197, 167, 0.4);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #5CC5A7;
+}
+
+.sg-pb__part { margin-top: 32px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.sg-pb__part h3 { margin: 0 0 14px; font-size: 1.1rem; font-weight: 700; color: #fff; }
+.sg-pb__evo {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+.sg-pb__evo li {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.sg-pb__evo-line { margin: 0 0 4px; font-size: 0.86rem; color: rgba(255, 255, 255, 0.85); }
+.sg-pb__motion {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: motion;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px 14px;
+}
+.sg-pb__motion li {
+  counter-increment: motion;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-content: start;
+  column-gap: 8px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+.sg-pb__motion li::before {
+  content: counter(motion);
+  grid-row: span 2;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #5CC5A7;
+}
+.sg-pb__motion b { color: #fff; }
+.sg-pb__motion span { color: rgba(255, 255, 255, 0.6); }
+.sg-pb__part--final .sg-pb__say.is-yes { font-size: 1rem; }
+
 @media (max-width: 620px) {
   .sg-pb__step { padding-left: 34px; }
+  .sg-pb__pair { grid-template-columns: 1fr; }
   .sg-pb__n { left: -13px; width: 26px; height: 26px; font-size: 0.76rem; }
   .sg-pb__head { flex-wrap: wrap; }
   .sg-pb__buckets,

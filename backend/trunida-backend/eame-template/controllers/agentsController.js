@@ -20,6 +20,7 @@ import { hasOwnRows } from '../services/answerService.js';
 import { isOwner } from './accessController.js';
 import { activeCategories, categoryLimit, coversWatcher, allowedSchedule, coverageSummary } from '../services/coverage.js';
 import { draftFollowUp } from '../services/draftService.js';
+import { ACTIONS, customersIn, guidanceFor, kindOf, learnFrom } from '../services/customerSpine.js';
 import { sendSignal } from '../services/tenantSignals.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -77,7 +78,26 @@ function findingView(f) {
     lastSeenAt: f.lastSeenAt || null,
     resolvedAt: f.resolvedAt || null,
     evidence: f.evidence || null,
+    // Retention or growth, and what the team has done about it so far.
+    kind: kindOf(f.watcherId || ''),
+    acted: f.acted || null,
+    outcomes: f.outcomes || [],
   };
+}
+
+/**
+ * What this business's own follow-ups have achieved, per watcher and step.
+ *
+ * Only findings somebody acted on, and only of the same kind as the board:
+ * the demonstration's outcomes must never teach the business's
+ * recommendations, nor the other way round.
+ */
+async function outcomeStats(onlyKind) {
+  const acted = await findingsCollection().find(
+    { ...onlyKind, $or: [{ acted: { $exists: true } }, { 'outcomes.0': { $exists: true } }] },
+    { projection: { watcherId: 1, state: 1, acted: 1, outcomes: 1 } },
+  ).limit(2000).toArray().catch(() => []);
+  return learnFrom(acted);
 }
 
 /**
@@ -166,6 +186,17 @@ export async function listFindingsHandler(req, res) {
     const book = await phoneBook().catch(() => new Map());
     const withPerson = (f) => { const v = findingView(f); v.person = personForFinding(v, book); return v; };
 
+    /*
+     * Measure reaches further back than the board's handful of resolved
+     * rows: a customer acted on last month and won back this week is the
+     * result the whole spine exists to show.
+     */
+    const since = new Date(Date.now() - 90 * 86400000);
+    const won = await findingsCollection()
+      .find({ state: 'resolved', 'outcomes.0': { $exists: true }, resolvedAt: { $gte: since }, ...onlyKind, ...notOff })
+      .limit(300).toArray().catch(() => []);
+    const stats = await outcomeStats(onlyKind);
+
     const RANK = { high: 0, medium: 1, low: 2 };
     const rows = open.map(withPerson).sort((a, b) =>
       (RANK[a.severity] ?? 1) - (RANK[b.severity] ?? 1)
@@ -219,6 +250,13 @@ export async function listFindingsHandler(req, res) {
        * front of them to deal with, and then everything about that one.
        */
       people: peopleIn(rows),
+      /*
+       * The same people, each tagged with where they are on
+       * Detect → Explain → Recommend → Act → Measure → Learn. Worked out in
+       * code from the findings and this business's own outcomes; see
+       * customerSpine.
+       */
+      customers: customersIn(rows, won.map(withPerson), stats),
       /*
        * Whether this application holds any of the customer's own records.
        *
@@ -309,7 +347,8 @@ export async function getFindingHandler(req, res) {
     const _id = new mongoose.Types.ObjectId(String(req.params.id));
     const f = await findingsCollection().findOne({ _id });
     if (!f) return res.status(404).json({ error: 'No such finding.' });
-    return res.json({ finding: findingView(f) });
+    const stats = await outcomeStats({ 'evidence.simulated': f.evidence?.simulated ? true : { $ne: true } });
+    return res.json({ finding: findingView(f), guidance: guidanceFor(f, stats) });
   } catch {
     return res.status(404).json({ error: 'No such finding.' });
   }
@@ -349,6 +388,31 @@ export async function draftFindingHandler(req, res) {
  * another country must not move the owner's briefing. Only watchers that
  * have never run and are still on the UTC default are moved.
  */
+/**
+ * The team did something about a finding — or takes it back.
+ *
+ * Svarg sends nothing; this is the team saying what THEY did, so Measure can
+ * tell whether it worked. Anyone who can read a finding can mark it, as with
+ * drafting: the front desk is who makes the call. An empty action clears it.
+ */
+export async function actedFindingHandler(req, res) {
+  try {
+    const _id = new mongoose.Types.ObjectId(String(req.params.id));
+    const action = String(req.body?.action || '');
+    if (action && !ACTIONS[action]) return res.status(400).json({ error: 'That is not a step Svarg knows.' });
+    const f = await findingsCollection().findOne({ _id });
+    if (!f) return res.status(404).json({ error: 'No such finding.' });
+    if (f.state === 'resolved') return res.status(400).json({ error: 'This one has already resolved.' });
+    const by = String(req.user?.name || req.user?.email || '');
+    await findingsCollection().updateOne({ _id }, action
+      ? { $set: { acted: { action, at: new Date(), by } } }
+      : { $unset: { acted: '' } });
+    return res.json({ ok: true, acted: action ? { action, label: ACTIONS[action] } : null });
+  } catch (err) {
+    return bad(res, err);
+  }
+}
+
 export async function timezoneHandler(req, res) {
   try {
     const { moved } = await adoptTimezone(req.body?.tz);

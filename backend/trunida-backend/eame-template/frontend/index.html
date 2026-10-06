@@ -297,6 +297,20 @@
       practice is a directory, and nobody reading a morning list wants a
       directory. Hidden entirely when there is nobody to choose between.
     -->
+    <!--
+      Every customer something is open for, each tagged with where they are
+      on Detect, Explain, Recommend, Act, Measure and Learn. The board's rows
+      say what was found; this says what happens next, one customer at a
+      time. Worked out in code (services/customerSpine.js), never by a model.
+    -->
+    <section class="cs" id="fn-cust" hidden aria-label="Customers found">
+      <div class="cs__head">
+        <h3 class="cs__title" id="fn-cust-title">Customers found</h3>
+        <p class="cs__sub" id="fn-cust-sub"></p>
+      </div>
+      <div class="cs__list" id="fn-cust-list"></div>
+    </section>
+
     <div class="fn__who" id="fn-who" hidden>
       <label class="fn__who-label" for="fn-person">Show</label>
       <select class="fn__who-pick" id="fn-person"></select>
@@ -374,6 +388,17 @@
 
     <div class="fd__act" id="fd-act">
       <h3 class="fd__h">What to do about it</h3>
+      <!-- Explain, Recommend, Act and Measure for this one finding. -->
+      <div class="fg" id="fd-guide" hidden>
+        <p class="fg__kind" id="fd-kind"></p>
+        <p class="fg__why" id="fd-explain"></p>
+        <p class="fg__rec"><span class="fg__label">Recommended next step</span> <b id="fd-recommend"></b> <span class="fg__learnt" id="fd-learnt"></span></p>
+        <div class="fg__steps">
+          <span class="fg__label">Mark what you did</span>
+          <div class="fg__btns" id="fd-steps"></div>
+        </div>
+        <p class="fg__measure" id="fd-measure"></p>
+      </div>
       <div class="fd__actions">
         <button type="button" class="fd__btn" id="fd-draft">Draft a follow-up</button>
         <button type="button" class="fd__btn fd__btn--quiet" id="fd-ask">Ask about this</button>

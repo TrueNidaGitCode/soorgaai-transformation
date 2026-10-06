@@ -201,8 +201,11 @@ describe('the agents are wired into the application', () => {
      * is telemetry about the reader themselves, and drafting a reply writes
      * a message and sends nothing — the person who would chase the client is
      * the person who should be able to draft to them.
+     *
+     * A third since 6 October 2026: marking which step was taken. It records
+     * what the front desk did — they make the call — and sends nothing.
      */
-    const READERS_MAY_WRITE = ["'/findings/opened'", "'/findings/:id/draft'"];
+    const READERS_MAY_WRITE = ["'/findings/opened'", "'/findings/:id/draft'", "'/findings/:id/acted'"];
 
     for (const line of lines) {
       expect(line, line).toContain('protect');

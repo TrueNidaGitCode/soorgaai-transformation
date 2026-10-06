@@ -48,6 +48,9 @@
     healthNote: document.getElementById('fn-health-note'),
     eg: document.getElementById('fn-eg'),
     eglist: document.getElementById('fn-eglist'),
+    cust: document.getElementById('fn-cust'),
+    custList: document.getElementById('fn-cust-list'),
+    custSub: document.getElementById('fn-cust-sub'),
   };
 
   var d = {
@@ -68,6 +71,13 @@
     drafttext: document.getElementById('fd-drafttext'),
     copy: document.getElementById('fd-copy'),
     note: document.getElementById('fd-note'),
+    guide: document.getElementById('fd-guide'),
+    kind: document.getElementById('fd-kind'),
+    explain: document.getElementById('fd-explain'),
+    recommend: document.getElementById('fd-recommend'),
+    learnt: document.getElementById('fd-learnt'),
+    steps: document.getElementById('fd-steps'),
+    measure: document.getElementById('fd-measure'),
   };
 
   function esc(t) {
@@ -492,6 +502,66 @@
     if (el.personClear) el.personClear.hidden = !person;
   }
 
+  /*
+   * ── Each customer, and where they are on the spine ──────────────────────
+   *
+   * Detect, Explain, Recommend, Act, Measure, Learn — one chip each, so a
+   * reader sees at a glance that this customer was found and explained, has a
+   * recommended step, and is waiting on somebody to take it. The server
+   * worked every word out in code (customerSpine.js); this only draws it.
+   */
+  var STAGES = [
+    ['detect', 'Detect'], ['explain', 'Explain'], ['recommend', 'Recommend'],
+    ['act', 'Act'], ['measure', 'Measure'], ['learn', 'Learn'],
+  ];
+  var STATE_WORD = { done: 'Done', part: 'Partly', waiting: 'Waiting', none: 'Not yet' };
+  var KIND_WORD = { retention: 'Retention', growth: 'Growth' };
+
+  function customerCard(c) {
+    var s = c.stages || {};
+    var tags = (c.kinds || []).map(function (k) {
+      return '<span class="cs__tag cs__tag--' + esc(k) + '">' + esc(KIND_WORD[k] || k) + '</span>';
+    }).join('');
+    var chips = STAGES.map(function (st) {
+      var v = s[st[0]] || { state: 'none', line: '' };
+      return '<li class="cs__stage is-' + esc(v.state) + '" title="' + esc(v.line) + '">'
+        + '<span class="cs__dot" aria-hidden="true"></span>'
+        + '<span class="cs__sname">' + st[1] + '</span>'
+        + '<span class="cs__sstate">' + esc(STATE_WORD[v.state] || '') + '</span>'
+        + '</li>';
+    }).join('');
+    var line = function (key, label) {
+      var v = s[key];
+      return v && v.line ? '<p class="cs__line"><span>' + label + '</span>' + esc(v.line) + '</p>' : '';
+    };
+    return '<article class="cs__card cs__card--' + esc(c.severity) + (person === c.person ? ' is-picked' : '') + '">'
+      + '<header class="cs__top">'
+      +   '<button type="button" class="cs__name" data-person="' + esc(c.person) + '">' + esc(c.person) + '</button>'
+      +   '<span class="cs__tags">' + tags + '</span>'
+      +   (c.top ? '<button type="button" class="cs__open" data-open="' + esc(c.top) + '">Open &rsaquo;</button>' : '')
+      + '</header>'
+      + '<ol class="cs__spine">' + chips + '</ol>'
+      + line('detect', 'Found')
+      + line('explain', 'Why it matters')
+      + line('recommend', 'Next step')
+      + line('act', 'Done so far')
+      + line('measure', 'Result')
+      + '</article>';
+  }
+
+  function drawCustomers(list) {
+    if (!el.cust || !el.custList) return;
+    var all = list || [];
+    var shown = person ? all.filter(function (c) { return c.person === person; }) : all;
+    el.cust.hidden = !all.length;
+    if (!all.length) { el.custList.innerHTML = ''; return; }
+    var acted = all.filter(function (c) { return c.stages && c.stages.act && c.stages.act.state === 'done'; }).length;
+    var won = all.filter(function (c) { return c.stages && c.stages.measure && c.stages.measure.state === 'done'; }).length;
+    var who = all.length === 1 ? '1 customer' : all.length + ' customers';
+    el.custSub.textContent = who + ' found · ' + acted + ' acted on · ' + won + ' with a result.';
+    el.custList.innerHTML = shown.map(customerCard).join('');
+  }
+
   function render(body) {
     _last = body;
     drawHero(body);
@@ -511,6 +581,7 @@
     var people = body.people || [];
     if (person && !people.some(function (p) { return p.person === person; })) person = '';
     drawPeople(people);
+    drawCustomers(body.customers || []);
 
     var open = all.filter(function (f) {
       if (picked && f.category !== picked) return false;
@@ -852,6 +923,7 @@
       d.note.hidden = true;
       d.draftbox.hidden = true;
       d.drafttext.value = '';
+      drawGuide(body.guidance, f);
 
       // Told only when somebody actually reads one: which watcher it came
       // from, never which finding.
@@ -869,7 +941,80 @@
     });
   }
 
+  /*
+   * Explain, Recommend, Act and Measure for one finding.
+   *
+   * The steps are the team's own: pressing one records that somebody did it,
+   * and Svarg sends nothing. Pressing it again takes it back. When the
+   * watcher later stops finding this, that step is counted as having worked,
+   * and that count is what Learn reads.
+   */
+  function drawGuide(g, f) {
+    if (!d.guide) return;
+    if (!g) { d.guide.hidden = true; return; }
+    d.guide.hidden = false;
+    d.guide.dataset.won = g.won || '';
+    d.kind.textContent = g.kind === 'retention' ? 'Retention — keeping this customer'
+      : g.kind === 'growth' ? 'Growth — revenue from this customer' : '';
+    d.kind.hidden = !d.kind.textContent;
+    d.explain.textContent = g.why || '';
+    d.recommend.textContent = (g.recommend && g.recommend.label) || '';
+    var ev = g.recommend && g.recommend.evidence;
+    d.learnt.textContent = g.recommend && g.recommend.learnt && ev
+      ? 'Chosen from your results: worked ' + ev.worked + ' of ' + ev.tried + ' times.'
+      : '';
+    var done = f.acted && f.acted.action;
+    d.steps.innerHTML = (g.steps || []).map(function (s) {
+      var on = s.action === done;
+      return '<button type="button" class="fg__step' + (on ? ' is-on' : '') + '" data-step="' + esc(s.action) + '"'
+        + ' aria-pressed="' + on + '"' + (f.state === 'resolved' ? ' disabled' : '') + '>' + esc(s.label) + '</button>';
+    }).join('');
+    measureLine(f.state, done ? f.acted.at : null, (f.outcomes || []).length);
+  }
+
+  function measureLine(state, actedAt, wins) {
+    var won = d.guide.dataset.won || 'the watcher stops finding it';
+    d.measure.textContent = state === 'resolved'
+      ? (wins ? 'Resolved after the team acted.' : 'Resolved.')
+      : actedAt
+        ? 'Marked ' + ago(actedAt) + '. Svarg checks on every run and counts it as worked once ' + won + '.'
+        : 'Once you mark a step, Svarg checks on every run and counts it as worked once ' + won + '.';
+  }
+
   // ── Wiring ────────────────────────────────────────────────────────────────
+
+  if (d.steps) {
+    d.steps.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-step]');
+      if (!b || b.disabled) return;
+      var action = b.classList.contains('is-on') ? '' : b.dataset.step;
+      api('/findings/' + encodeURIComponent(detail.dataset.finding) + '/acted', {
+        method: 'POST', body: JSON.stringify({ action: action }),
+      }).then(function () {
+        [].forEach.call(d.steps.querySelectorAll('[data-step]'), function (x) {
+          var mine = x.dataset.step === action;
+          x.classList.toggle('is-on', mine);
+          x.setAttribute('aria-pressed', mine ? 'true' : 'false');
+        });
+        measureLine('open', action ? new Date().toISOString() : null, 0);
+      }).catch(function (err) { d.note.hidden = false; d.note.textContent = err.message; });
+    });
+  }
+
+  if (el.custList) {
+    el.custList.addEventListener('click', function (e) {
+      var o = e.target.closest('[data-open]');
+      if (o) {
+        openFinding(o.dataset.open).catch(function (err) { el.note.hidden = false; el.note.textContent = err.message; });
+        return;
+      }
+      var p = e.target.closest('[data-person]');
+      if (!p) return;
+      // The same lens as the picker: one customer's findings, or everyone's.
+      person = person === p.dataset.person ? '' : p.dataset.person;
+      if (_last) render(_last);
+    });
+  }
 
   (function wireMode() {
     var btn = document.getElementById('fn-mode-toggle');

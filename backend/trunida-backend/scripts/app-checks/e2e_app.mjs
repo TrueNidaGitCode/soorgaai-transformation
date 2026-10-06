@@ -208,6 +208,46 @@ try {
   await conn.close();
 } catch (err) { check('webhook delivery path', false, err.stack); }
 
+// Detect → Explain → Recommend → Act → Measure → Learn, per customer, on a real database.
+try {
+  const mongoose = (await import('mongoose')).default;
+  const conn = await mongoose.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise();
+  const F = conn.collection('svarg_findings');
+  await F.deleteMany({ key: /^e2e-spine/ });
+  const agentId = new mongoose.Types.ObjectId();
+  const at = new Date(Date.now() - 3 * 86400000);
+  const ins = await F.insertMany([
+    { agentId, key: 'e2e-spine-1', state: 'open', title: 'Meera Iyer', watcherId: 'stopped-coming', agentName: 'Stopped Coming', severity: 'medium', firstSeenAt: at, lastSeenAt: new Date(), evidence: { rule: 'no visit in 14 days' } },
+    { agentId, key: 'e2e-spine-2', state: 'open', title: 'Meera Iyer', watcherId: 'package-overused', agentName: 'Package Over-used', severity: 'high', firstSeenAt: at, lastSeenAt: new Date(), evidence: { rule: 'sessions used above sessions bought' } },
+  ]);
+  const id1 = String(ins.insertedIds[0]);
+  const tok = (await j('/api/data/owner-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sok_e2e' }) })).body.token;
+  const H = { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
+  const board = await j('/api/agents/findings', { headers: H });
+  const meera = (board.body?.customers || []).find(c => c.person === 'Meera Iyer');
+  check('the board tags the customer with all six stages', meera && meera.findings === 2 && meera.kinds.sort().join() === 'growth,retention'
+    && Object.keys(meera.stages).join() === 'detect,explain,recommend,act,measure,learn' && meera.stages.act.state === 'waiting',
+    JSON.stringify(meera && { k: meera.kinds, s: Object.fromEntries(Object.entries(meera.stages).map(([k, v]) => [k, v.state])) }));
+  const one = await j('/api/agents/findings/' + id1, { headers: H });
+  check('a finding carries its why and its next step', one.body?.guidance?.recommend?.action === 'call' && /drift away/.test(one.body.guidance.why || ''), JSON.stringify(one.body?.guidance?.recommend));
+  check('a step outside the vocabulary is refused', (await j('/api/agents/findings/' + id1 + '/acted', { method: 'POST', headers: H, body: JSON.stringify({ action: 'email-blast' }) })).status === 400);
+  // A front-desk reader, not the owner: they are who makes the call.
+  const cb2 = await fetch(base + '/api/auth/callback?assertion=' + encodeURIComponent(signAssertion({ deployment: DEP, profile: { sub: '2', email: 'desk@e2e.in', name: 'Front Desk' } })), { redirect: 'manual' });
+  const deskTok = new URLSearchParams(String(cb2.headers.get('location') || '').split('#')[1] || '').get('token') || '';
+  const R = { Authorization: 'Bearer ' + deskTok, 'Content-Type': 'application/json' };
+  const acted = await j('/api/agents/findings/' + id1 + '/acted', { method: 'POST', headers: R, body: JSON.stringify({ action: 'call' }) });
+  await conn.collection('svarg_users').deleteMany({ email: 'desk@e2e.in' });
+  check('a signed-in reader can mark a step as done', acted.status === 200 && acted.body?.acted?.action === 'call', JSON.stringify(acted.body));
+  const after = (await j('/api/agents/findings', { headers: H })).body?.customers?.find(c => c.person === 'Meera Iyer');
+  check('Act is partly done and Measure waits on the acted finding', after?.stages?.act?.state === 'part' && after.stages.measure.state === 'waiting' && /come in again/.test(after.stages.measure.line), JSON.stringify(after?.stages?.measure));
+  // What the watcher run does when it stops finding it: resolve, with the outcome.
+  await F.updateOne({ _id: ins.insertedIds[0] }, { $set: { state: 'resolved', resolvedAt: new Date() }, $push: { outcomes: { action: 'call', actedAt: new Date(), resolvedAt: new Date() } } });
+  const won = (await j('/api/agents/findings', { headers: H })).body?.customers?.find(c => c.person === 'Meera Iyer');
+  check('Measure counts it once the finding resolved after the team acted', won?.stages?.measure?.state === 'done', JSON.stringify(won?.stages?.measure));
+  await F.deleteMany({ key: /^e2e-spine/ });
+  await conn.close();
+} catch (err) { check('customer spine', false, err.stack); }
+
 child.kill(); meta.close();
 await new Promise(r => setTimeout(r, 800));
 try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* handles */ }

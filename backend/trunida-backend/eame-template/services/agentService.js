@@ -730,18 +730,35 @@ export async function runAgent(agent, ask) {
       };
     };
 
+    /*
+     * A finding that comes back after resolving starts its follow-up again.
+     * What the team did last time already counted, in `outcomes`, when it
+     * resolved; leaving it marked as acted would claim this time was handled
+     * too. See customerSpine.
+     */
     for (const k of change.new) {
       await findingsCollection().updateOne(
         { agentId: _id, key: k },
-        { $set: { state: 'open', ...carry(k) }, $setOnInsert: { firstSeenAt: at } },
+        { $set: { state: 'open', ...carry(k) }, $setOnInsert: { firstSeenAt: at }, $unset: { acted: '' } },
         { upsert: true },
       );
     }
     for (const k of change.stillTrue) {
       await findingsCollection().updateOne({ agentId: _id, key: k }, { $set: carry(k) });
     }
+    const before = new Map(previous.map(p => [p.key, p]));
     for (const k of change.resolved) {
-      await findingsCollection().updateOne({ agentId: _id, key: k }, { $set: { state: 'resolved', resolvedAt: at } });
+      /*
+       * Measure: if somebody marked a step as done and the watcher has now
+       * stopped finding it, that step worked. Recorded here, at the moment
+       * the application itself observed it, so Learn counts outcomes the
+       * customer's records showed rather than ones anybody claimed.
+       */
+      const acted = before.get(k)?.acted;
+      const outcome = acted && acted.action
+        ? { $push: { outcomes: { action: acted.action, actedAt: acted.at || null, resolvedAt: at } } }
+        : {};
+      await findingsCollection().updateOne({ agentId: _id, key: k }, { $set: { state: 'resolved', resolvedAt: at }, ...outcome });
       // Which watcher stopped being true, never which finding.
       sendSignal('finding_resolved', { watcherId: agent.watcherId || '' });
     }

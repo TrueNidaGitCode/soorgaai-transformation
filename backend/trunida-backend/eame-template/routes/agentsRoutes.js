@@ -24,7 +24,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { ownerOnly } from '../controllers/accessController.js';
-import { listAgentsHandler, createAgentHandler, patchAgentHandler, deleteAgentHandler, startFromCatalogueHandler, listFindingsHandler, getFindingHandler, draftFindingHandler, findingOpenedHandler, timezoneHandler } from '../controllers/agentsController.js';
+import { listAgentsHandler, createAgentHandler, patchAgentHandler, deleteAgentHandler, startFromCatalogueHandler, listFindingsHandler, getFindingHandler, draftFindingHandler, actedFindingHandler, findingOpenedHandler, timezoneHandler } from '../controllers/agentsController.js';
 
 const router = express.Router();
 
@@ -37,6 +37,8 @@ router.get   ('/findings/:id', protect, getFindingHandler);
 // the reply to it — deciding to send it is a person's, wherever they talk to
 // that customer already.
 router.post  ('/findings/:id/draft', protect, express.json({ limit: '4kb' }), draftFindingHandler);
+// What the team did about it. Records a step; sends nothing.
+router.post  ('/findings/:id/acted', protect, express.json({ limit: '2kb' }), actedFindingHandler);
 
 // The owner's clock, learned when they first open the application. Owner
 // only: a colleague abroad must not move the owner's morning briefing.

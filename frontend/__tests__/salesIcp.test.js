@@ -206,11 +206,12 @@ describe('one hypothesis, argued once', () => {
 describe('what the page admits about itself', () => {
   it('marks every pitched verb with whether it is built', () => {
     const view = icpView();
-    // Six stages since 6 October 2026. Act is partly built: a follow-up is
-    // drafted from the finding and never sent. Measure counts resolved
-    // findings, not customers kept.
-    for (const [verb, state] of [['Detect', 'yes'], ['Explain', 'part'], ['Recommend', 'no'],
-      ['Act', 'part'], ['Measure', 'part'], ['Learn', 'no']]) {
+    // Six stages since 6 October 2026, and Explain and Recommend built the
+    // same day (customerSpine.js in the delivered app). Act stays partly:
+    // Svarg records the step and never sends. Measure counts findings that
+    // stopped, not rupees; Learn has no customer with enough outcomes yet.
+    for (const [verb, state] of [['Detect', 'yes'], ['Explain', 'yes'], ['Recommend', 'yes'],
+      ['Act', 'part'], ['Measure', 'part'], ['Learn', 'part']]) {
       expect(view, verb).toMatch(new RegExp(`\\['${verb}', '${state}'`));
     }
   });
@@ -223,7 +224,7 @@ describe('what the page admits about itself', () => {
      * the claim is now true.
      */
     // Counted from the spine itself, so the sentence cannot drift from it.
-    expect(icpView()).toContain('${built} of the ${SPINE.length} is built, ${part} are partly built,');
+    expect(icpView()).toContain('${built} of the ${SPINE.length} are built, ${part} are partly built,');
     expect(icpView()).toContain('and ${not} are not built.');
   });
 });

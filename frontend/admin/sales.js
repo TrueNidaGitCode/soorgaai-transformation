@@ -2356,11 +2356,13 @@ function renderIcpView() {
    */
   const SPINE = [
     ['Detect', 'yes', 'Watchers run on a schedule and evaluate their condition in code: who stopped coming, who went quiet, who asked to upgrade, whose package ran past what was sold.'],
-    ['Explain', 'part', 'A finding carries the records behind it. Why it matters, in the customer&rsquo;s terms, is not written yet.'],
-    ['Recommend', 'no', 'Nothing yet says which intervention to choose for which customer.'],
-    ['Act', 'part', 'A follow-up message is drafted from the finding&rsquo;s own facts. It is never sent; a person copies and sends it.'],
-    ['Measure', 'part', 'Findings are tracked to resolved, and the Reports page counts them weekly and monthly. Customers retained and revenue recovered are not measured yet.'],
-    ['Learn', 'no', 'Nothing changes its own behaviour from what happened yet.'],
+    // Explain, Recommend and the rest since 6 October 2026: every customer
+    // found carries a card from Detect to Learn (eame-template customerSpine.js).
+    ['Explain', 'yes', 'Every finding says why it matters in the customer&rsquo;s terms &mdash; written per watcher, in code, alongside the records behind it.'],
+    ['Recommend', 'yes', 'Every customer found gets a next step: call, offer a time to come back, offer an upgrade, correct the bill. Chosen per watcher, in code.'],
+    ['Act', 'part', 'The team marks the step they took, and a follow-up can be drafted from the finding&rsquo;s facts. Svarg never sends anything; a person does.'],
+    ['Measure', 'part', 'A step counts as worked when the watcher stops finding the problem afterwards. Customers retained and revenue recovered in rupees are not measured yet.'],
+    ['Learn', 'part', 'Once two steps have each been tried three times in a business, the recommendation follows whichever worked more. No customer has enough outcomes yet.'],
   ];
 
   const TODAY   = ['Customer activity', 'Data', 'Reports', 'Someone notices', 'Investigates', 'Acts'];
@@ -2537,10 +2539,11 @@ function renderIcpView() {
             <p class="sg-who__note">${note}</p>
           </li>`).join('')}
       </ol>
-      <p class="sg-who__note"><b>${built} of the ${SPINE.length} is built, ${part} are partly built,
+      <p class="sg-who__note"><b>${built} of the ${SPINE.length} are built, ${part} are partly built,
         and ${not} are not built.</b> This page is read during live conversations, so it says so here
-        rather than letting somebody find out in the room. Demonstrate detection and the evidence
-        behind it; sell recommend, act, measure and learn as what comes next, with a date.</p>
+        rather than letting somebody find out in the room. Demonstrate detection, the reason and the
+        next step on a real customer; show act, measure and learn as working but new &mdash; no customer
+        has a measured result from them yet.</p>
 
       <div class="sg-who__block sg-who__block--lead">
         <p class="sg-who__label">ICP &mdash; <em>the customer relationship, not the company size</em></p>

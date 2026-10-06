@@ -2999,7 +2999,97 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 }
 .sg-ta__wedge .sg-ta__note { margin: 0; }
 
+/* ── Interviews: four answers each, and the playbook filled from them ─────
+   Added 6 October 2026. A card per company with where its playbook came
+   from; the form files the four answers; a cell is clicked to correct it. */
+
+.sg-ta__ivs { display: grid; gap: 8px; margin-bottom: 8px; }
+.sg-ta__iv {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.sg-ta__iv header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
+.sg-ta__iv header b { color: #fff; }
+.sg-ta__iv.is-new { border-color: rgba(92, 197, 167, 0.4); }
+.sg-ta__st { font-size: 0.78rem; color: rgba(255, 255, 255, 0.45); }
+.sg-ta__st.is-ok { color: #5CC5A7; }
+.sg-ta__st.is-warn { color: rgba(255, 190, 120, 0.9); }
+.sg-ta__st.is-bad { color: #fca5a5; }
+.sg-ta__st.is-busy { color: #93C5FD; }
+.sg-ta__edbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sg-ta__btn {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.sg-ta__btn:hover:not(:disabled) { border-color: #5CC5A7; color: #5CC5A7; }
+.sg-ta__btn.is-primary { border-color: rgba(92, 197, 167, 0.5); color: #5CC5A7; }
+.sg-ta__btn.is-quiet { background: transparent; color: rgba(255, 255, 255, 0.45); }
+.sg-ta__btn:disabled { opacity: 0.45; cursor: default; }
+.sg-ta__btn:focus-visible, .sg-ta__cell.is-editable:focus-visible { outline: 2px solid #5CC5A7; outline-offset: 2px; }
+.sg-ta__add { justify-self: start; }
+
+.sg-ta__form { display: grid; gap: 10px; }
+.sg-ta__formrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sg-ta__form label { display: grid; gap: 4px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.55); }
+.sg-ta__qa span b { margin-right: 4px; color: #5CC5A7; }
+.sg-ta__in {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font: inherit;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+.sg-ta__in:focus { outline: none; border-color: #5CC5A7; }
+
+.sg-ta__cell.is-editable { cursor: pointer; }
+.sg-ta__cell.is-editable:hover { background: rgba(92, 197, 167, 0.06); }
+.sg-ta__cell.is-editing { min-width: 220px; vertical-align: top; }
+.sg-ta__edstate, .sg-ta__edtext {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.sg-ta__open li { color: rgba(255, 255, 255, 0.72); }
+.sg-ta__wedgetext { margin: 6px 0; font-size: 0.95rem; }
+.sg-ta__groups { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.sg-ta__groups li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 0.86rem; color: rgba(255, 255, 255, 0.8); }
+.sg-ta__groups li span { display: inline-flex; gap: 4px; }
+.sg-ta__groups i {
+  font-style: normal;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.sg-ta__groups i.is-yes { border-color: rgba(92, 197, 167, 0.6); color: #5CC5A7; }
+.sg-ta__groups em { font-style: normal; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.4); }
+.sg-ta__groups small { flex-basis: 100%; font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); }
+
+
 @media (max-width: 620px) {
+  .sg-ta__formrow { grid-template-columns: 1fr; }
   .sg-ta__rowhead { width: 9rem; }
   .sg-ta__grid { min-width: 720px; }
 }

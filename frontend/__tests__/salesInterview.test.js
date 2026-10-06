@@ -100,6 +100,14 @@ describe('class names the interview owns', () => {
   });
 });
 
+/** The shared four questions' declaration, as source, and evaluated. */
+const QUESTIONS_SRC = (() => {
+  const at = js.indexOf('const ICP_QUESTIONS = [');
+  return at < 0 ? '' : js.slice(at, js.indexOf('];', at) + 2);
+})();
+// eslint-disable-next-line no-new-func
+const sharedQuestions = () => new Function(`${QUESTIONS_SRC} return ICP_QUESTIONS;`)();
+
 describe('fifteen minutes, and the clock is the content', () => {
   const view = fn('renderInterview');
 
@@ -136,27 +144,28 @@ describe('fifteen minutes, and the clock is the content', () => {
     expect(before).toContain('Do not pitch Svarg yet.');
   });
 
-  it('keeps the three questions of the middle block, and marks the one that matters', () => {
-    // About customers since 6 October 2026 (Retention & Growth). Long questions
-    // are joined literals in the source, so rejoin before matching.
-    const joined = view.replace(/'\s*\+\s*'/g, '');
-    expect(joined).toContain('What tends to happen with customers most often that you wish you could catch earlier?');
-    expect(joined).toContain('Which of these do you usually realise only after the customer has already started drifting away &mdash; or after the opportunity to grow them has already passed?');
-    expect(view).toContain('Can you give me a recent example of when that happened?');
-    // The key flag belongs to exactly one question in the whole script.
+  it('asks the four questions, from the list the Target Audience tab files them under', () => {
+    /*
+     * Four questions since 6 October 2026, the same in every interview. They
+     * live once, at module scope, so what is asked here and what is recorded
+     * on the Target Audience tab cannot drift apart.
+     */
+    expect(sharedQuestions().map(([, q]) => q)).toEqual([
+      'What is one customer problem that happens repeatedly, but your team usually notices too late?',
+      'Take the most recent example. What happened before you noticed it, and where was that information?',
+      'Who notices it today, how do they notice it, and what do they do once they know?',
+      'If you had known about it earlier, what would you have done—and what would it have saved or earned you?',
+    ]);
+    expect(view).toContain('const [Q1, Q2, Q3, Q4] = ICP_QUESTIONS.map');
+    // The key flag belongs to exactly one question, and it is the first.
     expect(view.match(/key: true/g) || []).toHaveLength(1);
+    expect(view).toMatch(/ask\(Q1, \{\s*n: '1', tests: 'Recurrence &middot; Lateness', key: true/);
   });
 
-  it('carries the three follow-ups that test the hypothesis', () => {
-    // A long question is written as two joined literals in the source. Rejoin
-    // them, so the test is about the sentence rather than where it wrapped.
-    const joined = view.replace(/'\s*\+\s*'/g, '');
-    for (const q of [
-      'was there any information that could have indicated it earlier?',
-      'Where was that information?',
-      'Who usually notices this, and how do they find out?',
-      'what would you do differently?',
-    ]) expect(joined, q).toContain(q);
+  it('says which matrix rows each of the four fills', () => {
+    expect(view).toMatch(/ask\(Q2, \{\s*n: '2', tests: 'Signal availability &middot; Fragmentation'/);
+    expect(view).toMatch(/ask\(Q3, \{ n: '3', tests: 'Manual effort &middot; Actionability' \}/);
+    expect(view).toMatch(/ask\(Q4, \{ n: '4', tests: 'Actionability &middot; Cost of lateness &middot; Measurability' \}/);
   });
 
   it('accepts impact in something other than rupees', () => {
@@ -179,7 +188,7 @@ describe('fifteen minutes, and the clock is the content', () => {
     // left is the page as a prospect would hear it.
     const el = { innerHTML: '' };
     // eslint-disable-next-line no-new-func
-    new Function('document', `${view}; renderInterview();`)({ getElementById: () => el });
+    new Function('document', `${QUESTIONS_SRC}\n${view}; renderInterview();`)({ getElementById: () => el });
     const spoken = el.innerHTML.replace(/<p class="sg-iv__note">[\s\S]*?<\/p>/g, '');
     expect(spoken.length).toBeGreaterThan(1500);
     for (const word of [/patient/i, /clinic/i, /wellness/i, /treatment/i, /academy/i,

@@ -3325,15 +3325,19 @@ function renderInterview() {
     'We would assign someone to follow up.', 'We would intervene before they stop coming.',
     'We would offer an upgrade.', 'We would resolve the complaint.', 'We would change their plan.'];
 
-  const FREQUENCY = ['Daily', 'Weekly', 'Monthly', 'Several customers every month', '10&ndash;20 customers',
-    'A meaningful percentage', 'Every renewal cycle', 'Whenever demand increases'];
-
   /** What late discovery is allowed to cost — rupees are not the only answer. */
   const COSTS_KEEP = ['Lost customers', 'Lost renewals', 'Lost revenue', 'Unused capacity',
     'Reduced lifetime value', 'Staff time spent recovering customers', 'Customer dissatisfaction',
     'Refunds', 'Lost future purchases'];
   const COSTS_GROW = ['Missed upgrades', 'Missed cross-sells', 'Lost expansion revenue', 'Missed opportunities',
     'Under-utilisation', 'Sales-team time', 'Delayed purchases', 'Customers buying elsewhere'];
+
+  /*
+   * The four questions since 6 October 2026, from ICP_QUESTIONS — the same
+   * list the Target Audience tab files the answers under, so what is asked
+   * here and what is recorded there cannot drift apart.
+   */
+  const [Q1, Q2, Q3, Q4] = ICP_QUESTIONS.map(([, q]) => q);
 
   const BLOCKS = [
     {
@@ -3346,79 +3350,56 @@ function renderInterview() {
         + note('The blank is the only thing that changes between businesses &mdash; operations, '
              + 'customer success, the front office, sales, the branch team, the service team. '
              + 'Everything else in the fifteen minutes is asked word for word of everybody.')
-        + ask('What are the biggest things your team has to keep track of about your customers every day?')
-        + beat('Let them answer. Do not explain retention, do not explain churn, and do not give '
-             + 'examples unless they genuinely cannot answer.')
-        + label('Listen for') + chips(KEEP_TRACK),
+        + beat('Then go straight to the first question. Do not explain retention or churn, and do not '
+             + 'give examples unless they genuinely cannot answer.'),
     },
     {
-      from: '2', to: '7', title: 'Find the customer problem',
-      body: rule('Three questions. Not four.')
-        + ask('What tends to happen with customers most often that you wish you could catch earlier?', {
-          n: '1', tests: 'Recurrence &middot; Problem',
-          after: '<p class="sg-iv__note">It joins the problem to early detection on purpose. If they '
-               + 'give several, take the one that sounds most frequent, most costly or most important '
-               + 'to them &mdash; and stay with it.</p>',
+      from: '2', to: '7', title: 'The problem, and the last time it happened',
+      body: rule('Four questions in the whole interview. These are the first two.')
+        + ask(Q1, {
+          n: '1', tests: 'Recurrence &middot; Lateness', key: true,
+          after: '<p class="sg-iv__note">You want the <b>moment of discovery</b>, not an opinion about '
+               + 'churn. If they give several problems, take the one that sounds most frequent, most '
+               + 'costly or most important to them &mdash; and stay with it.</p>',
         })
-        + ask('Which of these do you usually realise only after the customer has already started '
-            + 'drifting away &mdash; or after the opportunity to grow them has already passed?', {
-          n: '2', tests: 'Lateness', key: true,
-          after: '<p class="sg-iv__note">You want the <b>moment of discovery</b>, not their opinion '
-               + 'about churn. Retention: the customer disengages, and it is noticed after they stop '
-               + 'coming. Growth: the customer shows intent, and it is noticed after the opportunity '
-               + 'is gone. If you hear &ldquo;sometimes customers churn&rdquo;, ask: &ldquo;When do you '
-               + 'usually realise?&rdquo;</p>',
+        + label('Listen for') + chips(KEEP_TRACK)
+        + ask(Q2, {
+          n: '2', tests: 'Signal availability &middot; Fragmentation',
+          after: '<p class="sg-iv__note">A real customer, a real event, a real sequence. If they cannot '
+               + 'remember one, write that down: <b>an incident is stronger evidence than a belief.</b> '
+               + 'If there was no earlier information at all, that matters too &mdash; do not force '
+               + 'it.</p>',
         })
-        + ask('Can you give me a recent example of when that happened?', {
-          n: '3', tests: 'Cost of lateness',
-        })
-        + beat('Now stop talking. A real customer, a real event, a real sequence: what happened, when '
-             + 'it started, when they noticed, what they did, what happened to the customer.')
-        + note('If they cannot remember an actual example, write that down. <b>An incident is stronger '
-             + 'evidence than a belief.</b>'),
-    },
-    {
-      from: '7', to: '11', title: 'Follow the one customer problem',
-      body: rule('One problem. Do not go back to the others they mentioned &mdash; investigate the mechanism.')
-        + `<p class="sg-iv__sub">A &mdash; Signals</p>`
-        + ask('Before you realised there was a problem, was there any information that could have '
-            + 'indicated it earlier?', { tests: 'Signal availability' })
         + label('Listen for actual signals') + chips(SIGNALS)
-        + note('You are looking for <b>the business already had the evidence</b>. If the answer is '
-             + '&ldquo;no, there was no way to know&rdquo;, that matters &mdash; do not force the '
-             + 'qualification.')
-        + ask('Where was that information?', { tests: 'Fragmentation' })
-        + chips(SOURCES)
+        + label('And where they sat') + chips(SOURCES)
         + note('The strongest answer sounds like: &ldquo;The attendance was in one system, complaints '
              + 'were in another, and the sales team knew the customer had stopped responding.&rdquo; '
-             + 'That is the problem Svarg is looking for.')
-        + `<p class="sg-iv__sub">B &mdash; Current detection</p>`
-        + ask('Who usually notices this, and how do they find out?', { tests: 'Manual effort' })
+             + 'That is the problem Svarg is looking for.'),
+    },
+    {
+      from: '7', to: '11', title: 'How it is found today',
+      body: rule('One problem. Do not go back to the others they mentioned.')
+        + ask(Q3, { n: '3', tests: 'Manual effort &middot; Actionability' })
         + heard(DETECTED)
         + note('The strongest signal is <b>a person manually joining several pieces of information</b>. '
              + 'If their system already says &ldquo;customer X is at risk&rdquo;, ask what happens after '
-             + 'the system tells them. There may still be a problem, but it is a different one &mdash; '
-             + 'do not manufacture it.')
-        + `<p class="sg-iv__sub">C &mdash; Action</p>`
-        + ask('If you knew about this earlier, what would you do differently?', { tests: 'Actionability' })
-        + heard(ACTIONS)
-        + note('<b>One of the most important answers of the fifteen minutes.</b> &ldquo;We would '
-             + 'know&rdquo; is not enough: detection is worth something only with an action behind it '
-             + '&mdash; detect, decide, act, outcome.'),
+             + 'it tells them. There may still be a problem, but it is a different one &mdash; do not '
+             + 'manufacture it.'),
     },
     {
-      from: '11', to: '13', title: 'Quantify the problem',
-      body: rule('Two questions, and do not push for rupees &mdash; or ask them to invent numbers.')
-        + ask('How often does this happen?', { tests: 'Recurrence' })
-        + label('Any of these is an answer') + chips(FREQUENCY)
-        + ask('What does it cost you when you discover it late?', { tests: 'Cost of lateness &middot; Measurability' })
-        + beat('Let them describe the impact before anybody mentions money.')
+      from: '11', to: '13', title: 'What knowing earlier is worth',
+      body: rule('Let them describe the impact, and do not push for rupees &mdash; or ask them to invent numbers.')
+        + ask(Q4, { n: '4', tests: 'Actionability &middot; Cost of lateness &middot; Measurability' })
+        + heard(ACTIONS)
+        + note('&ldquo;We would know&rdquo; is not enough: detection is worth something only with an '
+             + 'action behind it &mdash; detect, decide, act, outcome.')
         + `<div class="sg-iv__pair">
              <div><p class="sg-iv__label">Retention</p>${chips(COSTS_KEEP)}</div>
              <div><p class="sg-iv__label">Growth</p>${chips(COSTS_GROW)}</div>
            </div>`
         + note('The strongest answer is one they already measure: &ldquo;We lose around 15 customers a '
-             + 'month&rdquo; beats &ldquo;it probably costs us a lot&rdquo;.'),
+             + 'month&rdquo; beats &ldquo;it probably costs us a lot&rdquo;. File all four answers on the '
+             + 'Target Audience tab &mdash; the playbook fills from them.'),
     },
     {
       from: '13', to: '15', title: 'Introduce Svarg',
@@ -3650,45 +3631,78 @@ const VERTICALS = [
   },
 ];
 
+/**
+ * The four questions, asked word for word in every interview.
+ *
+ * Since 6 October 2026 these are the interview: the ICP Interview tab reads
+ * them out, and the Target Audience tab files each company's answers under
+ * them. The AI then fills the ten-step playbook from the answers (see
+ * backend services/icpInterviewService.js, whose QUESTIONS are this list).
+ */
+const ICP_QUESTIONS = [
+  ['problem', 'What is one customer problem that happens repeatedly, but your team usually notices too late?'],
+  ['example', 'Take the most recent example. What happened before you noticed it, and where was that information?'],
+  ['detection', 'Who notices it today, how do they notice it, and what do they do once they know?'],
+  ['value', 'If you had known about it earlier, what would you have done—and what would it have saved or earned you?'],
+];
+
 let audienceVertical = 'clinics';
+
+/*
+ * The interviews for the vertical on screen, read from the server. They used
+ * to be written into this file by hand, a cell at a time; they are now four
+ * answers each, and the playbook below is filled from them.
+ */
+let icp = { vertical: '', interviews: [], wedge: null, loading: false, error: '' };
+let icpCounts = {};
+/** Which interview's answers are open for editing; 'new' for the add form. */
+let icpOpen = '';
+/** The cell being corrected, as `${interviewId}:${rowKey}`. */
+let icpEdit = '';
+/** What is waiting on the AI: an interview id, or 'wedge'. */
+let icpBusy = '';
+
+async function loadIcp(vertical) {
+  icp = { ...icp, vertical, loading: true, error: '' };
+  try {
+    const [data, counts] = await Promise.all([
+      api(`/icp?vertical=${encodeURIComponent(vertical)}`),
+      api('/icp/counts').catch(() => ({ counts: icpCounts })),
+    ]);
+    icp = { vertical, interviews: data.interviews || [], wedge: data.wedge || null, loading: false, error: '' };
+    icpCounts = counts.counts || {};
+  } catch (err) {
+    icp = { vertical, interviews: [], wedge: null, loading: false, error: err.message };
+  }
+  if (audienceVertical === vertical) renderAudience();
+}
 
 function setAudienceVertical(id) {
   audienceVertical = VERTICALS.some((v) => v.id === id) ? id : 'clinics';
+  icpOpen = ''; icpEdit = '';
+  loadIcp(audienceVertical);
   renderAudience();
 }
 
 function renderAudience() {
   const el = document.getElementById('sg-audience');
   if (!el) return;
+  if (icp.vertical !== audienceVertical && !icp.loading) { loadIcp(audienceVertical); }
 
   /*
    * The knowledge base's own name for this industry, not a description of it.
    *
    * Every vertical here is named as an overlay is named — Clinics & Wellness,
    * Automotive — because that overlay is what a delivered application for
-   * anybody in this column gets built on: its attention areas decide the
-   * categories their findings are grouped under. "Physiotherapy" named the
-   * trade in front of us and matched nothing, and a segment whose name exists
-   * only on this page cannot be joined to the thing that lays out their
-   * screens.
+   * anybody in this column gets built on.
    */
   const V = VERTICALS.find((x) => x.id === audienceVertical) || VERTICALS[0];
   const SEGMENT = V.name;
+  const ready = icp.vertical === audienceVertical && !icp.loading;
 
-  /**
-   * The pointers, in two groups, each one a step of the playbook.
-   *
-   * The first seven are step 1's conditions, taken from the playbook itself
-   * rather than reworded here: a company that passes on this table has to be
-   * the same company that passes on that one. The six below are step 9, which
-   * is the gate — the same problem, company after company.
-   */
   /*
-   * The three steps that are our work rather than a customer's answer, per
-   * vertical. They read differently depending on how far along the vertical
-   * is, and for one nobody has visited yet they all say the same thing: it
-   * has not started. Saying that plainly is the point of showing the step at
-   * all.
+   * The two steps that are our work rather than a customer's answer, per
+   * vertical. The third, the wedge, is found from the interviews below.
    */
   const OURS = {
     clinics: {
@@ -3698,15 +3712,12 @@ function renderAudience() {
         + 'patient was treated. That is the candidate to build, ahead of the over-used package and '
         + 'the treatment reminder &mdash; one of the three, or it becomes a platform for one '
         + 'customer'],
-      wedge: ['open', 'Drafted below. It locks when more than one column is full, and not before'],
     },
     engineering: {
       embed: ['', 'Not started. Nobody here has been spoken to yet, so there is no vocabulary to '
         + 'borrow &mdash; step 2 comes first'],
       build: ['', 'Nothing to choose between. A candidate before an interview is a guess with a '
         + 'roadmap attached'],
-      wedge: ['', 'No wedge. It is written from steps 1, 2 and 8, and none of them has been run '
-        + 'in this vertical'],
     },
   }[audienceVertical] || {};
 
@@ -3720,293 +3731,36 @@ function renderAudience() {
   ];
 
   /**
-   * All ten steps, because a table showing two of them looks like eight are
-   * done rather than eight are outstanding.
+   * All ten steps. Three shapes, and the shape says who owes the answer:
    *
-   * Three shapes, and the shape says who owes the answer:
-   *
-   *   rows     — the step breaks into several questions, one row each, asked
-   *              of every company (steps 1 and 9).
+   *   rows     — several questions, one row each, asked of every company.
    *   key      — one row, asked of every company.
-   *   segment  — one row spanning the companies, because the step is about
-   *              the segment or about us, not about any one of them. Embedding
-   *              yourself in a market, choosing what to build and locking a
-   *              wedge are our work; no column can answer them.
+   *   segment  — one row spanning the companies: our work, not theirs.
+   *
+   * Step 1 leads with the problem type, because a company is sorted by what
+   * its problem is before anything else. Step 7 carries the two rows four
+   * answers never reach — a pilot agreed, and Svarg catching one first —
+   * which only a person can fill.
    */
   const STEPS = [
-    { n: 1, title: PLAYBOOK_STEPS[0], rows: ACUTE_CONDITIONS },
+    { n: 1, title: PLAYBOOK_STEPS[0], rows: [['kind', 'Problem type'], ...ACUTE_CONDITIONS] },
     { n: 2, title: PLAYBOOK_STEPS[1], key: 'icpline' },
     { n: 3, title: PLAYBOOK_STEPS[2], key: 'bucket' },
-    { n: 4, title: PLAYBOOK_STEPS[3],
-      segment: OURS.embed },
+    { n: 4, title: PLAYBOOK_STEPS[3], segment: OURS.embed },
     { n: 5, title: PLAYBOOK_STEPS[4], key: 'reverse' },
-    { n: 6, title: PLAYBOOK_STEPS[5],
-      segment: OURS.build },
-    { n: 7, title: PLAYBOOK_STEPS[6], key: 'pilot' },
+    { n: 6, title: PLAYBOOK_STEPS[5], segment: OURS.build },
+    { n: 7, title: PLAYBOOK_STEPS[6], rows: [['pilot', 'Pilot agreed'], ['earlier', 'Svarg caught it before they did']] },
     { n: 8, title: PLAYBOOK_STEPS[7], key: 'economics' },
     { n: 9, title: PLAYBOOK_STEPS[8], rows: REPEATABILITY },
-    { n: 10, title: PLAYBOOK_STEPS[9],
-      segment: OURS.wedge },
+    { n: 10, title: PLAYBOOK_STEPS[9], wedge: true },
   ];
-
-  /*
-   * Company A is Vesoma, interviewed. Everything here comes from that
-   * conversation — nothing is inferred, and what was not asked is left empty
-   * rather than guessed at, because a guess in this table is indistinguishable
-   * from evidence three interviews later.
-   */
-  /*
-   * Column A is filled only where somebody has actually been interviewed. A
-   * vertical nobody has spoken to yet gets five blanks, which is the honest
-   * shape of it and the whole reason the empty columns are shown at all.
-   */
-  const INTERVIEWED = {
-    clinics: [
-    {
-      id: 'A', name: 'Vesoma', met: 'HOD', when: 'Interviewed',
-      frequency: ['yes', '~20 bookings a month left marked no-show when the patient came and was '
-        + 'treated &mdash; the admin missed the attendance. Gym packages repeatedly over-used'],
-      signals: ['yes', 'Entitlement vs actual usage; booking vs treatment record'],
-      spread: ['yes', 'WhatsApp, phone calls and a CRM. A call leaves nothing to read unless '
-        + 'somebody logs it'],
-      manual: ['yes', 'The HOD notices, sometimes. Nobody does it consistently &mdash; so it is '
-        + 'not a process, it is whether somebody happened to look'],
-      late: ['yes', 'After the treatment; after the entitlement is passed'],
-      // The condition is measurability, and that is now met: there is a unit
-      // price and a count. How many of the twenty were wrong is a separate
-      // question, and it is what decides the size — see roi.
-      cost: ['yes', '&#8377;1,000 a booking &times; ~20 a month = up to &#8377;20,000. The unit '
-        + 'price is known and the count is countable'],
-      action: ['yes', 'The HOD has the record corrected by hand. A correction, not a collection '
-        + '&mdash; whether the money follows is a separate question'],
-      // Added to step 1 on 6 October 2026, after the interview: not asked, so
-      // left empty with the question that closes it, never inferred.
-      measurable: ['', 'Not asked. A corrected record is countable; whether anybody would count the '
-        + 'money that follows it was not discussed'],
-      same: ['yes', 'The gap, and priced: a treated patient left marked no-show, a package used '
-        + 'past the entitlement. Here it costs revenue'],
-      buyer: ['yes', 'HOD'],
-      workflow: ['yes', 'Booking &rarr; treatment &rarr; front desk &rarr; system'],
-      simsignals: ['yes', 'Bookings, treatment records, entitlement, usage &mdash; across a CRM, '
-        + 'WhatsApp and the phone'],
-      simaction: ['yes', 'Correct the record by hand'],
-      /*
-       * A ceiling, not a figure. The twenty is every booking left marked
-       * no-show; the HOD says SOME of them attended. Twenty times a thousand
-       * is therefore the most it can be, and the actual number waits on how
-       * many of the twenty were wrong.
-       */
-      roi: ['claim', 'Up to &#8377;20,000 a month &mdash; &#8377;1,000 &times; however many of the '
-        + '20 actually attended. Nobody has counted that yet'],
-
-      // Step 2 — the one line the playbook asks for, in the order it asks:
-      // who, what workflow, what problem, why too late, cost, action.
-      icpline: ['yes', 'HOD, physiotherapy clinic &middot; booking &rarr; treatment &rarr; front '
-        + 'desk &middot; the record does not match what happened &middot; seen only afterwards '
-        + '&middot; &#8377;20,000+ claimed &middot; corrected by hand'],
-      // Step 3 — and the reason it is Acute rather than Vanity is what he
-      // opened with, not what he said about AI.
-      bucket: ['yes', '&#128293; Acute. He opened on revenue loss, not on AI'],
-      reverse: ['open', 'The workflow is named as far as the front desk. Where it actually breaks '
-        + 'has not been watched'],
-      pilot: ['', 'Not agreed. The ask is thirty days of usage data and a look at what it finds '
-        + '&mdash; not a project'],
-      economics: ['claim', 'Arithmetic shown: &#8377;1,000 &times; ~20 = &#8377;20,000 a month, '
-        + '&#8377;2.4L a year. It is a ceiling until somebody counts how many of the 20 attended'],
-    },
-    /*
-     * Interviewed twice, and the second conversation corrected the first.
-     *
-     * The first was short and was written up as "their CRM and their phone
-     * activity are disconnected". The second says that was the wrong reading.
-     * What they actually described is a customer who converts and then
-     * drifts: a lead becomes an opportunity, and keeping that person engaged
-     * over the following three months is where it goes wrong. The CRM is
-     * LeadSquared.
-     *
-     * So this column no longer claims the same gap as Vesoma, and iSPAN's
-     * column, which counted this one as a sighting of it, was corrected in
-     * the same change. A repeatability table is only evidence while its rows
-     * stop agreeing when the interviews do.
-     *
-     * Only what was said is recorded. The write-up of this conversation also
-     * carried a worked example — month one some calls, month three nothing,
-     * "no meaningful interaction for 28 days" — and that is an illustration of
-     * the problem, not something they reported. It is not in any cell.
-     */
-    {
-      id: 'B', name: 'The Wellness Co.', met: 'Not recorded', when: 'Interviewed twice',
-      signals: ['open', 'LeadSquared, and a phone system from the first conversation. Whether calls '
-        + 'and messages are logged against the opportunity in LeadSquared was not established'],
-      spread: ['yes', 'The opportunity lives in LeadSquared; the conversations that show whether '
-        + 'the customer is still engaged happen on the phone and elsewhere'],
-      same: ['open', 'A different problem from Vesoma. Vesoma&rsquo;s record disagrees with what '
-        + 'happened; here the record is right and the customer is drifting. What they share is '
-        + 'that the signal exists and is seen too late. Whether drifting costs them anything was '
-        + 'not asked'],
-      workflow: ['yes', 'Lead &rarr; opportunity &rarr; about three months of engagement &rarr; '
-        + 'the customer goes quiet'],
-      simsignals: ['open', 'Opportunity records in LeadSquared, and whatever activity is logged '
-        + 'against them. Which of those mark a customer as drifting was not established'],
-      icpline: ['open', 'Wellness operator &middot; lead &rarr; opportunity &rarr; three months of '
-        + 'engagement &middot; the converted customer drifts away &middot; cost and action not asked'],
-      bucket: ['open', 'Described clearly and unprompted. Still nothing counted &mdash; how many '
-        + 'opportunities go quiet, and what one is worth &mdash; so not yet Acute on the evidence'],
-      reverse: ['open', 'What &ldquo;disengaged&rdquo; means in their data &mdash; days without '
-        + 'activity, an unanswered call, a missed session &mdash; is the next thing to watch'],
-    },
-    /*
-     * Three problems named, none of them counted.
-     *
-     * The most useful column so far on breadth and the weakest on evidence: he
-     * opened with three distinct pains rather than one, and not one of them
-     * came with a number. So every condition that asks "how often" or "what
-     * does it cost" is left blank, and the amber cells below are the next
-     * conversation rather than a gap in the writing-up.
-     *
-     * ── The one that repeats ──────────────────────────────────────────────
-     *
-     * "He is not aware how the team is communicating with customers" is the
-     * second sighting of the same gap: Vesoma's call that leaves nothing to
-     * read unless somebody logs it, and now a founder who cannot see his own
-     * team's conversations. Two companies, unprompted, in one vertical.
-     *
-     * It was written as the THIRD, counting The Wellness Co.'s "call the CRM
-     * does not know happened". Their second interview corrected that reading
-     * — their problem is a converted customer drifting away, not a call going
-     * unrecorded — so the count came down with it. A tally that only ever goes
-     * up is not counting anything.
-     *
-     * The other two are new and neither has been seen elsewhere yet: a
-     * cancellation that arrives too late to refill the slot, and work handed
-     * between Physio and Nutrition with nothing joining them up.
-     *
-     * ── Why the custom CRM matters more than it sounds ────────────────────
-     *
-     * They built their own. There is no vendor to ask for an API and no
-     * export to schedule — but a custom system is one they control, which
-     * usually means a database they can grant read access to. The database
-     * connector already ships. Of the clinics seen so far this is the only
-     * one we could connect to properly today rather than by file.
-     */
-    {
-      id: 'C', name: 'iSPAN', met: 'Not recorded', when: 'Interviewed',
-      signals: ['open', 'A CRM they built themselves. Whether it already records a cancellation, '
-        + 'a lead call or a handover between teams was not asked'],
-      spread: ['yes', 'A custom CRM, and alongside it however the team actually talks to '
-        + 'customers &mdash; which he cannot see. The conversation and the record are in '
-        + 'different places'],
-      manual: ['open', 'Coordination between Physio, Nutrition and the other teams is done by '
-        + 'people and he says it is hard. Who does it, and how often it is missed, was not asked'],
-      late: ['yes', 'A cancellation arrives at the last minute with no intimation &mdash; by '
-        + 'definition too late to refill the slot'],
-      cost: ['open', 'An empty slot has a price and he did not give one. Nothing here is counted '
-        + 'yet, so the condition is unmet rather than failed'],
-      action: ['open', 'Not asked. What he would do with an early warning is the question that '
-        + 'decides whether any of this is worth building'],
-
-      same: ['yes', 'One of the three repeats, and it is the one that keeps repeating: the team '
-        + 'talks to customers and the owner cannot see it. Second company in this vertical to say '
-        + 'so unprompted, after Vesoma'],
-      workflow: ['yes', 'Lead &rarr; call &rarr; conversion, and booking &rarr; cancellation, and '
-        + 'a handover between Physio and Nutrition'],
-      simsignals: ['yes', 'Lead and call activity, bookings and cancellations, and whatever '
-        + 'crosses between teams &mdash; against a CRM that may hold none of it'],
-
-      icpline: ['open', 'Multi-discipline wellness centre &middot; lead &rarr; call &rarr; '
-        + 'conversion &middot; the owner cannot see how his team talks to customers &middot; the '
-        + 'cost and the action were not asked'],
-      bucket: ['open', 'Three problems raised unprompted, which is strong. None of them counted, '
-        + 'which is why it is not yet Acute &mdash; the test is evidence, not enthusiasm'],
-      reverse: ['open', 'Three workflows named and none of them watched. Which of the three '
-        + 'actually breaks, and where, is unknown'],
-    },
-    ],
-  };
-
-  /*
-   * Five columns, however many have been filled. The blanks are appended
-   * rather than declared, so adding an interview is adding one object and
-   * nothing else.
-   */
-  const blank = (id) => ({ id, name: '', met: '', when: 'Not yet' });
-  const done = INTERVIEWED[audienceVertical] || [];
-  const COMPANIES = ['A', 'B', 'C', 'D', 'E']
-    .map((id, i) => done[i] || blank(id));
-
-  /*
-   * ── Enough evidence, not every row ────────────────────────────────────────
-   *
-   * The ten-step grid below asks for every row at every company, and three
-   * interviews in it was mostly amber — which read as "not validated" when
-   * the problem, at two of them, plainly happens. The bar that decides
-   * whether to keep going is four questions, so they lead and the grid is the
-   * detail behind them.
-   *
-   * The third is the one this product stands or falls on, and it is not
-   * "can we integrate with their CRM". It is: given what they already have,
-   * could it have been seen earlier? A cancellation that arrives with no
-   * notice may leave nothing earlier to see, and that is worth knowing
-   * before building for it.
-   *
-   * Same rule as the grid: only what was said or shown. A ? is a legitimate
-   * answer, not a cell waiting to be forced into a tick.
-   */
-  const FOUR = [
-    ['happens', 'Does the problem actually happen?'],
-    ['exists', 'Does the information to spot it already exist somewhere?'],
-    ['earlier', 'Could SvargAI have detected it earlier?'],
-    ['value', 'Is there enough economic value?'],
-  ];
-  const FOUR_BY_VERTICAL = {
-    clinics: {
-      A: {
-        happens: ['yes', 'The record says no-show when the patient came and was treated &mdash; '
-          + '~20 bookings a month left marked no-show, some of whom attended'],
-        exists: ['yes', 'Booking against treatment record, spread across a CRM, phone calls and '
-          + 'WhatsApp'],
-        earlier: ['open', 'Watchers are running on their connected Zoho CRM and Exotel calls. '
-          + 'Whether a finding caught a real incident before the HOD would have is not yet '
-          + 'confirmed with him'],
-        value: ['claim', '&#8377;1,000 &times; ~20 a month = up to &#8377;20,000. A ceiling until '
-          + 'somebody counts how many of the 20 attended'],
-      },
-      B: {
-        happens: ['yes', 'Described unprompted: a lead becomes an opportunity and the customer '
-          + 'drifts over about three months. How many do was not counted'],
-        exists: ['open', 'LeadSquared and a phone system are involved. Whether the conversations '
-          + 'are logged against the opportunity is not known'],
-        earlier: ['open', 'Opportunity Gone Quiet is built for exactly this. Not connected to '
-          + 'their LeadSquared yet, so untested on their records'],
-        value: ['', 'Not asked'],
-      },
-      C: {
-        happens: ['yes', 'Three problems raised unprompted: last-minute cancellations with no '
-          + 'notice, not seeing how the team talks to customers, and coordination between Physio, '
-          + 'Nutrition and the others'],
-        exists: ['open', 'A CRM they built. Whether it records cancellations, lead calls or '
-          + 'handovers was not asked'],
-        earlier: ['open', 'Not tried. A cancellation with no notice may leave no earlier signal '
-          + 'at all &mdash; the other two might'],
-        value: ['', 'Not asked. An empty slot has a price he did not give'],
-      },
-    },
-  };
-  const FOUR_OF = FOUR_BY_VERTICAL[audienceVertical] || {};
 
   /*
    * ── How the second vertical is run ────────────────────────────────────────
    *
    * Three experiments rather than one list, because "engineering" is three
-   * kinds of business that may have three different problems: a product
-   * firm's project drifts, a plant-engineering firm's dependencies slip in a
-   * chain, a manufacturer's orders and production fall out of step. If they
-   * all say the same thing, that is the finding; if they do not, a single
-   * bucket would have hidden it.
-   *
-   * The companies are the prospect list as researched, not anybody's
-   * evidence. Nobody here has been interviewed, and the five columns below
-   * stay empty until somebody is.
+   * kinds of business that may have three different problems. The companies
+   * are the prospect list as researched, not anybody's evidence.
    */
   const EXPERIMENTS = {
     engineering: [
@@ -4050,58 +3804,18 @@ function renderAudience() {
   const WHO = WHO_BY_VERTICAL[audienceVertical] || null;
 
   /*
-   * Five questions, the same for everybody, so five answers can be compared.
-   * Each one feeds one of the four above: the first two say whether it
-   * happens, the third whether the information exists, the fourth whether
-   * finding out earlier changes anything, and the fifth the value.
+   * Five columns at least, however many have been interviewed. The blanks
+   * are honest: an empty column is a company nobody has asked yet.
    */
-  const FIVE = [
-    'Which customers do you usually realise you\u2019re losing only after it\u2019s too late?',
-    'How do you find out today, and how long after it starts?',
-    'Where would the warning signs have been?',
-    'If you had known earlier, what would you have done?',
-    'What does losing one customer cost you, or missing one renewal?',
-  ];
-
-  /**
-   * What the next conversation has to close.
-   *
-   * Each one is an amber cell above. They are written as questions because
-   * that is how they get asked, and they are few because a list of twelve
-   * gets none of them answered.
-   */
-  const ASKS_BY_VERTICAL = {
-    clinics: [
-      // The one number the whole figure now waits on. Twenty is every booking
-      // left marked no-show; the loss is however many of them actually came.
-      ['roi', 'Of those twenty a month, how many had actually attended?'],
-      // The action is a correction. Whether a correction is money is the thing
-      // the whole figure rests on, and nobody has said yet.
-      ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],
-      /*
-       * The second interview was short and stopped at the problem. These two
-       * are the rest of the script, and until they are answered the second
-       * column cannot count towards repeatability however similar it looks.
-       */
-      ['frequency', 'How often does a call fail to reach the CRM &mdash; and who notices when it does?'],
-      ['cost', 'What is lost when it happens: a follow-up, a booking, or a customer?'],
-      // Step 1's eighth condition, unasked at Vesoma.
-      ['measurable', 'If a corrected record turned into a collected bill, where would you see it &mdash; and who would count it?'],
-    ],
-    /*
-     * A vertical nobody has spoken to has no follow-ups, because there is
-     * nothing to follow up. What it has is the interview, unchanged — the
-     * same questions asked of everybody, which is what makes five answers
-     * comparable. So it points at the tab that holds them rather than
-     * inventing engineering-flavoured versions of them here.
-     */
-    engineering: [],
-  };
-  const ASKS = ASKS_BY_VERTICAL[audienceVertical] || [];
+  const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+  const done = ready ? icp.interviews : [];
+  const COMPANIES = done.map((iv) => ({ ...iv, id: iv.letter, ivId: iv.id, name: iv.company }))
+    .concat(LETTERS.slice(done.length).map((id) => ({ id, name: '', met: '', when: 'Not yet', cells: {} })));
 
   const GLYPH = { yes: '&#10003;', open: '?', claim: '!', '': '&middot;' };
+  const STATE_WORD = { yes: 'evidenced', open: 'asked, not established', claim: 'stated, not yet arithmetic', '': 'not asked' };
 
-  /** One value, in whatever width it is given. */
+  /** A static cell written here (HTML), spanning `span` columns. */
   const value = (v, span) => {
     const wide = span > 1 ? ` colspan="${span}"` : '';
     if (!v) return `<td class="sg-ta__cell is-empty"${wide}><span class="sg-ta__mark">&middot;</span></td>`;
@@ -4109,16 +3823,47 @@ function renderAudience() {
       <span class="sg-ta__mark">${GLYPH[v[0]] || ''}</span><span>${v[1]}</span></td>`;
   };
 
-  const cell = (c, key) => value(c[key], 1);
+  /**
+   * One company's cell for one row, from the server — escaped, because it is
+   * the AI's writing or an operator's. Clicking it corrects it; a corrected
+   * cell is kept through every later fill.
+   */
+  const cell = (c, key) => {
+    if (!c.ivId) return value(null, 1);
+    const v = (c.cells || {})[key];
+    const at = `${c.ivId}:${key}`;
+    if (icpEdit === at) {
+      return `<td class="sg-ta__cell is-editing">
+        <select class="sg-ta__edstate" aria-label="State">
+          ${Object.keys(STATE_WORD).map((s) => `<option value="${s}"${(v?.state || '') === s ? ' selected' : ''}>${STATE_WORD[s]}</option>`).join('')}
+        </select>
+        <textarea class="sg-ta__edtext" rows="4" aria-label="What was established">${esc(v?.text || '')}</textarea>
+        <span class="sg-ta__edbar">
+          <button type="button" class="sg-ta__btn is-primary" data-act="save-cell" data-iv="${c.ivId}" data-key="${key}">Save</button>
+          <button type="button" class="sg-ta__btn" data-act="cancel-cell">Cancel</button>
+        </span></td>`;
+    }
+    const state = v ? (v.state || '') : '';
+    // Where the cell came from, on hover: the words it rests on, or a person.
+    const from = [v?.quote ? `From the answers: &ldquo;${esc(v.quote)}&rdquo;` : '', v?.edited ? 'Written by hand' : '']
+      .filter(Boolean).join(' &middot; ');
+    const title = from ? ` title="${from}"` : '';
+    return `<td class="sg-ta__cell is-${state || 'empty'} is-editable${v?.edited ? ' is-edited' : ''}"${title}
+        data-act="edit-cell" data-iv="${c.ivId}" data-key="${key}" tabindex="0">
+      <span class="sg-ta__mark">${GLYPH[state] || '&middot;'}</span><span>${esc(v?.text || '')}</span></td>`;
+  };
 
-  /** The step's number and name, as a row heading. */
   const stepHead = (s) => `<span class="sg-ta__stepn">${s.n}</span>${s.title}`;
 
-  /*
-   * A step becomes one row, several rows, or one row spanning the companies —
-   * see STEPS. The last of those is not a formatting choice: a step nobody can
-   * answer per company should not have five cells inviting somebody to try.
-   */
+  const W = ready ? icp.wedge : null;
+  const wedgeCell = () => {
+    if (W?.locked) return value(['yes', `Locked: ${esc(W.locked)}`], COMPANIES.length);
+    if (W?.draft?.sentence) {
+      return value([W.ready ? 'open' : '', `${W.ready ? 'Ready to lock' : 'Draft, not ready'}: ${esc(W.draft.sentence)}`], COMPANIES.length);
+    }
+    return value(['', 'Not found yet. Use &ldquo;Find the wedge&rdquo; below once interviews are filled'], COMPANIES.length);
+  };
+
   const stepRows = (s) => {
     if (s.rows) {
       return `<tr class="sg-ta__grouprow">
@@ -4127,27 +3872,91 @@ function renderAudience() {
             <th class="sg-ta__rowhead is-sub">${label}</th>
             ${COMPANIES.map((c) => cell(c, key)).join('')}</tr>`).join('');
     }
-    if (s.segment) {
+    if (s.segment || s.wedge) {
       return `<tr class="sg-ta__steprow is-segment">
           <th class="sg-ta__rowhead">${stepHead(s)}</th>
-          ${value(s.segment, COMPANIES.length)}</tr>`;
+          ${s.wedge ? wedgeCell() : value(s.segment, COMPANIES.length)}</tr>`;
     }
     return `<tr class="sg-ta__steprow">
         <th class="sg-ta__rowhead">${stepHead(s)}</th>
         ${COMPANIES.map((c) => cell(c, s.key)).join('')}</tr>`;
   };
 
-  /**
-   * How many have actually been interviewed, counted from the table.
-   *
-   * This used to be a number on the vertical. Adding iSPAN made the header
-   * say "2 of 5" above three filled columns — a count that disagrees with
-   * the thing it is counting, on the one screen whose whole argument is
-   * that the evidence is real. Derived now, so adding an interview is
-   * adding one object and nothing else, exactly as the blanks below already
-   * promise.
+  const head = `<thead><tr><th class="sg-ta__rowhead"></th>
+      ${COMPANIES.map((c) => `
+        <th class="sg-ta__co${c.name ? ' is-done' : ''}">
+          <span class="sg-ta__coid">${c.id}</span>
+          <span class="sg-ta__coname">${c.name ? esc(c.name) : '&mdash;'}</span>
+          <span class="sg-ta__cowho">${esc(c.met || c.when || '')}</span>
+        </th>`).join('')}</tr></thead>`;
+
+  /*
+   * What the next conversation has to close: every condition the answers
+   * touched but did not establish, worded as the AI or the operator left it.
+   * Derived, so it can never disagree with the table above it.
    */
-  const metCount = (vertId) => (INTERVIEWED[vertId] || []).length;
+  const LABEL_OF = Object.fromEntries([['kind', 'Problem type'], ...ACUTE_CONDITIONS]);
+  const STILL_OPEN = done.flatMap((iv) => Object.keys(LABEL_OF)
+    .filter((k) => iv.cells?.[k]?.state === 'open')
+    .map((k) => `${iv.letter} &middot; ${esc(iv.company)} &mdash; ${LABEL_OF[k]}: ${esc(iv.cells[k].text)}`)).slice(0, 8);
+
+  /** One interview's status line: where its playbook came from. */
+  const status = (iv) => {
+    if (icpBusy === iv.id) return '<span class="sg-ta__st is-busy">AI is filling the playbook&hellip;</span>';
+    if (iv.fillError) return `<span class="sg-ta__st is-bad">Could not fill: ${esc(iv.fillError)}</span>`;
+    if (iv.stale) return '<span class="sg-ta__st is-warn">Answers changed since the playbook was filled</span>';
+    if (iv.filledAt) return '<span class="sg-ta__st is-ok">Playbook filled by AI &middot; click any cell to correct it</span>';
+    if (iv.legacy) return '<span class="sg-ta__st">Re-filed from the earlier hand-written table</span>';
+    return '<span class="sg-ta__st is-warn">Not filled yet</span>';
+  };
+
+  const answersForm = (iv) => `
+    <div class="sg-ta__form" data-form="${iv ? iv.id : 'new'}">
+      <div class="sg-ta__formrow">
+        <label>Company<input class="sg-ta__in" name="company" value="${esc(iv?.company || '')}" required></label>
+        <label>Who you met<input class="sg-ta__in" name="met" value="${esc(iv?.met || '')}" placeholder="Role, e.g. HOD"></label>
+        <label>When<input class="sg-ta__in" name="when" value="${esc(iv?.when || '')}" placeholder="e.g. 6 Oct 2026"></label>
+      </div>
+      ${ICP_QUESTIONS.map(([k, q], i) => `
+        <label class="sg-ta__qa"><span><b>${i + 1}</b> ${q}</span>
+          <textarea class="sg-ta__in" name="${k}" rows="3" placeholder="Their words, as close as you can">${esc(iv?.answers?.[k] || '')}</textarea>
+        </label>`).join('')}
+      <div class="sg-ta__edbar">
+        <button type="button" class="sg-ta__btn is-primary" data-act="save-answers" data-iv="${iv ? iv.id : ''}">
+          Save and fill the playbook</button>
+        <button type="button" class="sg-ta__btn" data-act="close-form">Cancel</button>
+      </div>
+    </div>`;
+
+  const wedgeBlock = () => {
+    const w = W;
+    const groups = w?.groups || [];
+    return `
+      <div class="sg-ta__wedge">
+        <p class="sg-ta__label">${w?.locked ? 'Wedge &mdash; locked' : 'The wedge &mdash; found from the interviews'}</p>
+        ${w?.locked ? `<p>${esc(w.locked)}</p>
+          <div class="sg-ta__edbar"><button type="button" class="sg-ta__btn" data-act="unlock-wedge">Unlock</button></div>` : `
+        ${w?.draft?.sentence ? `<textarea class="sg-ta__in sg-ta__wedgetext" rows="3" aria-label="Wedge sentence">${esc(w.draft.sentence)}</textarea>` : `
+          <p>Svarg helps <em>&hellip;</em> identify <em>&hellip;</em> before <em>&hellip;</em>.</p>`}
+        <p class="sg-ta__note">${w ? (w.ready
+          ? '<b>Ready to lock.</b> Two or more companies share one evidenced problem.'
+          : '<b>Not ready.</b> No problem is evidenced at two companies yet &mdash; one company&rsquo;s problem is a customer, not a market.') : ''}
+          ${w?.reason ? ` ${esc(w.reason)}` : ''}${w?.stale ? ' <b>Interviews changed since this was found.</b>' : ''}</p>
+        ${groups.length ? `<ul class="sg-ta__groups">${groups.map((g) => `
+          <li><b>${esc(g.problem)}</b>
+            <span>${g.companies.map((l) => `<i class="${g.evidenced.includes(l) ? 'is-yes' : ''}">${esc(l)}</i>`).join('')}</span>
+            ${g.kind ? `<em>${esc(g.kind)}</em>` : ''}${g.why ? `<small>${esc(g.why)}</small>` : ''}</li>`).join('')}</ul>` : ''}
+        <div class="sg-ta__edbar">
+          <button type="button" class="sg-ta__btn is-primary" data-act="find-wedge"${icpBusy === 'wedge' || !done.length ? ' disabled' : ''}>
+            ${icpBusy === 'wedge' ? 'The AI is grouping the problems&hellip;' : w ? 'Find the wedge again' : 'Find the wedge'}</button>
+          ${w?.draft?.sentence ? `<button type="button" class="sg-ta__btn" data-act="lock-wedge"${w.ready ? '' : ' disabled'}>Lock it</button>` : ''}
+        </div>
+        ${w?.error ? `<p class="sg-ta__st is-bad">Last attempt failed: ${esc(w.error)}</p>` : ''}
+        <p class="sg-ta__note">The AI groups companies by the <b>same</b> problem, not the same category, and
+          drafts the sentence from their words. Green letters have the problem evidenced. It stays a draft until
+          two companies share one, and until somebody locks it.</p>`}
+      </div>`;
+  };
 
   el.innerHTML = `
     <section class="sg-ta">
@@ -4155,12 +3964,12 @@ function renderAudience() {
         ${VERTICALS.map((v) => `
           <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
                   data-vert="${v.id}" aria-selected="${v.id === audienceVertical}">
-            ${v.name}<span>${metCount(v.id)} of 5 interviewed</span>
+            ${v.name}<span>${icpCounts[v.id] || 0} of 5 interviewed</span>
           </button>`).join('')}
       </div>
 
       <div class="sg-ta__lead">
-        <p class="sg-ta__seg">${SEGMENT}<span>${metCount(audienceVertical)} of 5 interviewed</span>
+        <p class="sg-ta__seg">${SEGMENT}<span>${done.length} of 5 interviewed</span>
           <em class="sg-ta__kb">${V.overlay ? `knowledge base overlay: ${V.overlay}` : 'knowledge base overlay'}</em></p>
         <p class="sg-ta__hyp">${V.hypothesis}</p>
         <p class="sg-ta__note">${V.note}</p>
@@ -4191,24 +4000,46 @@ function renderAudience() {
           </div>`).join('')}
       </div>` : ''}
 
-      <p class="sg-ta__label">Four questions &mdash; enough evidence, not every row</p>
+      <p class="sg-ta__label">Four questions, for every interview</p>
+      <ol class="sg-ta__asks">
+        ${ICP_QUESTIONS.map(([, q]) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
+      </ol>
+      <p class="sg-ta__note">The same four for everybody, so the answers can be compared. Type the
+        answers below as notes; the AI fills the ten-step playbook from them, every tick quoting the
+        words it rests on, and you correct any cell by clicking it.</p>
+
+      <p class="sg-ta__label">Interviews</p>
+      ${icp.error ? `<p class="sg-ta__st is-bad">${esc(icp.error)}</p>` : ''}
+      ${!ready ? '<p class="sg-ta__note">Loading the interviews&hellip;</p>' : `
+      <div class="sg-ta__ivs">
+        ${done.map((iv) => `
+          <article class="sg-ta__iv">
+            <header>
+              <span class="sg-ta__coid">${iv.letter}</span>
+              <b>${esc(iv.company)}</b>
+              <span class="sg-ta__cowho">${[iv.met, iv.when].filter(Boolean).map(esc).join(' &middot; ')}</span>
+              ${status(iv)}
+            </header>
+            ${icpOpen === iv.id ? answersForm(iv) : `
+            <div class="sg-ta__edbar">
+              <button type="button" class="sg-ta__btn" data-act="open-form" data-iv="${iv.id}">Answers</button>
+              <button type="button" class="sg-ta__btn is-primary" data-act="fill" data-iv="${iv.id}"${icpBusy ? ' disabled' : ''}>
+                ${iv.filledAt ? 'Fill again with AI' : 'Fill the playbook with AI'}</button>
+              <button type="button" class="sg-ta__btn is-quiet" data-act="remove" data-iv="${iv.id}">Remove</button>
+            </div>`}
+          </article>`).join('')}
+        ${icpOpen === 'new' ? `<article class="sg-ta__iv is-new">${answersForm(null)}</article>` : `
+          <button type="button" class="sg-ta__btn sg-ta__add" data-act="open-form" data-iv="new">+ Add an interview</button>`}
+      </div>`}
+
+      <p class="sg-ta__label">The four answers, company by company</p>
       <div class="sg-ta__wrap">
         <table class="sg-ta__grid sg-ta__grid--four">
-          <thead>
-            <tr>
-              <th class="sg-ta__rowhead"></th>
-              ${COMPANIES.map((c) => `
-                <th class="sg-ta__co${c.name ? ' is-done' : ''}">
-                  <span class="sg-ta__coid">${c.id}</span>
-                  <span class="sg-ta__coname">${c.name || '&mdash;'}</span>
-                  <span class="sg-ta__cowho">${c.met || c.when}</span>
-                </th>`).join('')}
-            </tr>
-          </thead>
+          ${head}
           <tbody>
-            ${FOUR.map(([key, q], i) => `<tr class="sg-ta__steprow">
+            ${ICP_QUESTIONS.map(([, q], i) => `<tr class="sg-ta__steprow">
                 <th class="sg-ta__rowhead"><span class="sg-ta__stepn">${i + 1}</span>${q}</th>
-                ${COMPANIES.map((c) => value((FOUR_OF[c.id] || {})[key], 1)).join('')}</tr>`).join('')}
+                ${COMPANIES.map((c) => cell(c, `q${i + 1}`)).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </div>
@@ -4220,39 +4051,19 @@ function renderAudience() {
         <span class="is-empty"><i>&middot;</i>not asked, or not done yet</span>
       </p>
 
-      <p class="sg-ta__label">Five questions, for every interview</p>
-      <ol class="sg-ta__asks">
-        ${FIVE.map((q) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
-      </ol>
-      <p class="sg-ta__note">The same five for everybody, so the answers can be compared, and all
-        about customers. The first two answer whether it happens, the third whether the signals
-        exist, the fourth whether knowing earlier changes anything, and the fifth what it is worth.
-        Growth is the follow-up: &ldquo;And where do you feel you&rsquo;re missing chances to grow
-        the customers you already have?&rdquo;</p>
-
-      ${ASKS.length ? `
+      ${STILL_OPEN.length ? `
       <p class="sg-ta__label">Still open from the interviews so far</p>
-      <ol class="sg-ta__asks">
-        ${ASKS.map(([, q]) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
+      <ol class="sg-ta__asks sg-ta__open">
+        ${STILL_OPEN.map((q) => `<li>${q}</li>`).join('')}
       </ol>` : ''}
 
-      <details class="sg-ta__more">
-        <summary>The full ten-step playbook, row by row</summary>
-        <p class="sg-ta__note">The detail behind the four questions. It does not have to be
-          full for a company to count &mdash; it is where an answer goes once one is given.</p>
+      <details class="sg-ta__more" open>
+        <summary>The ten-step playbook, filled from the answers</summary>
+        <p class="sg-ta__note">Each company&rsquo;s cells come from its four answers. Hover a tick to see the
+          words it rests on; click a cell to correct it. A corrected cell is never overwritten by the AI.</p>
         <div class="sg-ta__wrap">
           <table class="sg-ta__grid">
-            <thead>
-              <tr>
-                <th class="sg-ta__rowhead"></th>
-                ${COMPANIES.map((c) => `
-                  <th class="sg-ta__co${c.name ? ' is-done' : ''}">
-                    <span class="sg-ta__coid">${c.id}</span>
-                    <span class="sg-ta__coname">${c.name || '&mdash;'}</span>
-                    <span class="sg-ta__cowho">${c.met || c.when}</span>
-                  </th>`).join('')}
-              </tr>
-            </thead>
+            ${head}
             <tbody>
               ${STEPS.map(stepRows).join('')}
             </tbody>
@@ -4260,31 +4071,107 @@ function renderAudience() {
         </div>
       </details>
 
-      ${audienceVertical === 'clinics' ? `
-      <div class="sg-ta__wedge">
-        <p class="sg-ta__label">Draft wedge &mdash; not locked</p>
-        <p>Svarg helps <em>clinic and wellness operators</em> find <em>the clients they are about to
-          lose and the revenue they are leaving with the ones they keep</em> &mdash; a course abandoned,
-          a package not renewed, a treated session never billed &mdash; before <em>it is written off
-          as a bad month</em>.</p>
-        <p class="sg-ta__note">It stays a draft until the table has more than one full column.
-          The customer supplied the raw material for this sentence; nobody invented it in a
-          room. And it stays NARROWER than the hypothesis above on purpose &mdash; a hypothesis
-          is what we are testing, a wedge is what we sell first, and &ldquo;we find where your
-          records disagree with reality&rdquo; is a platform pitch with nobody in it.</p>
-      </div>` : `
-      <div class="sg-ta__wedge">
-        <p class="sg-ta__label">No wedge yet</p>
-        <p>Svarg helps <em>&hellip;</em> detect <em>&hellip;</em> before <em>&hellip;</em>.</p>
-        <p class="sg-ta__note">The blanks are filled from steps 1, 2 and 8, in this vertical, by
-          the people in it. Writing a plausible sentence here first is how a wedge ends up being
-          defended rather than tested.</p>
-      </div>`}
+      ${wedgeBlock()}
     </section>`;
 
-  el.querySelector('.sg-seg').addEventListener('click', (e) => {
+  wireAudience(el.querySelector('.sg-ta'));
+}
+
+/** The tab's clicks, wired to the freshly drawn section. */
+function wireAudience(root) {
+  if (!root) return;
+  root.querySelector('.sg-seg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-vert]');
     if (b) setAudienceVertical(b.dataset.vert);
+  });
+
+  const formValues = (form) => {
+    const v = (n) => (form.querySelector(`[name="${n}"]`) || {}).value || '';
+    return {
+      company: v('company'), met: v('met'), when: v('when'),
+      answers: Object.fromEntries(ICP_QUESTIONS.map(([k]) => [k, v(k)])),
+    };
+  };
+
+  const fill = async (id) => {
+    icpBusy = id; renderAudience();
+    try { await api(`/icp/interviews/${id}/fill`, { method: 'POST' }); }
+    catch (err) { banner(`The AI could not fill the playbook: ${err.message}`); }
+    icpBusy = '';
+    await loadIcp(audienceVertical);
+  };
+
+  const act = async (b) => {
+    const a = b.dataset.act;
+    const id = b.dataset.iv;
+    try {
+      if (a === 'open-form') { icpOpen = id; icpEdit = ''; renderAudience(); return; }
+      if (a === 'close-form') { icpOpen = ''; renderAudience(); return; }
+      if (a === 'edit-cell') { icpEdit = `${id}:${b.dataset.key}`; renderAudience(); return; }
+      if (a === 'cancel-cell') { icpEdit = ''; renderAudience(); return; }
+      if (a === 'save-cell') {
+        const td = b.closest('td');
+        await api(`/icp/interviews/${id}/cells/${b.dataset.key}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ state: td.querySelector('.sg-ta__edstate').value, text: td.querySelector('.sg-ta__edtext').value }),
+        });
+        icpEdit = '';
+        await loadIcp(audienceVertical);
+        return;
+      }
+      if (a === 'save-answers') {
+        const body = formValues(b.closest('[data-form]'));
+        let target = id;
+        if (!id) {
+          const r = await api('/icp/interviews', { method: 'POST', body: JSON.stringify({ vertical: audienceVertical, ...body }) });
+          target = r.id;
+        } else {
+          await api(`/icp/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+        }
+        icpOpen = '';
+        await loadIcp(audienceVertical);
+        await fill(target);
+        return;
+      }
+      if (a === 'fill') { await fill(id); return; }
+      if (a === 'remove') {
+        if (!window.confirm('Remove this interview and the playbook filled from it?')) return;
+        await api(`/icp/interviews/${id}`, { method: 'DELETE' });
+        await loadIcp(audienceVertical);
+        return;
+      }
+      if (a === 'find-wedge') {
+        icpBusy = 'wedge'; renderAudience();
+        try { await api(`/icp/wedge/${audienceVertical}/find`, { method: 'POST' }); }
+        catch (err) { banner(`The AI could not find the wedge: ${err.message}`); }
+        icpBusy = '';
+        await loadIcp(audienceVertical);
+        return;
+      }
+      if (a === 'lock-wedge') {
+        const text = (root.querySelector('.sg-ta__wedgetext') || {}).value || '';
+        await api(`/icp/wedge/${audienceVertical}/lock`, { method: 'POST', body: JSON.stringify({ text }) });
+        await loadIcp(audienceVertical);
+        return;
+      }
+      if (a === 'unlock-wedge') {
+        await api(`/icp/wedge/${audienceVertical}/lock`, { method: 'POST', body: JSON.stringify({ text: '' }) });
+        await loadIcp(audienceVertical);
+      }
+    } catch (err) {
+      banner(err.message);
+    }
+  };
+
+  root.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    // Typing in the open editor must not reopen it.
+    if (!b || (b.dataset.act === 'edit-cell' && e.target.closest('textarea, select'))) return;
+    act(b);
+  });
+  root.addEventListener('keydown', (e) => {
+    const b = e.target.closest('[data-act="edit-cell"]');
+    if (b && (e.key === 'Enter' || e.key === ' ') && e.target === b) { e.preventDefault(); act(b); }
   });
 }
 

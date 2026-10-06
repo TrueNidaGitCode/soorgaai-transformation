@@ -1,21 +1,19 @@
 /**
- * The target audience table: one segment, five companies, and four of them empty.
+ * The target audience table: four answers per company, the ten-step
+ * playbook filled from them, and the wedge found across them.
  *
- * ── What this screen is for ────────────────────────────────────────────────
+ * ── What changed on 6 October 2026 ─────────────────────────────────────────
  *
- * The playbook calls step 9 the gate: the same problem at company after
- * company, or there is no ICP. This is that gate as a table, and the thing it
- * exists to prevent is one enthusiastic interview being read as a market.
+ * The table was written by hand in this file, a cell at a time. It is now
+ * read from the server: each interview is four answers, the AI fills the
+ * playbook from them (every tick quoting the words it rests on, see the
+ * backend's icpInterviewService), and a person corrects any cell by clicking
+ * it. The evidence for the three companies interviewed so far moved with the
+ * data — its tests are in backend/__tests__/icpInterviews.test.js.
  *
- * So the assertions are mostly about restraint rather than content:
- *
- *   - Four of five columns stay empty until somebody has actually been
- *     interviewed. An empty column is evidence, not an unfinished page.
- *   - A claim is never recorded as evidence. The ₹20,000 a month came from
- *     the HOD, the arithmetic behind it has not been shown, and a cell that
- *     said ✓ would launder an estimate into a fact three interviews later.
- *   - Every pointer that is not evidenced has a question attached, because a
- *     gap nobody wrote a question for is a gap that stays open.
+ * What these hold is the screen's restraint: empty columns stay empty, the
+ * AI's words are escaped, a corrected cell says so, and the wedge cannot be
+ * locked until two companies share one evidenced problem.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -29,19 +27,19 @@ const css = read('../admin/sales.css');
 const html = read('../admin/sales.html');
 
 function fn(name) {
-  const start = js.search(new RegExp(`^function ${name}\\([a-z]*\\) \\{`, 'm'));
+  const start = js.search(new RegExp(`^(async )?function ${name}\\([a-zA-Z, =']*\\) \\{`, 'm'));
   expect(start, `${name} not found`).toBeGreaterThan(-1);
   let depth = 0;
-  for (let i = start; i < js.length; i++) {
+  for (let i = js.indexOf('{', start); i < js.length; i++) {
     if (js[i] === '{') depth++;
     else if (js[i] === '}' && --depth === 0) return js.slice(start, i + 1);
   }
   throw new Error(`${name} is unbalanced`);
 }
 
-function blocks(view) {
+function blocks(src) {
   const found = new Set();
-  for (const m of view.matchAll(/class="([^"]*)"/g)) {
+  for (const m of src.matchAll(/class="([^"]*)"/g)) {
     for (const cls of m[1].split(/\s+/)) {
       const bare = /^sg-[a-z0-9-]+/.exec(cls.split('__')[0].split('--')[0]);
       if (bare) found.add(bare[0]);
@@ -50,15 +48,6 @@ function blocks(view) {
   return found;
 }
 
-const view = fn('renderAudience');
-
-/**
- * One `const NAME = … ;` declaration's value, from the view or module scope.
- *
- * To the semicolon at depth zero rather than to a matching bracket, because
- * one of these is an object that is immediately indexed — `{…}[vertical] || {}`
- * — and stopping at its closing brace would lose the half that chooses.
- */
 function literal(src, name) {
   const at = src.search(new RegExp(`^\\s*const ${name} = `, 'm'));
   expect(at, `${name} not found`).toBeGreaterThan(-1);
@@ -73,45 +62,45 @@ function literal(src, name) {
   throw new Error(`${name} is unbalanced`);
 }
 
-/**
- * The view's own data, evaluated.
- *
- * ROWS spreads the shared ACUTE_CONDITIONS, so that comes along — which is
- * the point of the change these tests cover: the table's first seven rows
- * are the playbook's seven conditions, not a second wording of them.
- */
-const SHARED = literal(js, 'ACUTE_CONDITIONS');
-const TITLES = literal(js, 'PLAYBOOK_STEPS');
+const view = fn('renderAudience');
 
 /**
- * One of the view's own declarations, evaluated for a chosen vertical.
+ * Draw the tab for real, from a given server answer, and return the HTML.
  *
- * The vertical is injected rather than read, so the same shipped code can be
- * run twice — once for the industry with an interview behind it and once for
- * the one nobody has visited — and the difference asserted rather than
- * assumed.
+ * The shipped code from VERTICALS to the end of wireAudience is evaluated
+ * with the page's own helpers beside it, and the server state injected — so
+ * what is asserted is what the operator would see.
  */
-function dataFor(vertical, name) {
-  const scope = `const audienceVertical = ${JSON.stringify(vertical)};
-    const ACUTE_CONDITIONS = ${SHARED};
-    const PLAYBOOK_STEPS = ${TITLES};
-    const VERTICALS = ${literal(js, 'VERTICALS')};
-    const REPEATABILITY = ${literal(view, 'REPEATABILITY')};
-    const OURS = ${literal(view, 'OURS')};
-    const INTERVIEWED = ${literal(view, 'INTERVIEWED')};
-    const blank = ${literal(view, 'blank')};
-    const done = ${literal(view, 'done')};
-    const ASKS_BY_VERTICAL = ${literal(view, 'ASKS_BY_VERTICAL')};`;
+function draw({ vertical = 'clinics', interviews = [], wedge = null, counts = {} } = {}) {
+  const from = js.indexOf('const VERTICALS = [');
+  const wire = fn('wireAudience');
+  const to = js.indexOf(wire) + wire.length;
+  const calls = [];
+  const el = { innerHTML: '', querySelector: () => ({ addEventListener() {}, querySelector: () => ({ addEventListener() {} }) }) };
+  const scope = `
+    const PLAYBOOK_STEPS = ${literal(js, 'PLAYBOOK_STEPS')};
+    const ACUTE_CONDITIONS = ${literal(js, 'ACUTE_CONDITIONS')};
+    ${fn('esc')}
+    ${js.slice(from, to)}
+    audienceVertical = ${JSON.stringify(vertical)};
+    icp = { vertical: ${JSON.stringify(vertical)}, interviews: INTERVIEWS, wedge: WEDGE, loading: false, error: '' };
+    icpCounts = COUNTS;
+    renderAudience();
+    return document.getElementById('sg-audience').innerHTML;`;
   // eslint-disable-next-line no-new-func
-  return new Function(`${scope} return ${literal(view, name)};`)();
+  const out = new Function('document', 'api', 'banner', 'window', 'INTERVIEWS', 'WEDGE', 'COUNTS', scope)(
+    { getElementById: () => el },
+    (p) => { calls.push(p); return Promise.resolve({ interviews: [], counts: {} }); },
+    () => {}, {}, interviews, wedge, counts,
+  );
+  return { html: out, calls };
 }
 
-const data = (name) => dataFor('clinics', name);
-
-/** Every key a company is scored on: the sub-rows, plus the one-row steps. */
-function pointerKeys(steps) {
-  return steps.flatMap((s) => (s.rows ? s.rows.map(([k]) => k) : s.key ? [s.key] : []));
-}
+const iv = (letter, over = {}) => ({
+  id: `id${letter}`, letter, company: `Company ${letter}`, met: 'Owner', when: 'Oct 2026',
+  answers: { problem: 'p', example: 'e', detection: 'd', value: 'v' },
+  cells: {}, legacy: false, filledAt: '2026-10-06', fillError: '', stale: false, unfilled: false, ...over,
+});
 
 describe('the tab is reachable', () => {
   it('sits after the interview, which is where its rows come from', () => {
@@ -133,16 +122,6 @@ describe('the tab is reachable', () => {
   });
 
   it('shares no block name with the other four tabs, bar the switcher', () => {
-    /*
-     * The rule that caught the sg-flow collision, with the exception its own
-     * comment always allowed: a shared LAYOUT PRIMITIVE is fine, an
-     * accidentally shared component is not.
-     *
-     * sg-seg is the industry switcher. Pitches and this tab both choose an
-     * industry, they should look identical doing it, and one set of rules for
-     * one control is the opposite of the bug — two tabs each styling their own
-     * copy is how they drift.
-     */
     const SHARED_PRIMITIVES = new Set(['sg-seg']);
     const mine = blocks(view);
     expect(mine.size).toBeGreaterThan(0);
@@ -155,396 +134,126 @@ describe('the tab is reachable', () => {
 
   it('is styled, and its table scrolls in its own container', () => {
     expect(css).toMatch(/^\.sg-ta \{/m);
-    // Six columns of prose are wider than a phone. Only the table may scroll
-    // sideways — never the page.
     expect(css).toMatch(/\.sg-ta__wrap \{\s*overflow-x: auto;/);
+    expect(css).toMatch(/^\.sg-ta__iv \{/m);
   });
 });
 
-describe('five companies, one of them interviewed', () => {
-  const companies = data('COMPANIES');
-  const steps = data('STEPS');
-  const pointers = pointerKeys(steps);
-
-  it('has five columns and holds the segment they belong to', () => {
-    expect(companies).toHaveLength(5);
-    expect(companies.map((c) => c.id)).toEqual(['A', 'B', 'C', 'D', 'E']);
-  });
+describe('the verticals', () => {
+  // eslint-disable-next-line no-new-func
+  const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
 
   it('names the segment as the knowledge base names it', () => {
-    /*
-     * It said "Physiotherapy", which described the trade in front of us and
-     * matched nothing. The knowledge base has an overlay per industry — the
-     * attention areas, the opportunity discovery, the use case classification
-     * — and an application delivered to anybody in this column is built on
-     * the one called Clinics & Wellness. A segment whose name exists only on
-     * this page cannot be joined to the thing that decides their screens.
-     */
-    // eslint-disable-next-line no-new-func
-    const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
     expect(verticals.map((v) => v.name)).toEqual(['Clinics &amp; Wellness', 'Engineering &amp; Project Operations']);
-
-    /*
-     * Every vertical must name a knowledge base overlay that exists. The
-     * overlay decides the categories a delivered application groups its
-     * findings under, so a vertical named only here produces a column that
-     * cannot become software. Joined rather than URL-resolved: one folder
-     * name has a space and an ampersand in it, which is the name being
-     * checked.
-     */
     for (const v of verticals) {
-      const overlay = join(
-        dirname(fileURLToPath(import.meta.url)),
-        '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases',
-        // A vertical with no overlay of its own names the one its applications
-        // are built on, and the page says which.
-        (v.overlay || v.name).replace('&amp;', '&'),
-      );
+      const overlay = join(dirname(fileURLToPath(import.meta.url)),
+        '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases', (v.overlay || v.name).replace('&amp;', '&'));
       expect(existsSync(overlay), `no overlay for ${v.name}`).toBe(true);
-      if (v.overlay) expect(view).toContain('knowledge base overlay: ${V.overlay}');
-    }
-    expect(view).toContain('knowledge base overlay');
-  });
-
-  it('starts a new vertical with five empty columns and no invented evidence', () => {
-    /*
-     * The whole risk of adding a second industry before visiting it: a
-     * plausible example typed in advance is indistinguishable from evidence
-     * by the third conversation. So the shipped code is run for Automotive
-     * and every cell checked, rather than the emptiness being assumed.
-     */
-    const auto = dataFor('engineering', 'COMPANIES');
-    const steps = dataFor('engineering', 'STEPS');
-    expect(auto).toHaveLength(5);
-    const keys = steps.flatMap((s) => (s.rows ? s.rows.map(([k]) => k) : s.key ? [s.key] : []));
-    for (const c of auto) {
-      expect(c.name, c.id).toBe('');
-      for (const k of keys) expect(c[k], `${c.id}.${k}`).toBeUndefined();
-    }
-    // And the three steps that are our work say plainly that they have not
-    // begun, rather than borrowing the first vertical's answers.
-    for (const s of steps.filter((x) => x.segment)) {
-      expect(s.segment[0], `step ${s.n} state`).toBe('');
-      expect(s.segment[1].length, `step ${s.n} text`).toBeGreaterThan(20);
-    }
-    // No follow-up questions, because nothing has been answered yet.
-    expect(dataFor('engineering', 'ASKS')).toEqual([]);
-  });
-
-  it('leaves the columns nobody has visited genuinely empty', () => {
-    /*
-     * Not placeholder answers, not "TBD" — nothing. A cell invented to make
-     * the table look finished is indistinguishable from evidence by the time
-     * anyone reads it back, and a second column that agrees with the first
-     * because somebody filled its gaps in is how a repeatability table stops
-     * being evidence at all.
-     */
-    const named = companies.filter((c) => c.name);
-    expect(named.length).toBeGreaterThan(0);
-    expect(named[0].name).toBe('Vesoma');
-    for (const c of companies) {
-      if (c.name) continue;
-      for (const k of pointers) expect(c[k], `${c.id}.${k}`).toBeUndefined();
     }
   });
 
-  it('leaves a short interview short, rather than inferring the rest', () => {
-    /*
-     * The Wellness Co. was one problem and most of the script unasked. Every
-     * row they were not asked about is absent, including the ones the first
-     * company answered — the temptation being to carry those across because
-     * the problems look alike.
-     */
-    const b = companies.find((c) => c.name === 'The Wellness Co.');
-    expect(b, 'the second interview').toBeTruthy();
-    for (const unasked of ['frequency', 'manual', 'late', 'cost', 'action', 'roi', 'simaction']) {
-      expect(b[unasked], `B.${unasked} was not asked`).toBeUndefined();
-    }
-    // And what they did say is recorded as said: two systems that do not talk.
-    expect(b.spread[0]).toBe('yes');
-    expect(b.same[0]).toBe('open');
-    expect(b.same[1]).toMatch(/unasked|not asked/);
-  });
-
-  it('carries all ten steps, numbered and named as the playbook names them', () => {
-    /*
-     * It showed two of the ten, which reads as eight steps done rather than
-     * eight outstanding — the opposite of what the table is for. And the
-     * titles are the playbook's own: this was already got wrong once, when
-     * "Signals are spread across multiple systems" became "Signals in more
-     * than one place" here, and a step called something slightly different on
-     * the second screen is a second step.
-     */
-    // eslint-disable-next-line no-new-func
-    const titles = new Function(`return ${TITLES};`)();
-    expect(titles).toHaveLength(10);
-    expect(steps).toHaveLength(10);
-    expect(steps.map((s) => s.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(steps.map((s) => s.title)).toEqual(titles);
-  });
-
-  it('breaks step 1 into the playbook’s seven conditions, not a rewording', () => {
-    // eslint-disable-next-line no-new-func
-    const acute = new Function(`return ${SHARED};`)();
-    expect(steps[0].rows).toEqual(acute);
-    expect(acute.map(([, label]) => label)).toContain('Signals are spread across multiple systems');
-    // Step 9 is the other one that breaks up: the six comparisons.
-    expect(steps[8].rows.map(([, l]) => l)).toContain('Same problem');
-  });
-
-  it('spans the columns for the steps no single company can answer', () => {
-    /*
-     * Embedding yourself in a market, choosing what to build and locking a
-     * wedge are our work, not a customer's answer. Five cells against them
-     * would invite somebody to fill in five things that do not exist.
-     */
-    const ours = steps.filter((s) => s.segment).map((s) => s.n);
-    expect(ours).toEqual([4, 6, 10]);
-    for (const s of steps) {
-      expect(Boolean(s.rows) + Boolean(s.key) + Boolean(s.segment), `step ${s.n}`).toBe(1);
-    }
-  });
-
-  it('records what Vesoma actually said', () => {
-    const v = data('COMPANIES')[0];
-    expect(v.met).toBe('HOD');
-    expect(v.frequency[0]).toBe('yes');
-    expect(v.frequency[1]).toMatch(/no-show/);
-    expect(v.late[0]).toBe('yes');
-    expect(v.same[1]).toMatch(/marked no-show/);
-    // Answered after the first interview: the three places a signal lives.
-    expect(v.spread[0]).toBe('yes');
-    expect(v.spread[1]).toMatch(/WhatsApp/);
-    expect(v.spread[1]).toMatch(/phone calls/);
-    expect(v.spread[1]).toMatch(/CRM/);
-    // And the catch that came with the answer: one of the three is not readable.
-    expect(v.spread[1]).toMatch(/nothing to read unless/);
-    /*
-     * The sharpest answer of the three, and the one most easily flattened
-     * into a plain yes: the HOD notices SOMETIMES, and nobody does it
-     * consistently. “A person joins the dots by hand” and “nobody reliably
-     * joins them at all” are different findings, and the second is the
-     * stronger one — there is no process to displace, only an absence.
-     */
-    expect(v.manual[0]).toBe('yes');
-    expect(v.manual[1]).toMatch(/HOD notices, sometimes/);
-    expect(v.manual[1]).toMatch(/Nobody does it consistently/);
-    /*
-     * The action is a correction, not a collection. Recording it as “they fix
-     * it” would quietly make the ₹20,000 look recoverable, and nobody has
-     * said that it is.
-     */
-    expect(v.action[0]).toBe('yes');
-    expect(v.action[1]).toMatch(/corrected by hand/);
-    expect(v.action[1]).toMatch(/not a collection/);
-  });
-});
-
-describe('a claim is not evidence', () => {
-  const v = data('COMPANIES')[0];
-
-  it('keeps the ₹20,000 as a ceiling, now that the arithmetic is known', () => {
-    /*
-     * The working came back: ₹1,000 a booking, about twenty a month left
-     * marked no-show. That settles MEASURABILITY — there is a unit price and
-     * a count — so the qualifying condition is evidenced.
-     *
-     * It does not settle the amount. Twenty is every no-show mark, and only
-     * some of those patients actually attended; twenty thousand is therefore
-     * the most it can be, not what it is. Recording the ceiling as the figure
-     * is the same laundering as before with an extra step in front of it, so
-     * the size stays a claim until somebody counts.
-     */
-    expect(v.cost[0]).toBe('yes');
-    expect(v.cost[1]).toMatch(/&#8377;1,000 a booking/);
-    expect(v.cost[1]).toMatch(/up to/);
-
-    expect(v.roi[0]).toBe('claim');
-    expect(v.roi[1]).toMatch(/Up to/);
-    expect(v.roi[1]).toMatch(/however many of the 20 actually attended/);
-    expect(v.roi[1]).toMatch(/Nobody has counted/);
-    expect(v.economics[0]).toBe('claim');
-    expect(v.economics[1]).toMatch(/ceiling/);
-  });
-
-  it('separates a claim from evidence in the key, so the glyph means something', () => {
-    expect(view).toContain('stated, not yet arithmetic');
-    expect(view).toContain('asked, not established');
-    expect(css).toMatch(/\.sg-ta__cell\.is-claim \{/);
-  });
-
-  it('qualifies the first company on all seven conditions', () => {
-    /*
-     * Every one of step 1's conditions is evidenced at Vesoma: it is an acute
-     * problem there. What is still open is how big, which is what its two
-     * questions are about.
-     */
-    const v2 = data('COMPANIES')[0];
-    // eslint-disable-next-line no-new-func
-    const qualify = new Function(`return ${SHARED};`)().map(([k]) => k);
-    // Except the eighth, added after the interview on 6 October 2026: it was
-    // never asked, so it stays empty with its question rather than inferred.
-    expect(qualify.filter((k) => v2[k][0] !== 'yes')).toEqual(['measurable']);
-  });
-
-  it('keeps the wedge a draft while only one column is full', () => {
-    expect(view).toMatch(/Draft wedge/);
-    expect(view).toMatch(/stays a draft until the table has more than one full column/);
-  });
-});
-
-describe('every gap carries the question that closes it', () => {
-  const v = data('COMPANIES')[0];
-  const asks = data('ASKS');
-
-  it('asks about something unproven at some company, never about a settled row', () => {
-    /*
-     * A question belongs to whichever company has not answered it. Vesoma's
-     * frequency is evidenced; The Wellness Co.'s is not, and "how often does
-     * a call fail to reach the CRM" is a real question because of the second
-     * company rather than the first.
-     *
-     * So the rule is: every question names a row that is unproven SOMEWHERE
-     * in the table. A question about a row every company has answered is one
-     * nobody needs to ask.
-     */
-    const all = data('COMPANIES').filter((c) => c.name);
-    for (const [key] of asks) {
-      const unproven = all.filter((c) => !c[key] || c[key][0] !== 'yes');
-      expect(unproven.length, `${key} is settled at every company`).toBeGreaterThan(0);
-    }
-  });
-
-  it('covers every acute-problem condition that is still unproven', () => {
-    /*
-     * Scoped to step 1 deliberately. Those seven are things the CUSTOMER
-     * answers, so a gap in them is a question for the next conversation. The
-     * later steps are our own work — nobody closes "choose what to build" by
-     * asking a clinic about it.
-     */
-    // eslint-disable-next-line no-new-func
-    const acute = new Function(`return ${SHARED};`)().map(([k]) => k);
-    const asked = new Set(asks.map(([k]) => k));
-    for (const k of acute) {
-      if (v[k][0] === 'yes') continue;
-      expect(asked.has(k), `no question closes ${k}`).toBe(true);
-    }
-  });
-
-  it('keeps the list short enough to actually ask', () => {
-    expect(asks.length).toBeLessThanOrEqual(5);
-  });
-});
-
-/**
- * Widening a hypothesis is the cheapest way to make it look confirmed.
- *
- * The clinics hypothesis started as "revenue leakage". Two interviews in, it
- * says something broader: reality does not reach the business system. That
- * change is defensible — Vesoma alone carries two versions of the gap, a
- * treated patient marked no-show and a cancellation that never reached the
- * booking, and only one of them loses money — but a broader claim is an easier
- * claim, and an easier claim passes on evidence that would not have passed
- * before.
- *
- * So the widening comes with a bar, and the bar lives here rather than in the
- * prose beside it: the hypothesis is a gap THAT COSTS SOMETHING. A company
- * whose "Same problem" cell reads evidenced must have had the cost side
- * established too. Otherwise the table records a match nobody priced, which is
- * how six repeatability rows turn into a market that does not exist.
- */
-describe('the wider hypothesis kept its bar', () => {
-  // Module scope rather than the view's: the verticals are declared beside the
-  // tab instead of inside it, so dataFor cannot reach them.
-  // eslint-disable-next-line no-new-func
-  const clinics = new Function(`return ${literal(js, 'VERTICALS')};`)()
-    .find((v) => v.id === 'clinics');
-
-  it('names the customers at stake, and still names a consequence', () => {
-    // Retention and growth since 6 October 2026: clients lost part-way, and
-    // growth from the ones kept. The gap is the mechanism, kept in the note.
+  it('keeps the clinics hypothesis on customers at stake, with a cost', () => {
+    const clinics = verticals.find((v) => v.id === 'clinics');
     expect(clinics.hypothesis).toMatch(/lose clients/i);
     expect(clinics.hypothesis).toMatch(/growth/i);
-    expect(clinics.note).toMatch(/reality does not reach/i);
-    // A gap alone is not the hypothesis. Something has to be at stake in it,
-    // or every disconnected pair of systems in the world qualifies.
-    expect(clinics.hypothesis).toMatch(/consequence|cost|revenue/i);
-  });
-
-  it('never records the same problem at a company whose cost side is unasked', () => {
-    /*
-     * The rule the widening has to survive. Vesoma passes it — ₹1,000 × ~20,
-     * with the arithmetic shown and marked as a ceiling. The Wellness Co. does
-     * not, so its cell stays amber however strongly the shape matches.
-     */
-    for (const c of dataFor('clinics', 'COMPANIES').filter((x) => x.name)) {
-      if (!c.same || c.same[0] !== 'yes') continue;
-      const priced = ['cost', 'roi', 'economics'].filter((k) => c[k] && c[k][1]);
-      expect(priced.length, `${c.name} matches the problem but nothing was priced`)
-        .toBeGreaterThan(0);
-    }
-  });
-
-  it('leaves the second company amber on the problem, not green', () => {
-    // Stated as itself rather than derived, because this is the exact cell a
-    // rewrite would flip by accident: the gap IS the same, and under a wider
-    // hypothesis "same" reads true long before anybody has asked what it costs.
-    const b = dataFor('clinics', 'COMPANIES').find((c) => c.id === 'B');
-    expect(b.name).toBeTruthy();
-    expect(b.same[0]).toBe('open');
-    expect(b.cost).toBeUndefined();
-    expect(b.roi).toBeUndefined();
-  });
-
-  it('records why it was widened, so the next reader can disagree with it', () => {
-    /*
-     * A hypothesis that changes without a reason attached is indistinguishable
-     * from one that drifted. The note has to say which company the
-     * generalisation came from — the first, not the newest — and it has to
-     * admit the part that is inference rather than interview.
-     */
+    expect(clinics.hypothesis).toMatch(/cost|revenue/i);
     expect(clinics.note).toMatch(/Vesoma/);
     expect(clinics.note).toMatch(/inference|inferred/i);
   });
 });
 
-describe('four questions lead, and the playbook is the detail', () => {
-  // eslint-disable-next-line no-new-func
-  const FOUR = new Function(`return ${literal(view, 'FOUR')};`)();
-  // eslint-disable-next-line no-new-func
-  const BY = new Function(`return ${literal(view, 'FOUR_BY_VERTICAL')};`)();
-  // eslint-disable-next-line no-new-func
-  const FIVE = new Function(`return ${literal(view, 'FIVE')};`)();
-
-  it('asks exactly the four, in order, with whether it can be seen earlier third', () => {
-    expect(FOUR.map(([k]) => k)).toEqual(['happens', 'exists', 'earlier', 'value']);
-    // Not "can we integrate with their CRM": whether it could have been seen earlier.
-    expect(FOUR[2][1]).toMatch(/detected it earlier/);
+describe('read from the server, not written here', () => {
+  it('holds no interview evidence in the page source any more', () => {
+    for (const name of ['INTERVIEWED', 'FOUR_BY_VERTICAL', 'ASKS_BY_VERTICAL', 'FIVE']) {
+      expect(js, name).not.toMatch(new RegExp(`const ${name} = `));
+    }
+    expect(fn('loadIcp')).toContain('/icp?vertical=');
   });
 
-  it('interviews with five questions, the same for everybody', () => {
-    expect(FIVE).toHaveLength(5);
-    // About customers, since the focus became retention and growth.
-    expect(FIVE.join(' ')).toMatch(/customers do you usually realise you.re losing[\s\S]*find out[\s\S]*warning signs[\s\S]*known earlier[\s\S]*cost/);
+  it('asks the server for the vertical it is about to draw', () => {
+    expect(view).toContain('if (icp.vertical !== audienceVertical && !icp.loading) { loadIcp(audienceVertical); }');
+    // Already loaded for the vertical on screen: nothing more is asked.
+    expect(draw({ vertical: 'engineering' }).calls).toEqual([]);
   });
 
-  it('fills a column only for a company that was interviewed, and invents nothing for a new vertical', () => {
-    const named = data('COMPANIES').filter((c) => c.name).map((c) => c.id);
-    for (const id of Object.keys(BY.clinics)) expect(named, id).toContain(id);
-    expect(BY.engineering).toBeUndefined();
+  it('starts a vertical nobody has been to with five empty columns', () => {
+    const { html: out } = draw({ vertical: 'engineering' });
+    expect((out.match(/class="sg-ta__co"/g) || []).length).toBeGreaterThanOrEqual(5);
+    expect(out).not.toMatch(/sg-ta__co is-done/);
+    expect(out).toContain('0 of 5 interviewed');
+  });
+});
+
+describe('four answers, filed and filled', () => {
+  it('files every interview under the same four questions', () => {
+    const { html: out } = draw();
+    // eslint-disable-next-line no-new-func
+    const qs = new Function(`return ${literal(js, 'ICP_QUESTIONS')};`)();
+    expect(qs).toHaveLength(4);
+    for (const [, q] of qs) expect(out).toContain(q);
+    expect(out).toContain('+ Add an interview');
   });
 
-  it('keeps an unknown as a ? rather than forcing it into a tick', () => {
-    // The Wellness Co.: LeadSquared and a phone are involved; whether the
-    // conversations are logged is not known.
-    expect(BY.clinics.B.exists[0]).toBe('open');
-    // Nobody has yet shown a finding that caught a real incident early.
-    for (const id of Object.keys(BY.clinics)) expect(BY.clinics[id].earlier[0], id).not.toBe('yes');
-    // Vesoma's figure is a ceiling, not a measured loss.
-    expect(BY.clinics.A.value[0]).toBe('claim');
+  it('draws what the AI wrote escaped, with the words it rests on', () => {
+    const { html: out } = draw({ interviews: [iv('A', { cells: {
+      q1: { state: 'yes', text: '<b>15 a month</b>', quote: 'about 15 a month', edited: false },
+      cost: { state: 'claim', text: '12000 a course', quote: '12000', edited: true },
+    } })] });
+    expect(out).toContain('&lt;b&gt;15 a month&lt;/b&gt;');
+    expect(out).not.toContain('<b>15 a month</b>');
+    expect(out).toContain('title="From the answers: &ldquo;about 15 a month&rdquo;"');
+    expect(out).toContain('title="From the answers: &ldquo;12000&rdquo; &middot; Written by hand"');
+    // A corrected cell is marked, because the AI will not touch it again.
+    expect(out).toMatch(/is-claim is-editable is-edited/);
   });
 
-  it('folds the ten-step grid under the four, rather than removing it', () => {
-    expect(view).toMatch(/sg-ta__grid--four[\s\S]*<details class="sg-ta__more">[\s\S]*STEPS\.map\(stepRows\)/);
+  it('says where each playbook came from', () => {
+    const { html: out } = draw({ interviews: [
+      iv('A'), iv('B', { stale: true }), iv('C', { filledAt: null, legacy: true }), iv('D', { filledAt: null, fillError: 'no credit' }),
+    ] });
+    expect(out).toContain('Playbook filled by AI');
+    expect(out).toContain('Answers changed since the playbook was filled');
+    expect(out).toContain('Re-filed from the earlier hand-written table');
+    expect(out).toContain('Could not fill: no credit');
+  });
+
+  it('carries all ten steps, numbered and named as the playbook names them', () => {
+    // eslint-disable-next-line no-new-func
+    const titles = new Function(`return ${literal(js, 'PLAYBOOK_STEPS')};`)();
+    const { html: out } = draw({ interviews: [iv('A')] });
+    titles.forEach((t) => expect(out, t).toContain(t));
+    // Step 1 leads with the problem type, then the playbook's own conditions.
+    expect(view).toContain("rows: [['kind', 'Problem type'], ...ACUTE_CONDITIONS]");
+    // Step 7's two rows are a person's to fill: nothing in four answers says a pilot was agreed.
+    expect(view).toContain("rows: [['pilot', 'Pilot agreed'], ['earlier', 'Svarg caught it before they did']]");
+  });
+
+  it('lists what is still open from the cells, so it cannot disagree with them', () => {
+    const { html: out } = draw({ interviews: [iv('B', { cells: { signals: { state: 'open', text: 'Whether calls are logged was not asked' } } })] });
+    expect(out).toContain('Still open from the interviews so far');
+    expect(out).toContain('B &middot; Company B &mdash; Warning signals already exist: Whether calls are logged was not asked');
+  });
+});
+
+describe('the wedge is found, and locked only when it is real', () => {
+  const groups = [{ problem: 'Patients stop mid-course', kind: 'retention', companies: ['A', 'B'], evidenced: ['A'], why: '' }];
+
+  it('will not lock a problem evidenced at one company', () => {
+    const { html: out } = draw({ interviews: [iv('A'), iv('B')], wedge: { groups, draft: { sentence: 'Svarg helps clinics…' }, ready: false } });
+    expect(out).toContain('<b>Not ready.</b>');
+    expect(out).toMatch(/data-act="lock-wedge" disabled/);
+    expect(out).toContain('<i class="is-yes">A</i><i class="">B</i>');
+  });
+
+  it('offers to lock once two companies share it', () => {
+    const { html: out } = draw({ interviews: [iv('A'), iv('B')], wedge: { groups: [{ ...groups[0], evidenced: ['A', 'B'] }], draft: { sentence: 'Svarg helps clinics…' }, ready: true } });
+    expect(out).toContain('<b>Ready to lock.</b>');
+    expect(out).toMatch(/data-act="lock-wedge">Lock it/);
+  });
+
+  it('shows a locked wedge as locked, with a way back', () => {
+    const { html: out } = draw({ interviews: [iv('A')], wedge: { locked: 'Svarg helps clinics find…', ready: true } });
+    expect(out).toContain('Wedge &mdash; locked');
+    expect(out).toContain('data-act="unlock-wedge"');
   });
 });

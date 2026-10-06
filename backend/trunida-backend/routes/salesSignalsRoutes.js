@@ -6,6 +6,10 @@ import {
   sendLeadNow, putSequence, readTemplate, writeTemplate, previewLead, setAccountKind, generateLeadEmail, getMotions,
   getDeck,
 } from '../controllers/salesSignalsController.js';
+import {
+  getIcp, getIcpCounts, postInterview, patchInterview, postFill, patchCell, deleteInterview,
+  postFindWedge, postLockWedge,
+} from '../controllers/icpInterviewController.js';
 
 const router = express.Router();
 
@@ -26,5 +30,17 @@ router.post('/leads/:id/send',     protect, adminOnly, sendLeadNow);
 router.patch('/accounts/:id/kind', protect, adminOnly, setAccountKind);
 router.get('/template',            protect, adminOnly, readTemplate);
 router.put('/template',            protect, adminOnly, writeTemplate);
+
+// ICP interviews: four answers, the playbook the AI fills from them, and the
+// wedge found across a vertical. See icpInterviewService.
+router.get('/icp',                         protect, adminOnly, getIcp);
+router.get('/icp/counts',                  protect, adminOnly, getIcpCounts);
+router.post('/icp/interviews',             protect, adminOnly, postInterview);
+router.patch('/icp/interviews/:id',        protect, adminOnly, patchInterview);
+router.delete('/icp/interviews/:id',       protect, adminOnly, deleteInterview);
+router.post('/icp/interviews/:id/fill',    protect, adminOnly, postFill);
+router.patch('/icp/interviews/:id/cells/:key', protect, adminOnly, patchCell);
+router.post('/icp/wedge/:vertical/find',   protect, adminOnly, postFindWedge);
+router.post('/icp/wedge/:vertical/lock',   protect, adminOnly, postLockWedge);
 
 export default router;

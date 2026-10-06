@@ -1,0 +1,368 @@
+[
+  {
+    "vertical": "clinics",
+    "order": 1,
+    "company": "Vesoma",
+    "met": "HOD",
+    "when": "Interviewed",
+    "answers": {
+      "problem": "The record says no-show when the patient came and was treated — ~20 bookings a month left marked no-show, some of whom attended\n~20 bookings a month left marked no-show when the patient came and was treated — the admin missed the attendance. Gym packages repeatedly over-used\nThe gap, and priced: a treated patient left marked no-show, a package used past the entitlement. Here it costs revenue",
+      "example": "Entitlement vs actual usage; booking vs treatment record\nWhatsApp, phone calls and a CRM. A call leaves nothing to read unless somebody logs it\nAfter the treatment; after the entitlement is passed\nBooking against treatment record, spread across a CRM, phone calls and WhatsApp",
+      "detection": "The HOD notices, sometimes. Nobody does it consistently — so it is not a process, it is whether somebody happened to look\nThe HOD has the record corrected by hand. A correction, not a collection — whether the money follows is a separate question\nHOD\nBooking → treatment → front desk → system",
+      "value": "₹1,000 a booking × ~20 a month = up to ₹20,000. The unit price is known and the count is countable\nUp to ₹20,000 a month — ₹1,000 × however many of the 20 actually attended. Nobody has counted that yet\nArithmetic shown: ₹1,000 × ~20 = ₹20,000 a month, ₹2.4L a year. It is a ceiling until somebody counts how many of the 20 attended"
+    },
+    "cells": {
+      "frequency": {
+        "state": "yes",
+        "text": "~20 bookings a month left marked no-show when the patient came and was treated — the admin missed the attendance. Gym packages repeatedly over-used",
+        "quote": "",
+        "edited": true
+      },
+      "signals": {
+        "state": "yes",
+        "text": "Entitlement vs actual usage; booking vs treatment record",
+        "quote": "",
+        "edited": true
+      },
+      "spread": {
+        "state": "yes",
+        "text": "WhatsApp, phone calls and a CRM. A call leaves nothing to read unless somebody logs it",
+        "quote": "",
+        "edited": true
+      },
+      "manual": {
+        "state": "yes",
+        "text": "The HOD notices, sometimes. Nobody does it consistently — so it is not a process, it is whether somebody happened to look",
+        "quote": "",
+        "edited": true
+      },
+      "late": {
+        "state": "yes",
+        "text": "After the treatment; after the entitlement is passed",
+        "quote": "",
+        "edited": true
+      },
+      "cost": {
+        "state": "yes",
+        "text": "₹1,000 a booking × ~20 a month = up to ₹20,000. The unit price is known and the count is countable",
+        "quote": "",
+        "edited": true
+      },
+      "action": {
+        "state": "yes",
+        "text": "The HOD has the record corrected by hand. A correction, not a collection — whether the money follows is a separate question",
+        "quote": "",
+        "edited": true
+      },
+      "measurable": {
+        "state": "",
+        "text": "Not asked. A corrected record is countable; whether anybody would count the money that follows it was not discussed",
+        "quote": "",
+        "edited": true
+      },
+      "same": {
+        "state": "yes",
+        "text": "The gap, and priced: a treated patient left marked no-show, a package used past the entitlement. Here it costs revenue",
+        "quote": "",
+        "edited": true
+      },
+      "buyer": {
+        "state": "yes",
+        "text": "HOD",
+        "quote": "",
+        "edited": true
+      },
+      "workflow": {
+        "state": "yes",
+        "text": "Booking → treatment → front desk → system",
+        "quote": "",
+        "edited": true
+      },
+      "simsignals": {
+        "state": "yes",
+        "text": "Bookings, treatment records, entitlement, usage — across a CRM, WhatsApp and the phone",
+        "quote": "",
+        "edited": true
+      },
+      "simaction": {
+        "state": "yes",
+        "text": "Correct the record by hand",
+        "quote": "",
+        "edited": true
+      },
+      "roi": {
+        "state": "claim",
+        "text": "Up to ₹20,000 a month — ₹1,000 × however many of the 20 actually attended. Nobody has counted that yet",
+        "quote": "",
+        "edited": true
+      },
+      "icpline": {
+        "state": "yes",
+        "text": "HOD, physiotherapy clinic · booking → treatment → front desk · the record does not match what happened · seen only afterwards · ₹20,000+ claimed · corrected by hand",
+        "quote": "",
+        "edited": true
+      },
+      "bucket": {
+        "state": "yes",
+        "text": "🔥 Acute. He opened on revenue loss, not on AI",
+        "quote": "",
+        "edited": true
+      },
+      "reverse": {
+        "state": "open",
+        "text": "The workflow is named as far as the front desk. Where it actually breaks has not been watched",
+        "quote": "",
+        "edited": true
+      },
+      "pilot": {
+        "state": "",
+        "text": "Not agreed. The ask is thirty days of usage data and a look at what it finds — not a project",
+        "quote": "",
+        "edited": true
+      },
+      "economics": {
+        "state": "claim",
+        "text": "Arithmetic shown: ₹1,000 × ~20 = ₹20,000 a month, ₹2.4L a year. It is a ceiling until somebody counts how many of the 20 attended",
+        "quote": "",
+        "edited": true
+      },
+      "q1": {
+        "state": "yes",
+        "text": "The record says no-show when the patient came and was treated — ~20 bookings a month left marked no-show, some of whom attended",
+        "quote": "",
+        "edited": true
+      },
+      "q2": {
+        "state": "yes",
+        "text": "Booking against treatment record, spread across a CRM, phone calls and WhatsApp",
+        "quote": "",
+        "edited": true
+      },
+      "earlier": {
+        "state": "open",
+        "text": "Watchers are running on their connected Zoho CRM and Exotel calls. Whether a finding caught a real incident before the HOD would have is not yet confirmed with him",
+        "quote": "",
+        "edited": true
+      },
+      "q4": {
+        "state": "claim",
+        "text": "₹1,000 × ~20 a month = up to ₹20,000. A ceiling until somebody counts how many of the 20 attended",
+        "quote": "",
+        "edited": true
+      },
+      "q3": {
+        "state": "yes",
+        "text": "The HOD notices, sometimes. Nobody does it consistently — so it is not a process, it is whether somebody happened to look",
+        "quote": "",
+        "edited": true
+      }
+    },
+    "legacy": true
+  },
+  {
+    "vertical": "clinics",
+    "order": 2,
+    "company": "The Wellness Co.",
+    "met": "",
+    "when": "Interviewed twice",
+    "answers": {
+      "problem": "Described unprompted: a lead becomes an opportunity and the customer drifts over about three months. How many do was not counted",
+      "example": "The opportunity lives in LeadSquared; the conversations that show whether the customer is still engaged happen on the phone and elsewhere",
+      "detection": "Lead → opportunity → about three months of engagement → the customer goes quiet",
+      "value": ""
+    },
+    "cells": {
+      "signals": {
+        "state": "open",
+        "text": "LeadSquared, and a phone system from the first conversation. Whether calls and messages are logged against the opportunity in LeadSquared was not established",
+        "quote": "",
+        "edited": true
+      },
+      "spread": {
+        "state": "yes",
+        "text": "The opportunity lives in LeadSquared; the conversations that show whether the customer is still engaged happen on the phone and elsewhere",
+        "quote": "",
+        "edited": true
+      },
+      "same": {
+        "state": "open",
+        "text": "A different problem from Vesoma. Vesoma’s record disagrees with what happened; here the record is right and the customer is drifting. What they share is that the signal exists and is seen too late. Whether drifting costs them anything was not asked",
+        "quote": "",
+        "edited": true
+      },
+      "workflow": {
+        "state": "yes",
+        "text": "Lead → opportunity → about three months of engagement → the customer goes quiet",
+        "quote": "",
+        "edited": true
+      },
+      "simsignals": {
+        "state": "open",
+        "text": "Opportunity records in LeadSquared, and whatever activity is logged against them. Which of those mark a customer as drifting was not established",
+        "quote": "",
+        "edited": true
+      },
+      "icpline": {
+        "state": "open",
+        "text": "Wellness operator · lead → opportunity → three months of engagement · the converted customer drifts away · cost and action not asked",
+        "quote": "",
+        "edited": true
+      },
+      "bucket": {
+        "state": "open",
+        "text": "Described clearly and unprompted. Still nothing counted — how many opportunities go quiet, and what one is worth — so not yet Acute on the evidence",
+        "quote": "",
+        "edited": true
+      },
+      "reverse": {
+        "state": "open",
+        "text": "What “disengaged” means in their data — days without activity, an unanswered call, a missed session — is the next thing to watch",
+        "quote": "",
+        "edited": true
+      },
+      "q1": {
+        "state": "yes",
+        "text": "Described unprompted: a lead becomes an opportunity and the customer drifts over about three months. How many do was not counted",
+        "quote": "",
+        "edited": true
+      },
+      "q2": {
+        "state": "open",
+        "text": "LeadSquared and a phone system are involved. Whether the conversations are logged against the opportunity is not known",
+        "quote": "",
+        "edited": true
+      },
+      "earlier": {
+        "state": "open",
+        "text": "Opportunity Gone Quiet is built for exactly this. Not connected to their LeadSquared yet, so untested on their records",
+        "quote": "",
+        "edited": true
+      },
+      "q4": {
+        "state": "",
+        "text": "Not asked",
+        "quote": "",
+        "edited": true
+      }
+    },
+    "legacy": true
+  },
+  {
+    "vertical": "clinics",
+    "order": 3,
+    "company": "iSPAN",
+    "met": "",
+    "when": "Interviewed",
+    "answers": {
+      "problem": "Three problems raised unprompted: last-minute cancellations with no notice, not seeing how the team talks to customers, and coordination between Physio, Nutrition and the others\nOne of the three repeats, and it is the one that keeps repeating: the team talks to customers and the owner cannot see it. Second company in this vertical to say so unprompted, after Vesoma",
+      "example": "A custom CRM, and alongside it however the team actually talks to customers — which he cannot see. The conversation and the record are in different places\nA cancellation arrives at the last minute with no intimation — by definition too late to refill the slot",
+      "detection": "Lead → call → conversion, and booking → cancellation, and a handover between Physio and Nutrition",
+      "value": ""
+    },
+    "cells": {
+      "signals": {
+        "state": "open",
+        "text": "A CRM they built themselves. Whether it already records a cancellation, a lead call or a handover between teams was not asked",
+        "quote": "",
+        "edited": true
+      },
+      "spread": {
+        "state": "yes",
+        "text": "A custom CRM, and alongside it however the team actually talks to customers — which he cannot see. The conversation and the record are in different places",
+        "quote": "",
+        "edited": true
+      },
+      "manual": {
+        "state": "open",
+        "text": "Coordination between Physio, Nutrition and the other teams is done by people and he says it is hard. Who does it, and how often it is missed, was not asked",
+        "quote": "",
+        "edited": true
+      },
+      "late": {
+        "state": "yes",
+        "text": "A cancellation arrives at the last minute with no intimation — by definition too late to refill the slot",
+        "quote": "",
+        "edited": true
+      },
+      "cost": {
+        "state": "open",
+        "text": "An empty slot has a price and he did not give one. Nothing here is counted yet, so the condition is unmet rather than failed",
+        "quote": "",
+        "edited": true
+      },
+      "action": {
+        "state": "open",
+        "text": "Not asked. What he would do with an early warning is the question that decides whether any of this is worth building",
+        "quote": "",
+        "edited": true
+      },
+      "same": {
+        "state": "yes",
+        "text": "One of the three repeats, and it is the one that keeps repeating: the team talks to customers and the owner cannot see it. Second company in this vertical to say so unprompted, after Vesoma",
+        "quote": "",
+        "edited": true
+      },
+      "workflow": {
+        "state": "yes",
+        "text": "Lead → call → conversion, and booking → cancellation, and a handover between Physio and Nutrition",
+        "quote": "",
+        "edited": true
+      },
+      "simsignals": {
+        "state": "yes",
+        "text": "Lead and call activity, bookings and cancellations, and whatever crosses between teams — against a CRM that may hold none of it",
+        "quote": "",
+        "edited": true
+      },
+      "icpline": {
+        "state": "open",
+        "text": "Multi-discipline wellness centre · lead → call → conversion · the owner cannot see how his team talks to customers · the cost and the action were not asked",
+        "quote": "",
+        "edited": true
+      },
+      "bucket": {
+        "state": "open",
+        "text": "Three problems raised unprompted, which is strong. None of them counted, which is why it is not yet Acute — the test is evidence, not enthusiasm",
+        "quote": "",
+        "edited": true
+      },
+      "reverse": {
+        "state": "open",
+        "text": "Three workflows named and none of them watched. Which of the three actually breaks, and where, is unknown",
+        "quote": "",
+        "edited": true
+      },
+      "q1": {
+        "state": "yes",
+        "text": "Three problems raised unprompted: last-minute cancellations with no notice, not seeing how the team talks to customers, and coordination between Physio, Nutrition and the others",
+        "quote": "",
+        "edited": true
+      },
+      "q2": {
+        "state": "open",
+        "text": "A CRM they built. Whether it records cancellations, lead calls or handovers was not asked",
+        "quote": "",
+        "edited": true
+      },
+      "earlier": {
+        "state": "open",
+        "text": "Not tried. A cancellation with no notice may leave no earlier signal at all — the other two might",
+        "quote": "",
+        "edited": true
+      },
+      "q4": {
+        "state": "",
+        "text": "Not asked. An empty slot has a price he did not give",
+        "quote": "",
+        "edited": true
+      },
+      "q3": {
+        "state": "open",
+        "text": "Coordination between Physio, Nutrition and the other teams is done by people and he says it is hard. Who does it, and how often it is missed, was not asked",
+        "quote": "",
+        "edited": true
+      }
+    },
+    "legacy": true
+  }
+]

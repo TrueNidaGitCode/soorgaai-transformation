@@ -4409,26 +4409,29 @@ function renderFirstMessage(seg) {
           <p class="sg-fm__kind">Presentation</p>
           <p class="sg-fm__subject"><span>When</span>Emailed after the call, or instead of one.</p>
           <div class="sg-fm__body">
-            <p>The finalised clinic proposal. Seven slides: a cover, the problem,
-              what it watches, what they would see, how it works, what happens to
-              their records, and what it costs.</p>
+            <p>The Recurring Services proposal &mdash; clinics, wellness, gyms, salons.
+              Seven slides: a cover, the problem, what it watches, what they would see,
+              how it works, what happens to their records, and what it costs.</p>
             <p>The count on slide 2 is read from the running product every time this
               page loads, and every check named beside it is looked up in the
               catalogue first \u2014 so the deck cannot promise something that is
               not there.</p>
             <p><b>Two things the deck no longer says, that you should know.</b></p>
-            <p>The Rahul card on slide 3 holds an appointment, a phone call, a
-              promise and a missing follow-up. Today that is more than one finding:
-              Promise Not Kept joins the call to the CRM and gives the last two
-              lines, and the No Show comes from a different check. Reading several
-              findings as one patient is still being built. Fair as a picture of
-              where this goes; do not describe it as one row on the board today.</p>
+            <p>Meera on slide 3 is an example, not a customer &mdash; say so if asked.
+              Her card is two checks today, Package Over-used and No Show, shown together
+              on one customer card with the reason and the next step. The reason and the
+              next step are written by the AI service and need the model provider funded;
+              without it the card shows the standard wording, labelled as such.</p>
+            <p>The problem story on slide 1 is told only with what a booking system holds.
+              A phone promise (Promise Not Kept) needs their calls recorded on a phone
+              system we read &mdash; do not add it to the story unless they have one.</p>
             <p><b>If a clinic asks exactly what reaches the AI service</b>, the
               slide gives the honest shape and this is the detail behind it.
               Answering a question sends the dataset names and columns with up to
               four example values from each column, for every connected dataset,
               and then up to twenty-five names per group to the step that writes
-              the answer. Reading a call sends the whole recording, then the
+              the answer. Explaining a customer sends that customer&rsquo;s open
+              findings and the records behind them. Reading a call sends the whole recording, then the
               whole transcript. Drafting a follow-up sends that finding\u2019s own
               evidence. Nothing is kept by the provider or by us; the credentials
               to their CRM and phone system never leave their application at all.</p>
@@ -4448,37 +4451,36 @@ function renderFirstMessage(seg) {
         <article class="sg-fm__msg sg-fm__msg--deck sg-fm__msg--wide">
           <div class="sg-fm__notes">
           <p class="sg-fm__kind">One-page proposal</p>
-          <p class="sg-fm__subject"><span>For</span>The Wellness Co. &mdash; after the second interview.</p>
+          <p class="sg-fm__subject"><span>For</span>Recurring-service businesses &mdash; after the first conversation.</p>
           <div class="sg-fm__body">
-            <p>One page, built on the case that is true today: Rahul asked about
-              the 12-session package on the phone, the representative said
-              &ldquo;I&rsquo;ll check and get back to you&rdquo;, and nothing was
-              logged in LeadSquared. That is <b>Promise Not Kept</b>, and it joins
-              the call to the CRM exactly as drawn.</p>
-            <p><b>What the page lists that is not built.</b> &ldquo;Engagement is
-              declining&rdquo; and &ldquo;Customer stopped responding&rdquo; have no
-              check behind them. Say so if asked; do not demonstrate them.</p>
-            <p><b>What is built, with a condition.</b> &ldquo;Opportunity has no
-              recent meaningful activity&rdquo; is Opportunity Gone Quiet: open
-              opportunities with no activity in 21 days. Any LeadSquared activity
-              counts, so &ldquo;meaningful&rdquo; is more than it measures.
-              Promise Not Kept and upgrade interest need their calls recorded on a
-              phone system we read. Checks run every hour, which is what
-              &ldquo;continuously&rdquo; means.</p>
+            <p>One page, in the Recurring Services framing: customers who drift away, and the ones
+              ready for more. It is built on what the Bengaluru centre actually reported &mdash;
+              treated patients left marked No Show, and packages used past what was sold &mdash;
+              and every check it names exists today.</p>
+            <p><b>Meera is an example, not a customer.</b> The page says so. Her card is Package
+              Over-used and No Show shown together; the &ldquo;why it matters&rdquo; and the next
+              step are written by the AI service, which needs the model provider funded.</p>
+            <p><b>&ldquo;Did it work&rdquo;</b> means the finding stopped being true after your team
+              marked a step &mdash; a new booking, a paid package. Rupees recovered are not measured
+              yet; do not promise a figure.</p>
+            <p>The source is <code>docs/proposals/recurring-services-one-page.html</code>; edit it and run
+              <code>node scripts/make_one_pager.mjs</code> to rebuild the PDF and this preview. The
+              earlier proposal written for The Wellness Co. is
+              <a href="proposals/wellness-co-one-page-proposal.pdf" target="_blank" rel="noopener">still here</a>.</p>
           </div>
-          <a class="sg-fm__go" href="proposals/wellness-co-one-page-proposal.pdf" target="_blank" rel="noopener">Open the PDF</a>
-          <a class="sg-fm__go sg-fm__go--next" href="proposals/wellness-co-one-page-proposal.pdf"
-             download="SvargAI_Proposal_For_The_Wellness_Co.pdf">Download</a>
+          <a class="sg-fm__go" href="proposals/recurring-services-one-page-proposal.pdf" target="_blank" rel="noopener">Open the PDF</a>
+          <a class="sg-fm__go sg-fm__go--next" href="proposals/recurring-services-one-page-proposal.pdf"
+             download="SvargAI_Proposal_Recurring_Services.pdf">Download</a>
           </div>
           <!--
             The page itself, so what is read here is what they hold. An image
             rather than the PDF in a frame: vercel.json sends X-Frame-Options:
             DENY on every path, so a framed PDF draws as an empty box. The
-            image is the PDF's own single page, lifted out byte for byte.
+            image is rendered from the same HTML as the PDF.
           -->
-          <a class="sg-fm__pdf" href="proposals/wellness-co-one-page-proposal.pdf" target="_blank" rel="noopener">
-            <img src="proposals/wellness-co-one-page-proposal.jpg" loading="lazy"
-                 alt="The one-page proposal for The Wellness Co.: the promise was made on the phone and was not recorded in LeadSquared.">
+          <a class="sg-fm__pdf" href="proposals/recurring-services-one-page-proposal.pdf" target="_blank" rel="noopener">
+            <img src="proposals/recurring-services-one-page-proposal.png" loading="lazy"
+                 alt="The one-page proposal for recurring-service businesses: your customers show you before they leave, and before they are ready for more.">
           </a>
         </article>` : ''}
       </div>
@@ -4640,75 +4642,82 @@ const DECK = [
     n: '00',
     kicker: 'Sales proposal',
     cover: true,
-    title: 'Your Clinic Has All the Information.',
-    titleAccent: 'Nobody Sees the Full Picture.',
-    sub: 'SvargAI connects your existing systems to find the patients you are about to lose and '
-      + 'the revenue you are leaving behind — and tells your team who needs attention, and why. '
+    /*
+     * Recurring Services since 7 October 2026: clinics, wellness, gyms,
+     * salons, spas — the customer who drifts, and the one ready for more.
+     */
+    title: 'Your Customers Show You Before They Leave.',
+    titleAccent: 'And Before They’re Ready for More.',
+    sub: 'SvargAI reads the systems you already use to find the customers who are drifting away and '
+      + 'the ones ready for more — and tells your team who needs attention, why, and what to do next. '
       + 'No new software to learn. No workflows to replace.',
-    hub: ['CRM', 'Calendar', 'Phone', 'Staff', 'Payments'],
+    hub: ['Bookings', 'Packages', 'Phone', 'WhatsApp', 'Payments'],
   },
   {
     n: '01',
     kicker: 'The problem',
-    title: 'Your clinic already has the information. It is just spread across different places.',
-    sub: 'Nothing here is broken. Every one of these was recorded properly — no two of '
-      + 'them were recorded together.',
-    caseTitle: 'One patient. One week.',
+    title: 'Your business already has the signals. Nobody is watching them together.',
+    sub: 'Nothing here is broken. Every one of these was recorded properly — nobody read them '
+      + 'side by side until it was too late.',
+    /*
+     * Every line is something a booking system already holds, so the story
+     * needs no phone recording and no second system to be true.
+     */
+    caseTitle: 'One customer. One month.',
     case: [
-      ['CRM', 'Patient books an appointment.', false],
-      ['CRM', 'Appointment marked No Show.', false],
-      ['Phone', 'Patient calls and asks about a treatment package.', false],
-      ['Staff', '“I’ll check and get back to you.”', false],
-      ['CRM', 'No follow-up recorded.', true],
+      ['Bookings', 'Customer buys a 10-session package.', false],
+      ['Bookings', 'Uses all ten, and books three more.', false],
+      ['Bookings', 'Then misses the next two appointments.', false],
+      ['Front desk', 'Nobody offers the next package. Nobody calls.', true],
     ],
-    close: 'The clinic has all the information. But nobody sees the full picture.',
+    close: 'She was ready for more, then she started to drift. Both were in the records.',
   },
   {
     n: '02',
     kicker: 'What it does',
-    title: 'SvargAI Watches Your Clinic While Your Team Runs It',
-    sub: 'For the patients you could lose, and the ones you could grow. Nothing to replace.',
+    title: 'SvargAI Watches Your Customers While Your Team Runs the Business',
+    sub: 'For the customers you could lose, and the ones you could grow. Nothing to replace.',
     live: 'watchers',
   },
   {
     n: '03',
     kicker: 'What you see',
-    title: 'A short list of things that need attention.',
-    sub: 'Not a dashboard to go and check.',
+    title: 'A short list of customers who need attention.',
+    sub: 'Not a dashboard to go and check. An example customer:',
     finding: {
-      who: 'Rahul Sharma',
-      verdict: 'Needs follow-up',
+      who: 'Meera Iyer',
+      verdict: 'Retention and growth',
       what: [
-        ['Appointment', 'Did not turn up', false],
-        ['Phone call', 'Asked about upgrading his treatment package', false],
-        ['Staff', 'Promised to call him back', false],
-        ['CRM', 'No follow-up recorded', true],
+        ['Package', 'Used 13 sessions on a 10-session package', false],
+        ['Appointments', 'Did not turn up for the last two', false],
+        ['Front desk', 'No renewal offered, no call made', true],
       ],
-      why: 'Rahul may still be interested, but there is <b>no recorded next step</b>.',
+      why: 'Meera is ready for more <b>and</b> starting to drift. Next step: call her this week and '
+        + 'offer the next package.',
       evidence: [
-        'The appointment in your CRM, marked <b>No Show</b>',
-        'The phone call where he asked about the package',
+        'Her package in your booking system — <b>13 of 10</b> sessions used',
+        'The two appointments marked <b>No Show</b>',
       ],
     },
-    close: 'SvargAI shows exactly why each item was raised.',
+    close: 'SvargAI shows why each customer was raised, and the next step to take.',
   },
   {
     n: '04',
     kicker: 'How it works',
-    title: 'From Information to Action — Four Steps',
+    title: 'From Signals to Action — Four Steps',
     sub: '',
     ring: [
       ['SvargAI Checks', 'clock'],
-      ['It Finds Something', 'alert'],
-      ['It Shows the Evidence', 'page'],
+      ['It Finds a Customer', 'alert'],
+      ['It Explains Why, and What Next', 'page'],
       ['Your Team Decides', 'people'],
     ],
-    close: 'Your team makes the final call.',
+    close: 'Your team makes the final call. SvargAI checks whether it worked.',
   },
   {
     n: '05',
     kicker: 'Privacy and control',
-    title: 'Your clinic keeps control of its data.',
+    title: 'Your business keeps control of its data.',
     sub: '',
     /*
      * Every line here was checked against the code before it was written.
@@ -4729,9 +4738,9 @@ const DECK = [
      */
     pillars: [
       ['Your systems', 'SvargAI reads only the systems you connect, and stops the moment you disconnect one.'],
-      ['Your records', 'Patient records stay in your own application. The logins to your CRM and phone '
-        + 'system are encrypted there, with a key used by no other clinic.'],
-      ['Your patients', 'No message is ever sent to a patient automatically. The application holds no '
+      ['Your records', 'Customer records stay in your own application. The logins to your booking system, '
+        + 'CRM and phone system are encrypted there, with a key used by no other business.'],
+      ['Your customers', 'No message is ever sent to a customer automatically. The application holds no '
         + 'email or messaging login — it cannot contact anyone. That is how it is built, not a setting.'],
       ['Your decisions', 'SvargAI can prepare a follow-up. A person reads it and decides whether to send it.'],
     ],
@@ -4761,36 +4770,36 @@ const DECK = [
      * been the one sentence here that was not true.
      */
     seen: {
-      head: 'What leaves your clinic, and what does not',
+      head: 'What leaves your business, and what does not',
       points: [
-        ['We never receive your patient records.',
+        ['We never receive your customer records.',
           'Our platform is told which check ran and how often — never who it was about.'],
-        ['To answer a question, patient names and appointment details go to the AI service that does the reading.',
+        ['To answer a question, or to explain a customer’s findings, customer names and appointment details go to the AI service that does the reading.',
           'It is not stored there, and it is not stored by us.'],
         ['To read a recorded call, the recording itself is sent, and the text that comes back is kept in your own application.',
           'The recording is not kept by the AI service, and not by us.'],
       ],
     },
-    note: 'Recording a patient call is your clinic’s decision. Switch the “this call is being '
+    note: 'Recording a customer call is your decision. Switch the “this call is being '
       + 'recorded” announcement on in your phone system before you start — that announcement '
-      + 'is how a patient consents, and SvargAI cannot set it for you.',
+      + 'is how a customer consents, and SvargAI cannot set it for you.',
     close: 'Connect what you want. Disconnect what you want. Your team stays in control.',
   },
   {
     n: '06',
     kicker: 'Pricing',
-    title: 'Simple pricing, based on how much of your clinic you want watched.',
+    title: 'Simple pricing, based on how much of your business you want watched.',
     sub: '',
     plans: [
       ['Hobby', '₹0', '', false,
-        'For watching a small part of the clinic.',
+        'For watching a small part of the business.',
         ['1 of 5 areas watched', '1 connected system', 'Checked every day', 'Up to 3 watchers', '1 person']],
       ['Pro', '₹16,999', 'a month', true,
-        'For keeping core clinic operations under continuous watch.',
+        'For keeping your customers under continuous watch.',
         ['3 of 5 areas watched', '5 connected systems', 'Checked every day', 'Up to 25 watchers', '5 people'],
         'or ₹1,69,990 a year'],
       ['Ultra', '₹49,999', 'a month', false,
-        'For watching the clinic across every area.',
+        'For watching the business across every area.',
         ['All 5 areas watched', '10 connected systems', 'Checked every hour', 'Up to 100 watchers', 'Unlimited people'],
         'or ₹4,99,990 a year'],
       ['Enterprise', 'Talk to us', '', false,
@@ -4799,7 +4808,7 @@ const DECK = [
           'As often as you need', 'Your whole team']],
     ],
     cta: {
-      head: 'Want to see what SvargAI can find in your clinic?',
+      head: 'Want to see which of your customers SvargAI would raise?',
       body: 'Connect one or two existing systems and we’ll show you.',
       where: 'svargai.com',
     },

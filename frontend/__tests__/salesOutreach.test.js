@@ -199,3 +199,31 @@ describe('the engineering pitch claims nothing it has not got', () => {
     expect(js).toContain("if (pitchSegment === 'clinics') loadDeckFacts();");
   });
 });
+
+describe('the one-page proposal for Recurring Services', () => {
+  it('links only to files that ship, and keeps its source beside the script that builds it', async () => {
+    const { existsSync } = await import('fs');
+    const here = (p) => new URL(p, import.meta.url);
+    // Rewritten 7 October 2026 for Recurring Services; the earlier one for The
+    // Wellness Co. stays reachable.
+    for (const f of ['recurring-services-one-page-proposal.pdf', 'recurring-services-one-page-proposal.png',
+      'wellness-co-one-page-proposal.pdf']) {
+      expect(js, f).toContain(`proposals/${f}`);
+      expect(existsSync(here(`../admin/proposals/${f}`)), f).toBe(true);
+    }
+    expect(existsSync(here('../../docs/proposals/recurring-services-one-page.html'))).toBe(true);
+    expect(existsSync(here('../../scripts/make_one_pager.mjs'))).toBe(true);
+  });
+
+  it('says on the page that the example customer is an example', () => {
+    const src = read('../../docs/proposals/recurring-services-one-page.html');
+    expect(src).toContain('<span class="eg">An example</span>');
+    expect(src).toContain('What a wellness centre in Bengaluru shared');
+    // What is attributed to the centre is only what it reported. "Customer stopped
+    // coming" further down is the name of a check, not their claim.
+    const shared = src.slice(src.indexOf('What a wellness centre in Bengaluru shared'), src.indexOf('One customer, as SvargAI shows it'));
+    expect(shared).toContain('were treated were still recorded as');
+    expect(shared).not.toMatch(/stopp(ed|ing)/i);
+    expect(src).toContain('SvargAI never contacts a customer.');
+  });
+});

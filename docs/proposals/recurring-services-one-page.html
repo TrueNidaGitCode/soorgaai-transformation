@@ -1,0 +1,171 @@
+<!doctype html>
+<!--
+  SvargAI — one-page proposal for recurring-service businesses (7 October 2026).
+
+  The source of frontend/admin/proposals/recurring-services-one-page-proposal.pdf
+  and its .png preview. Regenerate both with:
+    node scripts/make_one_pager.mjs      (from the repo root)
+
+  Every claim here was checked against the product before it was written:
+  the eight checks named are watchers in eame-template/services/agentCatalogue.js;
+  the customer card is customerSpine.js + customerAnalysis.js; nothing is sent
+  to a customer (draftService writes and stops). The centre's two examples are
+  what Vesoma reported, attributed to "a wellness centre in Bengaluru", and
+  Meera is marked as an example.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SvargAI — Proposal for recurring-service businesses</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=DM+Sans:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --paper: #F6F3EC; --ink: #1E1D1A; --soft: #6B675E; --line: #DDD6C8;
+    --teal: #2F6B5E; --gold: #A27B3E; --red: #A83A2E; --panel: #EDE6D8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); }
+  body {
+    width: 210mm; height: 297mm; padding: 11mm 15mm 8mm; overflow: hidden;
+    font-family: 'DM Sans', system-ui, sans-serif; font-size: 9.1pt; line-height: 1.4; color: var(--ink);
+    display: flex; flex-direction: column; gap: 3.3mm;
+  }
+  .serif { font-family: 'Newsreader', Georgia, serif; }
+  .label { font-size: 7.4pt; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 3mm; border-bottom: 1px solid var(--line); }
+  .top .brand { font-family: 'Newsreader', Georgia, serif; font-size: 13pt; }
+  .top .brand span { color: var(--gold); margin: 0 4px; }
+  .top .label { color: var(--soft); font-weight: 600; }
+  .kicker { color: var(--teal); margin: 0; }
+  h1 { margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: 24.5pt; line-height: 1.06; letter-spacing: -0.01em; }
+  h1 .grey { color: #8A857B; }
+  .tag { margin: 0; font-family: 'Newsreader', Georgia, serif; font-style: italic; color: var(--teal); font-size: 13.5pt; display: flex; align-items: center; gap: 10px; }
+  .tag::before { content: ''; width: 28px; height: 1px; background: var(--gold); }
+  .lede { margin: 0; color: #4A4740; max-width: 165mm; }
+  .head2 { display: flex; justify-content: space-between; align-items: baseline; }
+  .head2 .label { color: var(--gold); }
+  .head2 .small { font-size: 8pt; color: var(--soft); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; }
+  .sig { border-top: 1.5px solid var(--ink); padding-top: 2.5mm; }
+  .sig .label { color: var(--soft); font-weight: 600; }
+  .sig h3 { margin: 1.5mm 0 1mm; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: 12pt; line-height: 1.2; }
+  .sig p { margin: 0; color: #4A4740; }
+  .sig .kind { display: inline-block; margin-top: 1.5mm; font-size: 7.4pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); }
+  .card { background: #fff; border: 1px solid var(--line); padding: 3.2mm 5mm; display: grid; gap: 2mm; }
+  .card .who { display: flex; align-items: baseline; gap: 8px; }
+  .card .who .label { color: var(--soft); }
+  .card .who .eg { margin-left: auto; font-size: 7.4pt; color: var(--soft); border: 1px solid var(--line); padding: 1px 6px; border-radius: 99px; }
+  .card h2 { margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: 17pt; }
+  .card h2 .tags { font-family: 'DM Sans', sans-serif; font-size: 7.6pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle; margin-left: 8px; }
+  .card h2 .tags b { color: #3D6FA8; margin-right: 6px; } .card h2 .tags i { font-style: normal; color: var(--teal); }
+  .spine { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2mm; }
+  .spine div { border-top: 2px solid var(--teal); padding-top: 1.5mm; }
+  .spine div.wait { border-top-color: var(--gold); }
+  .spine .label { color: var(--teal); font-size: 7pt; }
+  .spine div.wait .label { color: var(--gold); }
+  .spine p { margin: 0.8mm 0 0; font-size: 8.4pt; line-height: 1.35; color: #3A3832; }
+  .lists { display: grid; grid-template-columns: 1.15fr 1fr; gap: 9mm; }
+  .lists h4, .how h4 { margin: 0 0 1.5mm; font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 13.5pt; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 0 6mm; }
+  .checks .label { color: var(--teal); margin: 0 0 1.2mm; } .checks .grow .label { color: var(--gold); }
+  .checks ul { list-style: none; margin: 0; padding: 0; } .checks li { margin: 0 0 1.1mm; }
+  .fine { margin: 2mm 0 0; font-size: 7.8pt; font-style: italic; color: var(--soft); }
+  .how ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1mm; }
+  .how li { display: grid; grid-template-columns: 7mm 1fr; }
+  .how li span { color: var(--teal); font-family: 'Newsreader', Georgia, serif; font-size: 11pt; }
+  .how .final { margin: 2mm 0 0; font-weight: 600; }
+  .panel { background: var(--panel); padding: 3.8mm 6mm; display: grid; grid-template-columns: 1.2fr 1fr; gap: 8mm; }
+  .panel .label { color: var(--gold); } .panel .right .label { color: var(--teal); }
+  .panel h3 { margin: 1.2mm 0; font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 13pt; line-height: 1.2; }
+  .panel h3 i { color: var(--teal); }
+  .panel p { margin: 0; }
+  .panel .right { border-left: 1px solid #CFC5B1; padding-left: 7mm; }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 7.6pt; color: var(--soft); }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">SvargAI <span>&times;</span> Recurring-service businesses</div>
+    <div class="label">Proposal &middot; October 2026</div>
+  </div>
+
+  <p class="label kicker">Keep and grow the customers you already have</p>
+  <h1>Your customers show you before they leave.<br><span class="grey">And before they&rsquo;re ready for more.</span></h1>
+  <p class="tag">SvargAI finds them, and tells your team what to do next.</p>
+  <p class="lede">For clinics, wellness centres, gyms, salons and spas. SvargAI reads the systems you already use &mdash;
+    bookings, packages, your CRM, phone and WhatsApp &mdash; and raises the customers who are starting to drift
+    away, and the ones ready for a renewal or another service.</p>
+
+  <div class="head2">
+    <p class="label" style="margin:0">What a wellness centre in Bengaluru shared</p>
+    <span class="small">The signals were in their records. Nobody was watching them.</span>
+  </div>
+  <div class="two">
+    <div class="sig">
+      <p class="label">01 &middot; Bookings</p>
+      <h3>Patients who came in and were treated were still recorded as &ldquo;No Show&rdquo;.</h3>
+      <p>Work that was delivered, and never counted.</p>
+      <span class="kind">Revenue left behind</span>
+    </div>
+    <div class="sig">
+      <p class="label">02 &middot; Packages</p>
+      <h3>Customers used more sessions than their package covered.</h3>
+      <p>The moment to offer a renewal, or another service &mdash; and nobody did.</p>
+      <span class="kind">Ready for more</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="who"><p class="label" style="margin:0">One customer, as SvargAI shows it</p><span class="eg">An example</span></div>
+    <h2>Meera Iyer <span class="tags"><b>Retention</b><i>Growth</i></span></h2>
+    <div class="spine">
+      <div><p class="label">Found</p><p>13 sessions used on a 10-session package. The last two appointments missed.</p></div>
+      <div><p class="label">Why it matters</p><p>She wanted more, and she is starting to drift. Both are early.</p></div>
+      <div><p class="label">Next step</p><p>Call her this week and offer the next package.</p></div>
+      <div><p class="label">Act</p><p>A message is drafted. Your team sends it and marks what they did.</p></div>
+      <div class="wait"><p class="label">Did it work</p><p>Checked on every run: a new booking, or a paid package.</p></div>
+    </div>
+  </div>
+
+  <div class="lists">
+    <div>
+      <h4>What SvargAI looks for</h4>
+      <div class="checks">
+        <div><p class="label">Retention</p><ul>
+          <li>Customer stopped coming</li><li>Customer has gone quiet</li>
+          <li>Missed appointments</li><li>Repeat complaints</li></ul></div>
+        <div class="grow"><p class="label">Growth</p><ul>
+          <li>Package used past what was sold</li><li>Asked about upgrading</li>
+          <li>Renewal coming up</li><li>Treated, but marked No Show</li></ul></div>
+      </div>
+      <p class="fine">The checks are chosen with you, from the systems you connect.</p>
+    </div>
+    <div class="how">
+      <h4>How it works</h4>
+      <ol>
+        <li><span>01</span><div><b>Connect</b> &mdash; your booking or clinic system, CRM, phone and WhatsApp.</div></li>
+        <li><span>02</span><div><b>Detect</b> &mdash; checks run on your own records, daily or hourly.</div></li>
+        <li><span>03</span><div><b>Explain</b> &mdash; for each customer: what was found, why it matters, the next step.</div></li>
+        <li><span>04</span><div><b>Act and measure</b> &mdash; your team acts; SvargAI checks whether it worked.</div></li>
+      </ol>
+      <p class="final">SvargAI never contacts a customer. Your team decides.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div>
+      <p class="label" style="margin:0">Not another system to run</p>
+      <h3>Your booking system records what happened.<br><i>SvargAI looks for who needs attention.</i></h3>
+      <p><b>It stays your system of record.</b> SvargAI does not replace it or ask your team to keep another one up to date.</p>
+    </div>
+    <div class="right">
+      <p class="label" style="margin:0">A practical starting point</p>
+      <p style="margin-top:2mm">Connect one or two systems you already use. Run a small set of checks on your own
+        records for thirty days, and review the customers SvargAI raises with your team before going further.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>SvargAI &middot; Proposal for recurring-service businesses</span><span>svargai.com &middot; hello@svargai.com</span></div>
+</body>
+</html>

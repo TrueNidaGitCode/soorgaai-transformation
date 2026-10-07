@@ -81,58 +81,59 @@ describe('seven slides, as approved', () => {
   });
 
   it('opens on the sentence the whole deck is named after', () => {
-    expect(deck).toContain('Your Clinic Has All the Information.');
-    expect(deck).toContain('Nobody Sees the Full Picture.');
+    // Recurring Services since 7 October 2026: the customer who drifts, and
+    // the one ready for more.
+    expect(deck).toContain('Your Customers Show You Before They Leave.');
+    expect(deck).toContain('And Before They\u2019re Ready for More.');
     expect(deck).toContain('No new software to learn. No workflows to replace.');
   });
 
   it('draws the five systems on the cover, meeting in one place', () => {
-    expect(deck).toContain("hub: ['CRM', 'Calendar', 'Phone', 'Staff', 'Payments']");
+    expect(deck).toContain("hub: ['Bookings', 'Packages', 'Phone', 'WhatsApp', 'Payments']");
     // Described for a reader who cannot see it.
     expect(deck).toContain('meeting in one place');
   });
 
   it('ends on one ask and where to find us', () => {
-    expect(deck).toContain('Want to see what SvargAI can find in your clinic?');
+    expect(deck).toContain('Want to see which of your customers SvargAI would raise?');
     expect(deck).toContain('svargai.com');
   });
 });
 
-describe('one patient, carried through the deck', () => {
+describe('one customer, carried through the deck', () => {
   it('tells the story on the problem slide in the order it happened', () => {
     const one = deck.slice(deck.indexOf("n: '01'"), deck.indexOf("n: '02'"));
-    expect([...one.matchAll(/\['(CRM|Phone|Staff)', '([^']*)/g)].map((m) => `${m[1]}: ${m[2]}`)).toEqual([
-      'CRM: Patient books an appointment.',
-      'CRM: Appointment marked No Show.',
-      'Phone: Patient calls and asks about a treatment package.',
-      // Curly quotes, so the capture runs to the end of the sentence.
-      'Staff: “I’ll check and get back to you.”',
-      'CRM: No follow-up recorded.',
+    expect([...one.matchAll(/\['(Bookings|Front desk)', '([^']*)/g)].map((m) => `${m[1]}: ${m[2]}`)).toEqual([
+      'Bookings: Customer buys a 10-session package.',
+      'Bookings: Uses all ten, and books three more.',
+      'Bookings: Then misses the next two appointments.',
+      'Front desk: Nobody offers the next package. Nobody calls.',
     ]);
   });
 
-  it('keeps the story to a CRM and a phone', () => {
-    // WhatsApp is a connector, not part of this story, and a third system is
-    // a third thing to explain before the point lands.
+  it('tells it only with what a booking system holds', () => {
+    // A phone promise needs a recorded phone system; a story that leans on
+    // one is untrue for every business without it.
     const one = deck.slice(deck.indexOf("n: '01'"), deck.indexOf("n: '02'"));
-    expect(one).not.toMatch(/WhatsApp/i);
+    expect(one.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/WhatsApp|Phone|get back to you/i);
   });
 
   it('marks the one line where something went wrong, twice, in one colour', () => {
-    // The missing follow-up, on the problem slide and again on the finding.
-    expect(deck).toContain("['CRM', 'No follow-up recorded.', true]");
-    expect(deck).toContain("['CRM', 'No follow-up recorded', true]");
+    // Nobody acted, on the problem slide and again on the finding.
+    expect(deck).toContain("['Front desk', 'Nobody offers the next package. Nobody calls.', true]");
+    expect(deck).toContain("['Front desk', 'No renewal offered, no call made', true]");
     expect(css).toContain('.sg-deck__steps li.is-bad .sg-deck__chev');
     expect(css).toContain('.sg-deck__what li.is-bad span, .sg-deck__what li.is-bad b');
   });
 
-  it('pays the story off with the same patient and the evidence', () => {
+  it('pays the story off with the same customer, the evidence and the next step', () => {
     const three = deck.slice(deck.indexOf("n: '03'"), deck.indexOf("n: '04'"));
-    expect(three).toContain('Rahul Sharma');
-    expect(three).toContain('Needs follow-up');
+    expect(three).toContain('Meera Iyer');
+    expect(three).toContain('Retention and growth');
+    expect(three).toContain('An example customer');
     expect(three).toContain('evidence: [');
     expect(deck).toContain('The evidence behind it');
-    expect(three).toContain('SvargAI shows exactly why each item was raised.');
+    expect(three).toContain('SvargAI shows why each customer was raised, and the next step to take.');
   });
 });
 
@@ -183,13 +184,13 @@ describe('the words a clinic owner should never have to read', () => {
   });
 
   it('says what happened, not what a field was set to', () => {
-    expect(slides).toContain('Patient did not turn up');
+    expect(slides).toContain('Did not turn up for the last two');
     expect(slides).not.toContain('status changed to');
   });
 
   it('says who decides', () => {
     expect(deck).toContain('Your Team Decides');
-    expect(deck).toContain('Your team makes the final call.');
+    expect(deck).toContain('Your team makes the final call. SvargAI checks whether it worked.');
     expect(deck).toContain('A person reads it and decides whether to send it.');
   });
 });
@@ -201,9 +202,12 @@ describe('the words a clinic owner should never have to read', () => {
  */
 describe('what the deck stopped saying, and where it went', () => {
   it('warns the seller that the finding card is more than one finding today', () => {
-    expect(card).toContain('Promise Not Kept joins the call to the CRM');
-    expect(card).toContain('still being built');
-    expect(card).toContain('do not describe it as one row on the board today');
+    // Since 7 October 2026: the example is said to be one, its two checks
+    // are named, and the phone promise is kept out unless they have one.
+    expect(card).toContain('Meera on slide 3 is an example, not a customer');
+    expect(card).toContain('Package Over-used and No Show');
+    expect(card).toContain('need the model provider funded');
+    expect(card).toContain('do not add it to the story unless they have one');
   });
 
   it('puts the strongest privacy claim back on the slide itself', () => {
@@ -212,7 +216,7 @@ describe('what the deck stopped saying, and where it went', () => {
      * softer 'you control what information is shared and when'. It is
      * structural and checkable, so it belongs in front of the customer.
      */
-    expect(strip(deck)).toContain('No message is ever sent to a patient automatically');
+    expect(strip(deck)).toContain('No message is ever sent to a customer automatically');
   });
 
   it('never states the unbuilt joining as something it does today', () => {
@@ -278,11 +282,11 @@ describe('every privacy claim, against the code that makes it true', () => {
   const privacy = strip(deck.slice(deck.indexOf("n: '05'"), deck.indexOf("n: '06'")));
 
   it('says the records stay in the clinic\u2019s own application', () => {
-    expect(privacy).toContain('Patient records stay in your own application');
+    expect(privacy).toContain('Customer records stay in your own application');
   });
 
   it('says the source logins are encrypted there, and they are', () => {
-    expect(privacy).toContain('encrypted there, with a key used by no other clinic');
+    expect(privacy).toContain('encrypted there, with a key used by no other business');
     const conn = api('eame-template/services/connectorService.js');
     expect(conn).toContain("crypto.createCipheriv('aes-256-gcm'");
     // Per application, not one key across the estate.
@@ -294,7 +298,7 @@ describe('every privacy claim, against the code that makes it true', () => {
      * The strongest claim on the slide, and structural rather than a
      * setting: drafting writes the message and stops.
      */
-    expect(privacy).toContain('No message is ever sent to a patient automatically');
+    expect(privacy).toContain('No message is ever sent to a customer automatically');
     expect(privacy).toContain('That is how it is built, not a setting');
     const draft = api('eame-template/services/draftService.js');
     // Matched across the comment wrap rather than asserting a line break.
@@ -302,7 +306,7 @@ describe('every privacy claim, against the code that makes it true', () => {
   });
 
   it('says the platform never receives patient records, and the wire refuses them', () => {
-    expect(privacy).toContain('We never receive your patient records.');
+    expect(privacy).toContain('We never receive your customer records.');
     expect(privacy).toContain('never who it was about');
     // The allow-list, which drops a name, a row or a finding key before it
     // is ever stored. A promise in the application is not a control; this is.
@@ -320,7 +324,8 @@ describe('every privacy claim, against the code that makes it true', () => {
      * meant patient names and whole recorded conversations, and a clinic that
      * finds out later stops believing the other three claims.
      */
-    expect(privacy).toContain('patient names and appointment details go to the AI service');
+    // Including the AI-written explanation of each customer, since 6 October 2026.
+    expect(privacy).toContain('or to explain a customer\u2019s findings, customer names and appointment details go to the AI service');
     expect(privacy).toContain('the recording itself is sent');
     expect(privacy).not.toContain('that information is sent to the AI service');
   });
@@ -387,6 +392,6 @@ describe('every privacy claim, against the code that makes it true', () => {
 
   it('keeps the four headings a reader scans', () => {
     expect([...privacy.matchAll(/\['(Your [a-z]+)',/g)].map((m) => m[1]))
-      .toEqual(['Your systems', 'Your records', 'Your patients', 'Your decisions']);
+      .toEqual(['Your systems', 'Your records', 'Your customers', 'Your decisions']);
   });
 });

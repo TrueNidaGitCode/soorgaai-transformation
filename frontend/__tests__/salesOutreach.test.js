@@ -107,12 +107,17 @@ describe('what the first message claims', () => {
 
   it('credits the centre with finding it, never us', () => {
     /*
-     * Both messages attribute it, in their own words: the email says the
-     * centre told us, the short one says the centre found them. Either is
-     * true. "We found" is the one that gets asked about.
+     * Both messages attribute it to the centre, in their own words. "We
+     * found" is the one that gets asked about.
+     *
+     * And only what the centre reported (rewritten 7 October 2026): treated
+     * patients left marked No Show, and packages used past what was sold.
+     * "Patients stopping during their treatment journey" was in the draft and
+     * is our inference, so it does not go out as theirs.
      */
-    expect(sent).toMatch(/recently shared two examples with us/);
-    expect(sent).toMatch(/a wellness centre in Bengaluru found/);
+    expect(sent).toMatch(/a wellness centre in Bengaluru recently shared that some patients who came in and\s+were treated/);
+    expect(sent).toMatch(/A wellness centre in Bengaluru recently shared examples of patients who were treated/);
+    expect(sent).not.toMatch(/stopp(ed|ing) (coming|during)/i);
     expect(sent).not.toMatch(/we found/i);
     expect(sent).not.toMatch(/we detected/i);
   });
@@ -133,9 +138,11 @@ describe('what the first message claims', () => {
      * Detect and explain are built; nothing here promises it acts by itself,
      * which the ICP tab lists as not built.
      */
-    expect(sent).toMatch(/runs multiple AI agents on top of the data and systems you already use/);
-    expect(sent).toMatch(/bring them to the person who can act on them/);
+    // Since 7 October 2026 the clinic messages ask about the problem and say
+    // nothing about what the product does; what holds is that nothing in any
+    // message promises it acts by itself.
     expect(sent).not.toMatch(/fixes|automatically|on its own|without you/i);
+    expect(sent).toMatch(/I&rsquo;m exploring a problem in recurring-service businesses/);
   });
 
   it('asks for the fifteen minutes the interview tab is built around', () => {

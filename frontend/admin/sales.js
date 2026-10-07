@@ -4146,38 +4146,47 @@ function wireAudience(root) {
  */
 const FIRST_MESSAGE = {
   'clinics': {
-    subject: 'When a treated patient is recorded as a &ldquo;No Show&rdquo;',
-    // Sent as written.
+    subject: 'Customers who drift away &mdash; or are ready for more',
+    /*
+     * Recurring Services, 7 October 2026: the owner's rewrite, opening on
+     * customers drifting or ready for more. One line was changed before it
+     * shipped: the draft said the centre reported patients leaving part-way
+     * through their treatment, which is our inference, not what Vesoma
+     * reported. The example below is what they said. The link is the lead's
+     * own tracked {{link}}, not an address carrying another source's tag.
+     */
     email: [
       'Hi [Name],',
-      'I work with clinics and wellness centres on a problem that quietly costs money: work that '
-        + 'gets done but never gets recorded properly.',
-      'A wellness centre in Bengaluru recently shared two examples with us &mdash; patients who '
-        + 'came in and were treated but were still marked as &ldquo;No Show&rdquo;, and customers '
-        + 'using more sessions than their package allows without anyone noticing until much later.',
-      'SvargAI runs multiple AI agents on top of the data and systems you already use. They '
-        + 'continuously look for signals like these, identify problems early, and bring them to the '
-        + 'person who can act on them &mdash; before they become costly.',
-      'I&rsquo;d like to understand whether you see similar problems at your centre.',
-      'Would you be open to a 15-minute call?',
-      'Learn more: {{link}}',
+      'I&rsquo;m exploring a problem in recurring-service businesses: <b>customers often show signs '
+        + 'that they are starting to drift, or are ready for more, but the business notices only after '
+        + 'the opportunity has passed.</b>',
+      'For example, a wellness centre in Bengaluru recently shared that some patients who came in and '
+        + 'were treated were still recorded as &ldquo;No Show&rdquo;, while other customers were using '
+        + 'more sessions than their package covered &mdash; which could have been the moment to offer a '
+        + 'renewal or additional services.',
+      'The signals were already present in the systems they use, but nobody was continuously '
+        + 'connecting them.',
+      'I&rsquo;m speaking with recurring-service businesses to understand how they currently identify '
+        + 'customers who are at risk of leaving or could be grown.',
+      'Would you be open to a <b>15-minute conversation</b> to share how you handle this today?',
+      'You can learn more about what we&rsquo;re building at SvargAI: {{link}}',
     ],
     sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
     /*
-     * Sent as written. The attribution is already right — it is the centre
-     * that found these, not us — which is the one thing the email above had
-     * to be corrected on.
+     * LinkedIn and WhatsApp, 7 October 2026: the owner's rewrite, with the
+     * same one-line correction as the email — the centre reported treated
+     * patients left marked No Show, not patients stopping mid-treatment.
      */
     short: [
-      'Hi [Name] &mdash; I work with clinics and wellness centres on problems that quietly cost money.',
-      'SvargAI runs multiple AI agents on top of the data and systems you already use. They '
-        + 'continuously look for signals that something is going wrong and identify problems early '
-        + '&mdash; before they turn into significant costs.',
-      'For example, a wellness centre in Bengaluru found patients marked as &ldquo;No Show&rdquo; '
-        + 'even though they had been treated, and customers using more than their package '
-        + 'entitlement without being noticed early.',
-      'Do you see similar problems at your centre? Happy to have a short chat.',
-      'Learn more: {{link}}',
+      'Hi [Name] &mdash; I&rsquo;m exploring a problem in recurring-service businesses: customers often '
+        + 'show signs that they&rsquo;re starting to drift or are ready for more, but the business notices '
+        + 'too late.',
+      'A wellness centre in Bengaluru recently shared examples of patients who were treated but still '
+        + 'recorded as &ldquo;No Show&rdquo;, and customers using more sessions than their package '
+        + 'allowed &mdash; signals that could have helped the team act earlier.',
+      'I&rsquo;m speaking with businesses to understand how they identify these customers today.',
+      'Do you see similar challenges? Happy to have a short chat.',
+      'Learn more about SvargAI: {{link}}',
     ],
   },
   /*

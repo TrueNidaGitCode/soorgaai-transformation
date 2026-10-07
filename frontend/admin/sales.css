@@ -1560,43 +1560,86 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
    conversation rather than remembered before one. */
 .sg-who { max-width: 900px; padding-block: 8px 48px; }
 
-/* ── The ladder ──────────────────────────────────────────────────────────── */
+/*
+ * ICP root. `.sg-who` is ALSO the funnel's e-mail cell (monospace, 0.85rem),
+ * and the ICP tab inherited a code font from it. The section is reset here, by
+ * element as well as class, so it outranks that rule.
+ */
+section.sg-who { font-family: inherit; font-size: 1rem; }
 
-.sg-who__ladder {
-  display: flex;
-  flex-wrap: wrap;
+/* ── Sub-tabs: Problem, ICP, GTM (7 October 2026) ───────────────────────── */
+
+.sg-who__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin: 0 0 26px;
-  padding: 0;
-  list-style: none;
+  margin: 0 0 24px;
 }
-
-.sg-who__ladder li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 7px 13px;
+.sg-who__tab {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  font-size: 0.82rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.5);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.sg-who__tab span {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
 }
+.sg-who__tab:hover { border-color: rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.75); }
+.sg-who__tab:focus-visible { outline: 2px solid #5CC5A7; outline-offset: 2px; }
+.sg-who__tab.is-on {
+  border-color: rgba(92, 197, 167, 0.45);
+  background: rgba(92, 197, 167, 0.07);
+  color: rgba(255, 255, 255, 0.88);
+}
+.sg-who__tab.is-on span { color: #5CC5A7; }
 
-.sg-who__ladder li span {
-  font-size: 0.72rem;
+/* One opening statement per panel, then plain sections. */
+.sg-who__lead {
+  margin: 0 0 8px;
+  padding: 22px 24px;
+  background: rgba(92, 197, 167, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.22);
+  border-radius: 12px;
+}
+.sg-who__lead .sg-who__label { margin-top: 0; }
+.sg-who__lead .sg-who__statement { margin-bottom: 0; }
+.sg-who__lead .sg-who__note { margin-top: 12px; }
+
+.sg-who__sec { padding: 26px 0 0; }
+.sg-who__sec + .sg-who__sec { margin-top: 2px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.sg-who__h {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fff;
+}
+.sg-who__p {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.4);
 }
-
-/* Only one of the three is a bet. It gets the emphasis. */
-.sg-who__ladder li.on {
-  border-color: rgba(92, 197, 167, 0.4);
-  background: rgba(92, 197, 167, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+.sg-who__sec .sg-who__note { margin-top: 12px; }
+.sg-who__more--inline { margin-top: 12px; }
+.sg-who__panel > .sg-who__more { margin-top: 18px; }
+@media (max-width: 620px) {
+  .sg-who__tabs { grid-template-columns: 1fr; }
 }
-.sg-who__ladder li.on span { color: #5CC5A7; }
 
 /* ── Blocks ──────────────────────────────────────────────────────────────── */
 
@@ -1680,7 +1723,7 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   background: rgba(255, 196, 120, 0.04);
 }
 
-.sg-who__card h3 {
+.sg-who__card h4 {
   margin: 0 0 8px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1688,7 +1731,7 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.5);
 }
-.sg-who__card--no h3 { color: rgba(255, 196, 120, 0.85); }
+.sg-who__card--no h4 { color: rgba(255, 196, 120, 0.85); }
 
 .sg-who__card p { margin: 0 0 8px; font-size: 0.9rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
 .sg-who__card p:last-child { margin-bottom: 0; }
@@ -1932,6 +1975,8 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 }
 /* The question to open with, set so it reads as something to say out loud. */
 .sg-who__ask {
+  margin: 0;
+  font-size: 1.05rem;
   font-style: italic;
   color: #5CC5A7;
   line-height: 1.55;
@@ -3881,3 +3926,6 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-seg__group:first-child { margin-top: 0; }
 .sg-ta__examples { margin: 0 0 8px; font-size: 0.84rem; color: rgba(255, 255, 255, 0.55); }
 .sg-pitch__none { margin: 14px 0; max-width: 70ch; }
+
+/* The vertical chain on the ICP tab stays inside its column. */
+.sg-who .sg-chain--down li { box-sizing: border-box; max-width: 100%; }

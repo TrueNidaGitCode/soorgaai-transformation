@@ -6,10 +6,7 @@ import {
   sendLeadNow, putSequence, readTemplate, writeTemplate, previewLead, setAccountKind, generateLeadEmail, getMotions,
   getDeck,
 } from '../controllers/salesSignalsController.js';
-import {
-  getIcp, getIcpCounts, postInterview, patchInterview, postFill, patchCell, deleteInterview,
-  postFindWedge, postLockWedge,
-} from '../controllers/icpInterviewController.js';
+import { getIcp, getIcpCounts } from '../controllers/icpInterviewController.js';
 
 const router = express.Router();
 
@@ -31,16 +28,9 @@ router.patch('/accounts/:id/kind', protect, adminOnly, setAccountKind);
 router.get('/template',            protect, adminOnly, readTemplate);
 router.put('/template',            protect, adminOnly, writeTemplate);
 
-// ICP interviews: four answers, the playbook the AI fills from them, and the
-// wedge found across a vertical. See icpInterviewService.
-router.get('/icp',                         protect, adminOnly, getIcp);
-router.get('/icp/counts',                  protect, adminOnly, getIcpCounts);
-router.post('/icp/interviews',             protect, adminOnly, postInterview);
-router.patch('/icp/interviews/:id',        protect, adminOnly, patchInterview);
-router.delete('/icp/interviews/:id',       protect, adminOnly, deleteInterview);
-router.post('/icp/interviews/:id/fill',    protect, adminOnly, postFill);
-router.patch('/icp/interviews/:id/cells/:key', protect, adminOnly, patchCell);
-router.post('/icp/wedge/:vertical/find',   protect, adminOnly, postFindWedge);
-router.post('/icp/wedge/:vertical/lock',   protect, adminOnly, postLockWedge);
+// ICP interviews, read-only: the four answers are shared in the Claude chat
+// and written with scripts/icp_record.mjs. See icpInterviewService.
+router.get('/icp',        protect, adminOnly, getIcp);
+router.get('/icp/counts', protect, adminOnly, getIcpCounts);
 
 export default router;

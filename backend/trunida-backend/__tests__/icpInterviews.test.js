@@ -1,20 +1,18 @@
 /**
  * Four answers in, the ten-step playbook and the wedge out.
  *
- * The owner's decisions (6 October 2026): the four questions are the
- * interview; the AI fills the playbook and a person confirms; the AI groups
- * companies by the SAME problem to find the wedge; the three hand-written
- * companies were re-filed under the four questions, word for word.
+ * Since 7 October 2026 the owner shares each interview's questions and
+ * answers in the Claude chat; the playbook is filled there and written with
+ * scripts/icp_record.mjs. The Target Audience tab only displays, and nothing
+ * here calls a model.
  *
- * What these hold the AI to is the table's whole worth: a tick must point at
- * words somebody said, a corrected cell is never overwritten, and a wedge is
- * not ready until two companies share one evidenced problem.
+ * What these hold the filling to is the table's whole worth: a tick must
+ * point at words somebody said, a cell written by hand earlier is kept, and a
+ * wedge is not ready — nor lockable — until two companies share one
+ * evidenced problem.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-
-const gen = vi.fn();
-vi.mock('../services/llmService.js', () => ({ generate: (...a) => gen(...a) }));
 
 const S = await import('../services/icpInterviewService.js');
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
@@ -37,76 +35,46 @@ describe('the four questions are one list, on both sides', () => {
     expect(page).toEqual(S.QUESTIONS);
   });
 
-  it('fills every per-company row the Target Audience table draws', () => {
-    const keys = new Set(S.ROWS.map(([k]) => k));
-    const table = ['q1', 'q2', 'q3', 'q4', 'kind', 'frequency', 'signals', 'spread', 'manual', 'late', 'cost',
-      'action', 'measurable', 'icpline', 'bucket', 'reverse', 'economics', 'same', 'buyer', 'workflow',
-      'simsignals', 'simaction', 'roi'];
-    for (const k of table) expect(keys.has(k), k).toBe(true);
-    // And the two only a person can fill are never offered to the AI.
-    for (const k of S.MANUAL_ONLY) expect(keys.has(k), k).toBe(false);
-    expect(S.MANUAL_ONLY).toEqual(['pilot', 'earlier']);
+  it('has a row for everything the Target Audience table draws', () => {
+    const keys = new Set([...S.ROWS.map(([k]) => k), ...S.MANUAL_ONLY]);
+    for (const k of ['q1', 'q2', 'q3', 'q4', 'kind', 'frequency', 'signals', 'spread', 'manual', 'late', 'cost',
+      'action', 'measurable', 'icpline', 'bucket', 'reverse', 'pilot', 'earlier', 'economics', 'same', 'buyer',
+      'workflow', 'simsignals', 'simaction', 'roi']) expect(keys.has(k), k).toBe(true);
   });
 });
 
-describe('what the AI is allowed to write', () => {
+describe('every tick is traced to the answers', () => {
   it('keeps a tick whose quote is in the answers', () => {
-    const c = S.checkCells({ cells: { frequency: { state: 'yes', text: 'About 15 a month', quote: 'About 15 a month' } } }, ANSWERS);
-    expect(c.frequency).toEqual({ state: 'yes', text: 'About 15 a month', quote: 'About 15 a month' });
+    const { cells, downgraded } = S.checkCells({ frequency: { state: 'yes', text: 'About 15 a month', quote: 'About 15 a month' } }, ANSWERS);
+    expect(cells.frequency).toEqual({ state: 'yes', text: 'About 15 a month', quote: 'About 15 a month' });
+    expect(downgraded).toEqual([]);
   });
 
-  it('downgrades a tick nothing said supports, rather than trusting it', () => {
-    const c = S.checkCells({ cells: { cost: { state: 'yes', text: 'Loses 2 lakh a month', quote: 'we lose 2 lakh a month' } } }, ANSWERS);
-    expect(c.cost.state).toBe('open');
-    expect(c.cost.text).toMatch(/Not traced to the answers/);
-    expect(c.cost.quote).toBe('');
+  it('downgrades a tick nothing said supports, and says which', () => {
+    const { cells, downgraded } = S.checkCells({ cost: { state: 'yes', text: 'Loses 2 lakh a month', quote: 'we lose 2 lakh a month' } }, ANSWERS);
+    expect(cells.cost.state).toBe('open');
+    expect(cells.cost.text).toMatch(/Not traced to the answers/);
+    expect(downgraded).toEqual(['cost']);
   });
 
   it('does the same for a stated figure, and ignores rows that do not exist', () => {
-    const c = S.checkCells({ cells: { roi: { state: 'claim', text: 'x', quote: '' }, pilot: { state: 'yes', text: 'agreed', quote: 'x' }, nonsense: {} } }, ANSWERS);
-    expect(c.roi.state).toBe('open');
-    expect(c.pilot).toBeUndefined();
-    expect(c.nonsense).toBeUndefined();
+    const { cells } = S.checkCells({ roi: { state: 'claim', text: 'x', quote: '' }, nonsense: { state: 'yes' } }, ANSWERS);
+    expect(cells.roi.state).toBe('open');
+    expect(cells.nonsense).toBeUndefined();
   });
 
-  it('never overwrites a cell a person corrected', () => {
+  it('lets a pilot or a caught incident be recorded without a quote, because no answer holds them', () => {
+    const { cells } = S.checkCells({ pilot: { state: 'yes', text: 'Agreed 30 days from 1 Nov' } }, ANSWERS);
+    expect(cells.pilot.state).toBe('yes');
+  });
+
+  it('keeps a cell written by hand earlier', () => {
     const merged = S.mergeCells(
       { cost: { state: 'claim', text: 'mine', edited: true }, late: { state: 'open', text: 'old', edited: false } },
-      { cost: { state: 'yes', text: 'AI', quote: 'q' }, late: { state: 'yes', text: 'new', quote: 'q' } },
+      { cost: { state: 'yes', text: 'new', quote: 'q' }, late: { state: 'yes', text: 'new', quote: 'q' } },
     );
     expect(merged.cost.text).toBe('mine');
     expect(merged.late).toEqual({ state: 'yes', text: 'new', quote: 'q', edited: false });
-  });
-
-  it('marks the playbook stale when the answers change after a fill', () => {
-    const doc = { _id: 'x', vertical: 'clinics', company: 'A', answers: ANSWERS, cells: {}, filledFrom: S.answersHash(ANSWERS) };
-    expect(S.view(doc).stale).toBe(false);
-    expect(S.view({ ...doc, answers: { ...ANSWERS, value: 'changed' } }).stale).toBe(true);
-  });
-});
-
-describe('asking the AI', () => {
-  beforeEach(() => gen.mockReset());
-
-  it('sends the four answers and the rows, with reasoning off, and checks what comes back', async () => {
-    gen.mockResolvedValue({ text: '```json\n' + JSON.stringify({ cells: {
-      frequency: { state: 'yes', text: 'About 15 a month.', quote: 'About 15 a month.' },
-      cost: { state: 'claim', text: '12000 a course', quote: 'Each course is worth 12000 rupees' },
-      economics: { state: 'yes', text: 'Saves 5 lakh', quote: 'saves five lakh' },
-    } }) + '\n```' });
-    const cells = await S.fillCells(ANSWERS);
-    const call = gen.mock.calls[0][0];
-    expect(call).toMatchObject({ thinking: false, label: 'icp-fill' });
-    expect(call.userMessage).toContain(S.QUESTIONS[0][1]);
-    expect(call.userMessage).toContain('A4. We would have called');
-    expect(cells.frequency.state).toBe('yes');
-    expect(cells.cost.state).toBe('claim');
-    expect(cells.economics.state).toBe('open');
-  });
-
-  it('refuses to fill from nothing', async () => {
-    await expect(S.fillCells({})).rejects.toThrow(/at least one answer/);
-    expect(gen).not.toHaveBeenCalled();
   });
 });
 
@@ -127,23 +95,32 @@ describe('the wedge', () => {
     expect(two.groups[0].companies).toEqual(['A', 'B']);
   });
 
-  it('describes each company to the AI from its own words and cells', () => {
-    const text = S.wedgeInput([iv('A', true)]);
-    expect(text).toContain('Company A: Co A');
-    expect(text).toContain('Problem (their words): Patients stop coming mid-course');
-    expect(text).toContain('Problem, one line: yes: patients stop mid-course');
+  it('refuses to lock before it is ready', () => {
+    expect(read('../services/icpInterviewService.js'))
+      .toMatch(/if \(lock && !result\.ready\) throw new Error\('It locks once two companies share one evidenced problem\.'\)/);
+  });
+});
+
+describe('filled in the chat, not by a model here', () => {
+  it('calls no model, and serves only reads', () => {
+    expect(read('../services/icpInterviewService.js')).not.toMatch(/llmService|generate\(/);
+    const routes = read('../routes/salesSignalsRoutes.js').split('\n').filter((l) => l.includes("'/icp"));
+    expect(routes).toHaveLength(2);
+    for (const r of routes) expect(r, r).toMatch(/^router\.get\(.*protect, adminOnly,/);
   });
 
-  it('refuses to lock before it is ready', () => {
-    const src = read('../services/icpInterviewService.js');
-    expect(src).toMatch(/if \(!w\?\.ready\) throw new Error\('It locks once two companies share one evidenced problem\.'\)/);
+  it('writes through a script that checks before it saves', () => {
+    const script = read('../scripts/icp_record.mjs');
+    expect(script).toContain('S.checkCells(iv.cells || {}, answers)');
+    expect(script).toContain("process.argv.includes('--write')");
+    expect(script).toContain('S.recordWedge(vertical, input.wedge)');
   });
 });
 
 describe('the three companies, re-filed word for word', () => {
   const by = (name) => legacy.find((d) => d.company === name);
 
-  it('keeps every hand-written cell as a person’s, so the AI never overwrites it', () => {
+  it('keeps every hand-written cell as a person’s', () => {
     expect(legacy.map((d) => d.company)).toEqual(['Vesoma', 'The Wellness Co.', 'iSPAN']);
     for (const d of legacy) {
       expect(d.legacy).toBe(true);
@@ -166,7 +143,6 @@ describe('the three companies, re-filed word for word', () => {
         expect(a).not.toMatch(/&[a-z]+;|<\w/);
       }
     }
-    // The Wellness Co. was never asked what it costs, so its fourth answer is empty.
     expect(by('The Wellness Co.').answers.value).toBe('');
   });
 
@@ -175,13 +151,5 @@ describe('the three companies, re-filed word for word', () => {
     expect(b.cells.same.state).toBe('open');
     expect(b.cells.cost).toBeUndefined();
     expect(b.cells.roi).toBeUndefined();
-  });
-});
-
-describe('wired, and admin-only', () => {
-  it('serves every ICP route behind protect and adminOnly', () => {
-    const routes = read('../routes/salesSignalsRoutes.js').split('\n').filter((l) => l.includes("'/icp"));
-    expect(routes.length).toBe(9);
-    for (const r of routes) expect(r, r).toMatch(/protect, adminOnly,/);
   });
 });

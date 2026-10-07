@@ -3655,12 +3655,6 @@ let audienceVertical = 'clinics';
  */
 let icp = { vertical: '', interviews: [], wedge: null, loading: false, error: '' };
 let icpCounts = {};
-/** Which interview's answers are open for editing; 'new' for the add form. */
-let icpOpen = '';
-/** The cell being corrected, as `${interviewId}:${rowKey}`. */
-let icpEdit = '';
-/** What is waiting on the AI: an interview id, or 'wedge'. */
-let icpBusy = '';
 
 async function loadIcp(vertical) {
   icp = { ...icp, vertical, loading: true, error: '' };
@@ -3679,7 +3673,6 @@ async function loadIcp(vertical) {
 
 function setAudienceVertical(id) {
   audienceVertical = VERTICALS.some((v) => v.id === id) ? id : 'clinics';
-  icpOpen = ''; icpEdit = '';
   loadIcp(audienceVertical);
   renderAudience();
 }
@@ -3813,7 +3806,6 @@ function renderAudience() {
     .concat(LETTERS.slice(done.length).map((id) => ({ id, name: '', met: '', when: 'Not yet', cells: {} })));
 
   const GLYPH = { yes: '&#10003;', open: '?', claim: '!', '': '&middot;' };
-  const STATE_WORD = { yes: 'evidenced', open: 'asked, not established', claim: 'stated, not yet arithmetic', '': 'not asked' };
 
   /** A static cell written here (HTML), spanning `span` columns. */
   const value = (v, span) => {
@@ -3825,31 +3817,15 @@ function renderAudience() {
 
   /**
    * One company's cell for one row, from the server — escaped, because it is
-   * the AI's writing or an operator's. Clicking it corrects it; a corrected
-   * cell is kept through every later fill.
+   * written from an interview, not by this page. Hover shows the words it
+   * rests on.
    */
   const cell = (c, key) => {
     if (!c.ivId) return value(null, 1);
     const v = (c.cells || {})[key];
-    const at = `${c.ivId}:${key}`;
-    if (icpEdit === at) {
-      return `<td class="sg-ta__cell is-editing">
-        <select class="sg-ta__edstate" aria-label="State">
-          ${Object.keys(STATE_WORD).map((s) => `<option value="${s}"${(v?.state || '') === s ? ' selected' : ''}>${STATE_WORD[s]}</option>`).join('')}
-        </select>
-        <textarea class="sg-ta__edtext" rows="4" aria-label="What was established">${esc(v?.text || '')}</textarea>
-        <span class="sg-ta__edbar">
-          <button type="button" class="sg-ta__btn is-primary" data-act="save-cell" data-iv="${c.ivId}" data-key="${key}">Save</button>
-          <button type="button" class="sg-ta__btn" data-act="cancel-cell">Cancel</button>
-        </span></td>`;
-    }
     const state = v ? (v.state || '') : '';
-    // Where the cell came from, on hover: the words it rests on, or a person.
-    const from = [v?.quote ? `From the answers: &ldquo;${esc(v.quote)}&rdquo;` : '', v?.edited ? 'Written by hand' : '']
-      .filter(Boolean).join(' &middot; ');
-    const title = from ? ` title="${from}"` : '';
-    return `<td class="sg-ta__cell is-${state || 'empty'} is-editable${v?.edited ? ' is-edited' : ''}"${title}
-        data-act="edit-cell" data-iv="${c.ivId}" data-key="${key}" tabindex="0">
+    const title = v?.quote ? ` title="From the answers: &ldquo;${esc(v.quote)}&rdquo;"` : '';
+    return `<td class="sg-ta__cell is-${state || 'empty'}"${title}>
       <span class="sg-ta__mark">${GLYPH[state] || '&middot;'}</span><span>${esc(v?.text || '')}</span></td>`;
   };
 
@@ -3861,7 +3837,7 @@ function renderAudience() {
     if (W?.draft?.sentence) {
       return value([W.ready ? 'open' : '', `${W.ready ? 'Ready to lock' : 'Draft, not ready'}: ${esc(W.draft.sentence)}`], COMPANIES.length);
     }
-    return value(['', 'Not found yet. Use &ldquo;Find the wedge&rdquo; below once interviews are filled'], COMPANIES.length);
+    return value(['', 'Not drafted yet. It is drafted from the interviews shared in the chat'], COMPANIES.length);
   };
 
   const stepRows = (s) => {
@@ -3902,59 +3878,29 @@ function renderAudience() {
 
   /** One interview's status line: where its playbook came from. */
   const status = (iv) => {
-    if (icpBusy === iv.id) return '<span class="sg-ta__st is-busy">AI is filling the playbook&hellip;</span>';
-    if (iv.fillError) return `<span class="sg-ta__st is-bad">Could not fill: ${esc(iv.fillError)}</span>`;
-    if (iv.stale) return '<span class="sg-ta__st is-warn">Answers changed since the playbook was filled</span>';
-    if (iv.filledAt) return '<span class="sg-ta__st is-ok">Playbook filled by AI &middot; click any cell to correct it</span>';
+    if (iv.filledAt) return '<span class="sg-ta__st is-ok">Playbook filled from the four answers</span>';
     if (iv.legacy) return '<span class="sg-ta__st">Re-filed from the earlier hand-written table</span>';
     return '<span class="sg-ta__st is-warn">Not filled yet</span>';
   };
-
-  const answersForm = (iv) => `
-    <div class="sg-ta__form" data-form="${iv ? iv.id : 'new'}">
-      <div class="sg-ta__formrow">
-        <label>Company<input class="sg-ta__in" name="company" value="${esc(iv?.company || '')}" required></label>
-        <label>Who you met<input class="sg-ta__in" name="met" value="${esc(iv?.met || '')}" placeholder="Role, e.g. HOD"></label>
-        <label>When<input class="sg-ta__in" name="when" value="${esc(iv?.when || '')}" placeholder="e.g. 6 Oct 2026"></label>
-      </div>
-      ${ICP_QUESTIONS.map(([k, q], i) => `
-        <label class="sg-ta__qa"><span><b>${i + 1}</b> ${q}</span>
-          <textarea class="sg-ta__in" name="${k}" rows="3" placeholder="Their words, as close as you can">${esc(iv?.answers?.[k] || '')}</textarea>
-        </label>`).join('')}
-      <div class="sg-ta__edbar">
-        <button type="button" class="sg-ta__btn is-primary" data-act="save-answers" data-iv="${iv ? iv.id : ''}">
-          Save and fill the playbook</button>
-        <button type="button" class="sg-ta__btn" data-act="close-form">Cancel</button>
-      </div>
-    </div>`;
 
   const wedgeBlock = () => {
     const w = W;
     const groups = w?.groups || [];
     return `
       <div class="sg-ta__wedge">
-        <p class="sg-ta__label">${w?.locked ? 'Wedge &mdash; locked' : 'The wedge &mdash; found from the interviews'}</p>
-        ${w?.locked ? `<p>${esc(w.locked)}</p>
-          <div class="sg-ta__edbar"><button type="button" class="sg-ta__btn" data-act="unlock-wedge">Unlock</button></div>` : `
-        ${w?.draft?.sentence ? `<textarea class="sg-ta__in sg-ta__wedgetext" rows="3" aria-label="Wedge sentence">${esc(w.draft.sentence)}</textarea>` : `
+        <p class="sg-ta__label">${w?.locked ? 'Wedge &mdash; locked' : 'The wedge &mdash; draft, from the interviews'}</p>
+        ${w?.locked ? `<p>${esc(w.locked)}</p>` : w?.draft?.sentence ? `<p>${esc(w.draft.sentence)}</p>` : `
           <p>Svarg helps <em>&hellip;</em> identify <em>&hellip;</em> before <em>&hellip;</em>.</p>`}
-        <p class="sg-ta__note">${w ? (w.ready
+        ${w && !w.locked ? `<p class="sg-ta__note">${w.ready
           ? '<b>Ready to lock.</b> Two or more companies share one evidenced problem.'
-          : '<b>Not ready.</b> No problem is evidenced at two companies yet &mdash; one company&rsquo;s problem is a customer, not a market.') : ''}
-          ${w?.reason ? ` ${esc(w.reason)}` : ''}${w?.stale ? ' <b>Interviews changed since this was found.</b>' : ''}</p>
+          : '<b>Not ready.</b> No problem is evidenced at two companies yet &mdash; one company&rsquo;s problem is a customer, not a market.'}
+          ${w.reason ? ` ${esc(w.reason)}` : ''}</p>` : ''}
         ${groups.length ? `<ul class="sg-ta__groups">${groups.map((g) => `
           <li><b>${esc(g.problem)}</b>
             <span>${g.companies.map((l) => `<i class="${g.evidenced.includes(l) ? 'is-yes' : ''}">${esc(l)}</i>`).join('')}</span>
             ${g.kind ? `<em>${esc(g.kind)}</em>` : ''}${g.why ? `<small>${esc(g.why)}</small>` : ''}</li>`).join('')}</ul>` : ''}
-        <div class="sg-ta__edbar">
-          <button type="button" class="sg-ta__btn is-primary" data-act="find-wedge"${icpBusy === 'wedge' || !done.length ? ' disabled' : ''}>
-            ${icpBusy === 'wedge' ? 'The AI is grouping the problems&hellip;' : w ? 'Find the wedge again' : 'Find the wedge'}</button>
-          ${w?.draft?.sentence ? `<button type="button" class="sg-ta__btn" data-act="lock-wedge"${w.ready ? '' : ' disabled'}>Lock it</button>` : ''}
-        </div>
-        ${w?.error ? `<p class="sg-ta__st is-bad">Last attempt failed: ${esc(w.error)}</p>` : ''}
-        <p class="sg-ta__note">The AI groups companies by the <b>same</b> problem, not the same category, and
-          drafts the sentence from their words. Green letters have the problem evidenced. It stays a draft until
-          two companies share one, and until somebody locks it.</p>`}
+        <p class="sg-ta__note">Companies are grouped by the <b>same</b> problem, not the same category. Green
+          letters have the problem evidenced. It stays a draft until two companies share one.</p>
       </div>`;
   };
 
@@ -4004,9 +3950,10 @@ function renderAudience() {
       <ol class="sg-ta__asks">
         ${ICP_QUESTIONS.map(([, q]) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
       </ol>
-      <p class="sg-ta__note">The same four for everybody, so the answers can be compared. Type the
-        answers below as notes; the AI fills the ten-step playbook from them, every tick quoting the
-        words it rests on, and you correct any cell by clicking it.</p>
+      <p class="sg-ta__note">The same four for everybody, so the answers can be compared. Share the
+        questions and answers in the Claude chat after each interview; the ten-step playbook below is
+        filled from them, every tick quoting the words it rests on, and the wedge is drafted across
+        the companies.</p>
 
       <p class="sg-ta__label">Interviews</p>
       ${icp.error ? `<p class="sg-ta__st is-bad">${esc(icp.error)}</p>` : ''}
@@ -4020,16 +3967,8 @@ function renderAudience() {
               <span class="sg-ta__cowho">${[iv.met, iv.when].filter(Boolean).map(esc).join(' &middot; ')}</span>
               ${status(iv)}
             </header>
-            ${icpOpen === iv.id ? answersForm(iv) : `
-            <div class="sg-ta__edbar">
-              <button type="button" class="sg-ta__btn" data-act="open-form" data-iv="${iv.id}">Answers</button>
-              <button type="button" class="sg-ta__btn is-primary" data-act="fill" data-iv="${iv.id}"${icpBusy ? ' disabled' : ''}>
-                ${iv.filledAt ? 'Fill again with AI' : 'Fill the playbook with AI'}</button>
-              <button type="button" class="sg-ta__btn is-quiet" data-act="remove" data-iv="${iv.id}">Remove</button>
-            </div>`}
           </article>`).join('')}
-        ${icpOpen === 'new' ? `<article class="sg-ta__iv is-new">${answersForm(null)}</article>` : `
-          <button type="button" class="sg-ta__btn sg-ta__add" data-act="open-form" data-iv="new">+ Add an interview</button>`}
+        ${done.length ? '' : '<p class="sg-ta__note">No interviews in this vertical yet.</p>'}
       </div>`}
 
       <p class="sg-ta__label">The four answers, company by company</p>
@@ -4077,101 +4016,12 @@ function renderAudience() {
   wireAudience(el.querySelector('.sg-ta'));
 }
 
-/** The tab's clicks, wired to the freshly drawn section. */
+/** The tab's one control: which vertical is on screen. */
 function wireAudience(root) {
   if (!root) return;
   root.querySelector('.sg-seg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-vert]');
     if (b) setAudienceVertical(b.dataset.vert);
-  });
-
-  const formValues = (form) => {
-    const v = (n) => (form.querySelector(`[name="${n}"]`) || {}).value || '';
-    return {
-      company: v('company'), met: v('met'), when: v('when'),
-      answers: Object.fromEntries(ICP_QUESTIONS.map(([k]) => [k, v(k)])),
-    };
-  };
-
-  const fill = async (id) => {
-    icpBusy = id; renderAudience();
-    try { await api(`/icp/interviews/${id}/fill`, { method: 'POST' }); }
-    catch (err) { banner(`The AI could not fill the playbook: ${err.message}`); }
-    icpBusy = '';
-    await loadIcp(audienceVertical);
-  };
-
-  const act = async (b) => {
-    const a = b.dataset.act;
-    const id = b.dataset.iv;
-    try {
-      if (a === 'open-form') { icpOpen = id; icpEdit = ''; renderAudience(); return; }
-      if (a === 'close-form') { icpOpen = ''; renderAudience(); return; }
-      if (a === 'edit-cell') { icpEdit = `${id}:${b.dataset.key}`; renderAudience(); return; }
-      if (a === 'cancel-cell') { icpEdit = ''; renderAudience(); return; }
-      if (a === 'save-cell') {
-        const td = b.closest('td');
-        await api(`/icp/interviews/${id}/cells/${b.dataset.key}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ state: td.querySelector('.sg-ta__edstate').value, text: td.querySelector('.sg-ta__edtext').value }),
-        });
-        icpEdit = '';
-        await loadIcp(audienceVertical);
-        return;
-      }
-      if (a === 'save-answers') {
-        const body = formValues(b.closest('[data-form]'));
-        let target = id;
-        if (!id) {
-          const r = await api('/icp/interviews', { method: 'POST', body: JSON.stringify({ vertical: audienceVertical, ...body }) });
-          target = r.id;
-        } else {
-          await api(`/icp/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
-        }
-        icpOpen = '';
-        await loadIcp(audienceVertical);
-        await fill(target);
-        return;
-      }
-      if (a === 'fill') { await fill(id); return; }
-      if (a === 'remove') {
-        if (!window.confirm('Remove this interview and the playbook filled from it?')) return;
-        await api(`/icp/interviews/${id}`, { method: 'DELETE' });
-        await loadIcp(audienceVertical);
-        return;
-      }
-      if (a === 'find-wedge') {
-        icpBusy = 'wedge'; renderAudience();
-        try { await api(`/icp/wedge/${audienceVertical}/find`, { method: 'POST' }); }
-        catch (err) { banner(`The AI could not find the wedge: ${err.message}`); }
-        icpBusy = '';
-        await loadIcp(audienceVertical);
-        return;
-      }
-      if (a === 'lock-wedge') {
-        const text = (root.querySelector('.sg-ta__wedgetext') || {}).value || '';
-        await api(`/icp/wedge/${audienceVertical}/lock`, { method: 'POST', body: JSON.stringify({ text }) });
-        await loadIcp(audienceVertical);
-        return;
-      }
-      if (a === 'unlock-wedge') {
-        await api(`/icp/wedge/${audienceVertical}/lock`, { method: 'POST', body: JSON.stringify({ text: '' }) });
-        await loadIcp(audienceVertical);
-      }
-    } catch (err) {
-      banner(err.message);
-    }
-  };
-
-  root.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-act]');
-    // Typing in the open editor must not reopen it.
-    if (!b || (b.dataset.act === 'edit-cell' && e.target.closest('textarea, select'))) return;
-    act(b);
-  });
-  root.addEventListener('keydown', (e) => {
-    const b = e.target.closest('[data-act="edit-cell"]');
-    if (b && (e.key === 'Enter' || e.key === ' ') && e.target === b) { e.preventDefault(); act(b); }
   });
 }
 

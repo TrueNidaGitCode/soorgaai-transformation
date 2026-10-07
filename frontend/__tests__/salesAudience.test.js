@@ -5,15 +5,16 @@
  * ── What changed on 6 October 2026 ─────────────────────────────────────────
  *
  * The table was written by hand in this file, a cell at a time. It is now
- * read from the server: each interview is four answers, the AI fills the
- * playbook from them (every tick quoting the words it rests on, see the
- * backend's icpInterviewService), and a person corrects any cell by clicking
- * it. The evidence for the three companies interviewed so far moved with the
+ * read from the server: each interview is four answers, and the playbook is
+ * filled from them with every tick quoting the words it rests on (see the
+ * backend's icpInterviewService). Since 7 October 2026 the answers are shared
+ * in the Claude chat and recorded with scripts/icp_record.mjs — the tab only
+ * displays, and has no write control of its own. The evidence for the three companies interviewed so far moved with the
  * data — its tests are in backend/__tests__/icpInterviews.test.js.
  *
- * What these hold is the screen's restraint: empty columns stay empty, the
- * AI's words are escaped, a corrected cell says so, and the wedge cannot be
- * locked until two companies share one evidenced problem.
+ * What these hold is the screen's restraint: empty columns stay empty, what
+ * was written is escaped, nothing on the page writes, and the wedge reads as
+ * a draft until two companies share one evidenced problem.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -185,36 +186,36 @@ describe('read from the server, not written here', () => {
 });
 
 describe('four answers, filed and filled', () => {
-  it('files every interview under the same four questions', () => {
+  it('files every interview under the same four questions, and points to the chat', () => {
     const { html: out } = draw();
     // eslint-disable-next-line no-new-func
     const qs = new Function(`return ${literal(js, 'ICP_QUESTIONS')};`)();
     expect(qs).toHaveLength(4);
     for (const [, q] of qs) expect(out).toContain(q);
-    expect(out).toContain('+ Add an interview');
+    expect(out.replace(/\s+/g, ' ')).toContain('Share the questions and answers in the Claude chat');
+    expect(out).toContain('No interviews in this vertical yet.');
   });
 
-  it('draws what the AI wrote escaped, with the words it rests on', () => {
+  it('has no control that writes — the playbook is filled in the chat', () => {
+    const src = js.slice(js.indexOf('let audienceVertical'), js.indexOf(fn('wireAudience')) + fn('wireAudience').length);
+    expect(src).not.toMatch(/data-act=|method: 'POST'|method: 'PATCH'|method: 'DELETE'|<textarea|<input/);
+    expect(src).not.toMatch(/Fill the playbook with AI|Find the wedge|Add an interview/);
+  });
+
+  it('draws what was written escaped, with the words it rests on', () => {
     const { html: out } = draw({ interviews: [iv('A', { cells: {
       q1: { state: 'yes', text: '<b>15 a month</b>', quote: 'about 15 a month', edited: false },
-      cost: { state: 'claim', text: '12000 a course', quote: '12000', edited: true },
     } })] });
     expect(out).toContain('&lt;b&gt;15 a month&lt;/b&gt;');
     expect(out).not.toContain('<b>15 a month</b>');
     expect(out).toContain('title="From the answers: &ldquo;about 15 a month&rdquo;"');
-    expect(out).toContain('title="From the answers: &ldquo;12000&rdquo; &middot; Written by hand"');
-    // A corrected cell is marked, because the AI will not touch it again.
-    expect(out).toMatch(/is-claim is-editable is-edited/);
   });
 
   it('says where each playbook came from', () => {
-    const { html: out } = draw({ interviews: [
-      iv('A'), iv('B', { stale: true }), iv('C', { filledAt: null, legacy: true }), iv('D', { filledAt: null, fillError: 'no credit' }),
-    ] });
-    expect(out).toContain('Playbook filled by AI');
-    expect(out).toContain('Answers changed since the playbook was filled');
+    const { html: out } = draw({ interviews: [iv('A'), iv('C', { filledAt: null, legacy: true }), iv('D', { filledAt: null })] });
+    expect(out).toContain('Playbook filled from the four answers');
     expect(out).toContain('Re-filed from the earlier hand-written table');
-    expect(out).toContain('Could not fill: no credit');
+    expect(out).toContain('Not filled yet');
   });
 
   it('carries all ten steps, numbered and named as the playbook names them', () => {
@@ -235,25 +236,24 @@ describe('four answers, filed and filled', () => {
   });
 });
 
-describe('the wedge is found, and locked only when it is real', () => {
+describe('the wedge reads as a draft until it is real', () => {
   const groups = [{ problem: 'Patients stop mid-course', kind: 'retention', companies: ['A', 'B'], evidenced: ['A'], why: '' }];
 
-  it('will not lock a problem evidenced at one company', () => {
+  it('says not ready while a problem is evidenced at one company', () => {
     const { html: out } = draw({ interviews: [iv('A'), iv('B')], wedge: { groups, draft: { sentence: 'Svarg helps clinics…' }, ready: false } });
     expect(out).toContain('<b>Not ready.</b>');
-    expect(out).toMatch(/data-act="lock-wedge" disabled/);
+    expect(out).toContain('Svarg helps clinics…');
     expect(out).toContain('<i class="is-yes">A</i><i class="">B</i>');
   });
 
-  it('offers to lock once two companies share it', () => {
+  it('says ready once two companies share it', () => {
     const { html: out } = draw({ interviews: [iv('A'), iv('B')], wedge: { groups: [{ ...groups[0], evidenced: ['A', 'B'] }], draft: { sentence: 'Svarg helps clinics…' }, ready: true } });
     expect(out).toContain('<b>Ready to lock.</b>');
-    expect(out).toMatch(/data-act="lock-wedge">Lock it/);
   });
 
-  it('shows a locked wedge as locked, with a way back', () => {
+  it('shows a locked wedge as locked', () => {
     const { html: out } = draw({ interviews: [iv('A')], wedge: { locked: 'Svarg helps clinics find…', ready: true } });
     expect(out).toContain('Wedge &mdash; locked');
-    expect(out).toContain('data-act="unlock-wedge"');
+    expect(out).toContain('Svarg helps clinics find…');
   });
 });

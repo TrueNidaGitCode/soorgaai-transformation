@@ -2362,12 +2362,11 @@ function renderIcpView() {
    * This page used to sell "find problems before they become costly", with a
    * problem statement about records disagreeing with what happened. That was
    * broad enough to mean any costly business problem, which is the platform
-   * pitch the GTM below tells us not to make. The focus is now two business
-   * outcomes: keeping customers, and growing what existing customers spend.
-   * "Businesses are reactive by default" stays as WHY the problem exists; it is
-   * no longer the product category. The record disagreeing with reality stays
-   * as one way it shows -- and revenue already earned but never billed (a
-   * treated patient left marked no-show) counts as growth, by decision.
+   * pitch the GTM below tells us not to make. On 6 October the focus became
+   * retention and growth; on 7 October the owner narrowed it to RETENTION
+   * ONLY, because explaining two outcomes to a customer is one too many.
+   * Growth (upgrades, unbilled work) comes later. "Businesses are reactive by
+   * default" stays as WHY the problem exists; it is not the product category.
    */
 
   /**
@@ -2377,28 +2376,28 @@ function renderIcpView() {
    * a demonstration and a promise, on a page somebody reads mid-call.
    */
   const SPINE = [
-    ['Detect', 'yes', 'Watchers run on a schedule and evaluate their condition in code: who stopped coming, who went quiet, who asked to upgrade, whose package ran past what was sold.'],
+    ['Detect', 'yes', 'Watchers run on a schedule and evaluate their condition in code: who stopped coming, who went quiet, who keeps missing appointments, whose complaints repeat.'],
     // Explain, Recommend and the rest since 6 October 2026: every customer
     // found carries a card from Detect to Learn (eame-template customerSpine.js).
     ['Explain', 'yes', 'Every finding says why it matters in the customer&rsquo;s terms &mdash; written per watcher, in code, alongside the records behind it.'],
-    ['Recommend', 'yes', 'Every customer found gets a next step: call, offer a time to come back, offer an upgrade, correct the bill. Chosen per watcher, in code.'],
+    ['Recommend', 'yes', 'Every customer found gets a next step: call them, offer a time to come back, pass it to a senior person.'],
     ['Act', 'part', 'The team marks the step they took, and a follow-up can be drafted from the finding&rsquo;s facts. Svarg never sends anything; a person does.'],
-    ['Measure', 'part', 'A step counts as worked when the watcher stops finding the problem afterwards. Customers retained and revenue recovered in rupees are not measured yet.'],
+    ['Measure', 'part', 'A step counts as worked when the watcher stops finding the problem afterwards. Customers retained over months, and the revenue kept, are not measured yet.'],
     ['Learn', 'part', 'Once two steps have each been tried three times in a business, the recommendation follows whichever worked more. No customer has enough outcomes yet.'],
   ];
 
   const TODAY   = ['Customer activity', 'Data', 'Reports', 'Someone notices', 'Investigates', 'Acts'];
   const INSTEAD = ['Customer activity', 'Signals', 'Svarg detects', 'Explains', 'Recommends', 'Acts', 'Measures'];
 
-  /** What must be true of a business for retention and growth signals to be worth money. */
+  /** What must be true of a business for retention signals to be worth money. */
   const CRITERIA = [
     'The problem recurs, because customers do &mdash; they buy, visit or renew repeatedly',
-    'The early signals already exist digitally &mdash; of a customer drifting, or ready to buy more',
+    'The early signals already exist digitally &mdash; of a customer starting to drift away',
     'Those signals sit in more than one system',
     'A person connects them by hand today, when anyone does',
     'It gets more expensive when found late &mdash; a customer lost, a renewal missed',
     'There is a clear action once the customer is identified',
-    'Whether it worked can be measured, in customers kept or revenue',
+    'Whether it worked can be measured, in customers kept',
   ];
 
   /** Two qualifiers that are about us rather than them — and are how deals die. */
@@ -2412,21 +2411,19 @@ function renderIcpView() {
     'Recurring customers',
     'Their behaviour leaves signals in several systems',
     'A person joins those signals by hand',
-    'A customer drifts, or an opportunity passes, before anyone notices',
+    'A customer drifts away before anyone notices',
     'A clear next action, and a number that moves',
   ];
 
   /*
-   * We believe, and would test. The problem hypothesis now names the outcome
-   * (customers lost, growth missed) and keeps "reactive by default" as the
-   * cause; the earlier wording -- reality not reaching the business system --
-   * survives as the mechanism in the first sentence.
+   * We believe, and would test. The problem hypothesis names the outcome
+   * (customers lost) and keeps "reactive by default" as the cause.
    */
   const HYPOTHESES = [
-    ['Problem', 'businesses lose customers, and growth from the customers they keep, because they are reactive by default: customer behaviour leaves signals across the systems they already run, nobody joins them continuously, and the pattern is noticed after the customer has gone or the opportunity has passed.'],
-    ['ICP', 'the businesses where this costs the most have recurring customer relationships, meaningful value per customer, and enough digital customer activity that a drift or an opportunity can be seen in data they already hold.'],
+    ['Problem', 'businesses lose customers because they are reactive by default: customer behaviour leaves signals across the systems they already run, nobody joins them continuously, and the pattern is noticed after the customer has gone.'],
+    ['ICP', 'the businesses where this costs the most have recurring customer relationships, meaningful value per customer, and enough digital customer activity that a customer drifting away can be seen in data they already hold.'],
     ['Product', 'Svarg can watch customer signals across those systems, identify who needs attention and explain why &mdash; and, next, recommend the intervention, help carry it out and measure whether it worked.'],
-    ['Business value', 'customers pay when the difference is measurable: customers kept, churn reduced, unbilled work recovered, expansion revenue, a response that comes days earlier.'],
+    ['Business value', 'customers pay when the difference is measurable: customers kept, churn reduced, renewals saved, a response that comes days earlier.'],
   ];
 
   /*
@@ -2434,24 +2431,24 @@ function renderIcpView() {
    * which titles they hold varies by company -- a clinic's buyer is its
    * operations head, a SaaS company's is customer success, an engineering
    * services firm's is its delivery head. The pains are written in the
-   * vocabulary of losing and growing customers, which is what is sold.
+   * vocabulary of losing customers, which is what is sold.
    */
   const PERSONAS = [
     ['Buyer', 'Operations, Customer Success or Revenue head',
-      'Customers lost quietly &middot; unexpected churn &middot; expansion missed &middot; no single view of a customer across systems &middot; teams reacting too late'],
+      'Customers lost quietly &middot; unexpected churn &middot; renewals missed &middot; no single view of a customer across systems &middot; teams reacting too late'],
     ['Economic buyer', 'Founder, business owner, business-unit or revenue leader',
-      'Revenue leakage &middot; churn &middot; customer lifetime value &middot; expansion revenue &middot; not knowing what is happening across the customer base'],
+      'Churn &middot; customer lifetime value &middot; renewals lost &middot; not knowing which customers are quietly leaving'],
     ['User', 'Operations, customer success, account management or the front desk',
       'Too many customers to watch &middot; checking several systems by hand &middot; deciding whom to call &middot; repetitive follow-up &middot; finding out too late. Reads it every morning, and decides whether it survives week two.'],
   ];
 
   const GTM = [
-    ['Identify', 'Find one recurring retention or growth problem that companies discover too late.'],
-    ['Prove', 'Connect the systems they already use and show Svarg finds the at-risk customer or the opportunity earlier, or more reliably, than they do today.'],
+    ['Identify', 'Find one recurring retention problem that companies discover too late.'],
+    ['Prove', 'Connect the systems they already use and show Svarg finds the at-risk customer earlier, or more reliably, than they do today.'],
     ['Act', 'Move past detection: recommend the intervention, and then help carry it out.'],
-    ['Measure', 'Prove the outcome in their numbers: customers retained, churn reduced, revenue recovered, expansion revenue, conversion, response rate, time saved.'],
+    ['Measure', 'Prove the outcome in their numbers: customers retained, churn reduced, renewals saved, response rate, time saved.'],
     ['Repeat', 'Find the same problem at similar companies, solved the same way.'],
-    ['Expand', 'Once Svarg owns one retention or growth problem inside an organisation, take the adjacent ones.'],
+    ['Expand', 'Once Svarg owns one retention problem inside an organisation, take the adjacent ones &mdash; growth among them, later.'],
   ];
 
   /*
@@ -2506,23 +2503,22 @@ function renderIcpView() {
       </div>
 
       <div class="sg-who__panel" data-panel="problem"${on === 'problem' ? '' : ' hidden'}>
-        ${lead('The problem &mdash; <em>businesses lose customers and growth because they are reactive by default</em>',
+        ${lead('The problem &mdash; <em>businesses lose customers because they are reactive by default</em>',
           `Customer behaviour creates signals in the systems a business already uses &mdash; the CRM,
           the booking system, the phone, WhatsApp, the ledger. <b>Those signals are fragmented, and nobody
           joins them continuously.</b> By the time the business notices, the customer may already have
-          gone, or the chance to grow them may have passed.`)}
+          gone.`)}
 
         ${sec('Today, and what should happen', `
           <p class="sg-who__p">Today</p>
           ${chain(TODAY)}
           <p class="sg-who__p">Instead</p>
           ${chain(INSTEAD, 'good')}
-          <p class="sg-who__note">One way it shows: something happens, a signal of it exists in a tool
-            they already run, and <b>the record says otherwise</b> &mdash; a treated patient left marked
-            no-show is revenue earned and never billed, which is growth recovered from a customer
-            already in the room.</p>`)}
+          <p class="sg-who__note">One way it shows: twenty appointments a month recorded as No Show all
+            <b>look the same in the records</b> &mdash; and the ones from customers starting to drift away
+            are noticed only when those customers do not come back.</p>`)}
 
-        ${sec('What Svarg sells &mdash; keep the customers you have, and grow them', `
+        ${sec('What Svarg sells &mdash; keep the customers you already have', `
           <ol class="sg-spine">
             ${SPINE.map(([verb, state, note]) => `
               <li class="sg-spine__step is-${state}">
@@ -2546,14 +2542,14 @@ function renderIcpView() {
               </div>`).join('')}
           </div>
           <p class="sg-who__note"><b>Evidence would be</b> several companies independently describing the
-            same retention or growth problem, the signals already existing digitally, the problem found
+            same retention problem, the signals already existing digitally, the problem found
             late today, the intervention clear, and the improvement measurable in money.</p>`)}
       </div>
 
       <div class="sg-who__panel" data-panel="icp"${on === 'icp' ? '' : ' hidden'}>
         ${lead('ICP &mdash; <em>the customer relationship, not the company size</em>',
           `Businesses with <b>recurring customer relationships, meaningful customer value, and enough
-          digital customer activity</b> that retention risks and growth opportunities can be seen in data
+          digital customer activity</b> that a customer starting to drift away can be seen in data
           they already hold.`,
           `<p class="sg-who__note">SMB, mid-market and enterprise are labels for segmenting, not the
             definition. The definition is the relationship and the five things below.</p>`)}
@@ -2586,18 +2582,17 @@ function renderIcpView() {
           <div class="sg-who__card sg-who__card--no">
             <p>A customer problem that happened once. One whose warning signs were never written down
               anywhere. One nobody can act on once they know. One whose improvement cannot be shown in a
-              number. And a problem outside retention and growth, however costly &mdash; the platform may
-              reach those later, and widening the wedge for them now is how it stops being one.</p>
+              number. And a problem outside retention, however costly &mdash; growth included: upgrades, cross-sell
+              and unbilled work come later, and pitching them now makes Svarg two products to explain.</p>
             <p class="sg-who__note">Each fails one of the seven, and each is a pilot that ends with
-              everyone agreeing it was interesting. A quotation going cold between the inbox and the ERP
-              is a sales workflow, and it is in: it is growth from a customer already asking.</p>
+              everyone agreeing it was interesting.</p>
           </div>`)}
       </div>
 
       <div class="sg-who__panel" data-panel="gtm"${on === 'gtm' ? '' : ' hidden'}>
         ${lead('GTM &mdash; <em>win one customer problem, then expand</em>',
           `Svarg does not enter the market as &ldquo;AI for every business problem&rdquo;. It starts with
-          <b>one measurable retention or growth problem in one repeatable customer segment.</b>`)}
+          <b>one measurable retention problem in one repeatable customer segment.</b>`)}
 
         ${sec('Six steps', `
           <ol class="sg-gtm">
@@ -2607,21 +2602,20 @@ function renderIcpView() {
           </ol>`)}
 
         ${sec('The motion', `
-          ${chain(['One retention or growth problem', 'evidence', 'pilot', 'measured outcome', 'the same problem at a similar company'], 'good')}
+          ${chain(['One retention problem', 'evidence', 'pilot', 'measured outcome', 'the same problem at a similar company'], 'good')}
           <p class="sg-who__p">Rather than</p>
           ${chain(['Industry', 'generic AI pitch', 'demo', 'custom project'], 'bad')}`)}
 
         ${sec('The opening question', `
           <p class="sg-who__ask">&ldquo;Which customers do you usually realise you&rsquo;re losing only
             after it&rsquo;s too late?&rdquo;</p>
-          <p class="sg-who__note">Then: &ldquo;And where do you feel you&rsquo;re missing chances to grow
-            the customers you already have?&rdquo; It opens on customers and money rather than AI, and the
-            answer is the qualification &mdash; a prospect who cannot name either is not in the ICP.</p>`)}
+          <p class="sg-who__note">Then: &ldquo;How do you find out today, and how long after it
+            starts?&rdquo; It opens on customers and money rather than AI, and the answer is the
+            qualification &mdash; a prospect who cannot name a customer they lost late is not in the ICP.</p>`)}
 
         ${sec('How to say it &mdash; one sentence a non-technical buyer finishes for you', `
           <p class="sg-who__ask">Svarg connects the systems you already use to find the customers
-            you are at risk of losing and the customers you could grow &mdash; and tells your team what
-            to do next.</p>
+            you are at risk of losing &mdash; and tells your team what to do next.</p>
           <p class="sg-who__note">What it is not: another CRM, dashboard or reporting tool, a
             churn-prediction model, a lead-scoring tool, a chatbot, or &ldquo;AI for every business
             problem&rdquo;. Svarg is <b>an intelligence and action layer on top of them</b>.</p>
@@ -2678,7 +2672,7 @@ let icpSub = (() => { try { return localStorage.getItem('sg-icp-sub') || 'proble
  * kill it, and the two are deliberately adjacent: a belief with no test beside
  * it hardens into a fact nobody checked.
  *
- * Rewritten 6 October 2026 for Retention & Growth. It opens on the thesis
+ * Rewritten 6 October 2026, and narrowed to retention only on 7 October. It opens on the thesis
  * (businesses are reactive by default; the signals are scattered and nobody
  * connects them early enough), then the same ten steps, then what the steps
  * produce: the product evolution, the motion, the strategic rule and the
@@ -2703,7 +2697,7 @@ let icpSub = (() => { try { return localStorage.getItem('sg-icp-sub') || 'proble
  * The order is the order they are run in.
  */
 const PLAYBOOK_STEPS = [
-  'Find the Acute Retention/Growth Problem',
+  'Find the Acute Retention Problem',
   'Find the Acute ICP',
   'Separate Acute ICP from Vanity Users',
   'Embed Yourself in the ICP',
@@ -2729,7 +2723,7 @@ const PLAYBOOK_STEPS = [
  * questions, so they live here, once.
  *
  * Eight since 6 October 2026: "The outcome can be measured" joined, because a
- * retention or growth problem whose result cannot be counted cannot be sold
+ * retention problem whose result cannot be counted cannot be sold
  * as arithmetic (step 8).
  *
  * The keys are the table's column data; the order is the order they are asked
@@ -2762,12 +2756,6 @@ function renderPlaybook() {
 
   const label = (t) => `<p class="sg-pb__label">${t}</p>`;
 
-  /** Two lists side by side: retention on the left, growth on the right. */
-  const pair = (left, right) => `<div class="sg-pb__pair">
-      <div class="sg-pb__side is-keep"><h4>Retention</h4>${left}</div>
-      <div class="sg-pb__side is-grow"><h4>Growth</h4>${right}</div>
-    </div>`;
-
   /** What exists today, said beside the stage it limits. */
   const today = (t) => `<p class="sg-pb__today"><b>Today</b> ${t}</p>`;
 
@@ -2782,17 +2770,9 @@ function renderPlaybook() {
     'Customers approach renewal with declining engagement, and the team finds the risk too late.',
     'Customers go inactive across several systems, and nobody connects those signals.',
   ];
-  const HYPOTHESES_GROW = [
-    'Existing customers show they are ready for an upgrade, cross-sell or expansion, and nobody notices.',
-    'Customers under-use a product or service they could buy more of.',
-    'A customer&rsquo;s engagement or demand is rising, and the sales team does not act.',
-    'Buying intent appears across CRM, communication and usage data but is never connected.',
-  ];
-
   const ASK = [
     'How do you know a customer is becoming inactive?',
     'How do you know a customer is likely to leave?',
-    'How do you know an existing customer is ready to buy more?',
     'What signals do you look at, and where do they live?',
     'Who checks them, and how often?',
     'What happens when nobody checks?',
@@ -2874,7 +2854,7 @@ function renderPlaybook() {
     ['Act', 'Eventually: notify the right person, create a task, draft the message, trigger a workflow, update the CRM.',
       '',
       'Partly. Svarg drafts the message, notifies the owner in a morning digest and records the step the team took. It does not send, create tasks or update the CRM.'],
-    ['Measure', 'Did the action work? Returned, renewed, upgraded, bought another service, stayed active &mdash; or churned anyway.',
+    ['Measure', 'Did the action work? Returned, renewed, stayed active &mdash; or churned anyway.',
       '',
       'Partly. A step counts as worked when the records stop showing the problem. Rupees retained are not measured yet.'],
   ];
@@ -2890,8 +2870,6 @@ function renderPlaybook() {
 
   const METRICS_KEEP = ['Customers detected at risk', 'How early they were detected', 'Number acted on',
     'Action rate', 'Recovery or save rate', 'Revenue retained', 'False positives', 'Time saved by the team'];
-  const METRICS_GROW = ['Opportunities detected', 'Customers identified', 'Outreach or action rate',
-    'Expansion conversion', 'Incremental revenue', 'Cross-sell or upgrade revenue', 'False positives', 'Time saved'];
 
   const ECON_KEEP = [
     ['Customers monitored', '200', '200'],
@@ -2901,13 +2879,6 @@ function renderPlaybook() {
     ['Customers recovered', '3', '14'],
     ['Revenue at risk identified', 'Unknown', '&#8377;X'],
     ['Revenue retained', 'Unknown', '&#8377;Y'],
-  ];
-  const ECON_GROW = [
-    ['Existing customers monitored', '500', '500'],
-    ['Expansion opportunities', 'Mostly manual', '47'],
-    ['Opportunities acted on', '12', '38'],
-    ['Conversions', 'X', 'Y'],
-    ['Incremental revenue', '&#8377;X', '&#8377;Y'],
   ];
   const table = (rows) => `<table class="sg-pb__econ">
       <thead><tr><th>Metric</th><th>Before Svarg</th><th>With Svarg</th></tr></thead>
@@ -2920,8 +2891,8 @@ function renderPlaybook() {
   const WEDGES = [
     ['Retention', 'Svarg helps multi-location clinics identify patients drifting away from treatment before they disappear, using appointment, attendance and CRM signals.'],
     ['Retention', 'Svarg helps coaching academies identify students whose engagement is declining before they drop out, using attendance, communication and payment signals.'],
-    ['Growth', 'Svarg helps service businesses identify existing customers ready for additional services before the opportunity is missed.'],
-    ['B2B', 'Svarg helps distributors identify accounts and quotations going cold before revenue is lost, using CRM, ERP and communication signals.'],
+    ['Retention', 'Svarg helps subscription businesses identify customers who are skipping or slowing their orders before they cancel.'],
+    ['B2B', 'Svarg helps distributors identify repeat accounts that are quietly ordering less before they stop, using CRM, ERP and communication signals.'],
   ];
 
   const STEPS = [
@@ -2931,14 +2902,12 @@ function renderPlaybook() {
       target: '5&ndash;7 problem hypotheses',
       body: label('Do not start with')
         + say('We want to solve customer retention.', false)
-        + say('We want to help businesses grow.', false)
-        + `<p class="sg-pb__note">Both are too broad. Generate hypotheses, then find the one that is both
+        + `<p class="sg-pb__note">Too broad. Generate hypotheses, then find the one that is both
            frequent and economically painful &mdash; you do not need to pursue all of them.</p>`
         + label('Problem hypotheses')
-        + pair(list(HYPOTHESES_KEEP), list(HYPOTHESES_GROW))
+        + list(HYPOTHESES_KEEP)
         + label('A strong problem usually has') + list(ACUTE, 'check')
-        + pair(seq(['Customer starts drifting', 'Nobody notices', 'Customer leaves']),
-          seq(['Customer shows a buying signal', 'Nobody notices', 'Opportunity disappears']))
+        + seq(['Customer starts drifting', 'Nobody notices', 'Customer leaves'])
         + `<p class="sg-pb__rule">These conditions are not merely product requirements. <b>They are ICP
            qualification criteria.</b> If most are missing, the problem may be interesting but is unlikely
            to become a strong Svarg business.</p>`,
@@ -2955,7 +2924,7 @@ function renderPlaybook() {
            who own or live the workflow.</p>`
         + label('Ask') + list(ASK)
         + label('The ICP should eventually sound like')
-        + say('Companies with <b>X recurring customer workflow</b>, where <b>Y retention or growth problem</b> '
+        + say('Companies with <b>X recurring customer workflow</b>, where <b>Y retention problem</b> '
             + 'happens frequently, and <b>Z person</b> currently detects it manually using <b>A, B and C systems</b>.', true)
         + label('For example')
         + say('Multi-location service businesses where customers gradually disengage from a recurring service, '
@@ -2991,8 +2960,7 @@ function renderPlaybook() {
     {
       title: PLAYBOOK_STEPS[4],
       aim: 'Watch how the problem is found today, before showing Svarg.',
-      body: pair(say('Show me how you currently know that a customer is at risk of leaving.', true),
-          say('Show me how you currently find existing customers who are ready to buy more.', true))
+      body: say('Show me how you currently know that a customer is at risk of leaving.', true)
         + label('Then watch where they look') + list(LOOK)
         + label('Do not accept') + say('We usually know.', false)
         + label('Ask') + say('Show me.', true)
@@ -3030,9 +2998,9 @@ function renderPlaybook() {
       body: label('Pilot structure') + list(PILOT)
         + label('The objective is not') + say('The customer liked the demo.', false)
         + label('It is')
-        + say('Svarg found a customer at risk, or a growth opportunity, that the business would otherwise '
-            + 'have discovered later &mdash; or missed entirely.', true)
-        + pair(list(METRICS_KEEP, 'check'), list(METRICS_GROW, 'check'))
+        + say('Svarg found a customer at risk that the business would otherwise have discovered later '
+            + '&mdash; or missed entirely.', true)
+        + label('Measure') + list(METRICS_KEEP, 'check')
         + `<p class="sg-pb__rule">Do not optimise for the number of &ldquo;insights&rdquo;.
            <b>Optimise for customer outcomes.</b></p>`,
     },
@@ -3049,7 +3017,6 @@ function renderPlaybook() {
         + say('You were losing or missing <b>X</b>. We identified <b>Y</b> earlier. Your team acted on '
             + '<b>Z</b>. The resulting value was <b>&#8377;N</b>.', true)
         + label('Retention example') + table(ECON_KEEP)
-        + label('Growth example') + table(ECON_GROW)
         + `<p class="sg-pb__note">Illustrative &mdash; the real numbers come from pilots. Be conservative with
            attribution: if Svarg found an opportunity and the customer did not act, do not count its whole
            value as revenue Svarg generated.</p>`,
@@ -3071,7 +3038,7 @@ function renderPlaybook() {
       title: PLAYBOOK_STEPS[9],
       aim: 'Only after steps 1&ndash;9: one sentence, specific enough to be wrong.',
       body: `<p class="sg-pb__wedge">Svarg helps <em>specific customer segment</em> identify
-           <em>specific retention or growth problem</em> before <em>specific costly outcome</em>,
+           <em>specific retention problem</em> before <em>specific costly outcome</em>,
            using signals already available across their existing systems.</p>`
         + label('Not')
         + `<div class="sg-pb__nots">
@@ -3100,7 +3067,7 @@ function renderPlaybook() {
   ];
 
   const MOTION = [
-    ['Identify', 'Find an acute retention or growth problem.'],
+    ['Identify', 'Find an acute retention problem.'],
     ['Prove', 'Show it happens repeatedly and that early signals exist.'],
     ['Detect', 'Use existing business data to find the customer earlier.'],
     ['Understand', 'Explain why that customer needs attention.'],
@@ -3109,7 +3076,7 @@ function renderPlaybook() {
     ['Measure', 'Measure the customer or revenue outcome.'],
     ['Repeat', 'Solve the same problem for more companies.'],
     ['Productize', 'Turn the repeated workflow into a repeatable product.'],
-    ['Expand', 'Once the wedge is strong, move into adjacent retention and growth problems.'],
+    ['Expand', 'Once the wedge is strong, move into adjacent retention problems &mdash; and, later, growth.'],
   ];
 
   const LADDER = [
@@ -3117,25 +3084,21 @@ function renderPlaybook() {
       'Attendance + payment + communication', 'Intervention', 'Student retained'],
     ['Retention', 'Missed appointments', 'Same or adjacent segment', 'Appointments',
       'Appointment + CRM + communication', 'Intervention', 'Customer retained'],
-    ['Growth', 'Existing customer expansion', 'Same segment', 'Usage',
-      'Usage + purchase history + engagement', 'Cross-sell', 'Revenue increased'],
+    ['Retention', 'Renewal at risk', 'Same segment', 'Renewals',
+      'Usage + payments + communication', 'Intervention', 'Renewal kept'],
   ];
 
   el.innerHTML = `
     <section class="sg-pb">
       <div class="sg-pb__lead">
-        <p class="sg-pb__kicker">Svarg B2B Playbook &mdash; Retention &amp; Growth</p>
+        <p class="sg-pb__kicker">Svarg B2B Playbook &mdash; Retention</p>
         <p class="sg-pb__thesis">Businesses are reactive by default.</p>
         <p class="sg-pb__note">They have customer data across CRM, communication tools, operational
           systems, payments, attendance, usage, support and spreadsheets. The problem is not that they
           have no data. It is that <b>important customer signals are scattered, and nobody continuously
           connects them early enough.</b></p>
-        <div class="sg-pb__pair">
-          <div class="sg-pb__side is-keep"><h4>Retention</h4><p>Customers start drifting away, and the
-            business notices too late.</p></div>
-          <div class="sg-pb__side is-grow"><h4>Growth</h4><p>Existing customers show buying or expansion
-            signals, and the business misses the opportunity.</p></div>
-        </div>
+        <p class="sg-pb__note"><b>Retention:</b> customers start drifting away, and the business notices
+          too late. Growth &mdash; upgrades, cross-sell &mdash; comes later, once one retention problem is won.</p>
         ${seq(['Data', 'Signals', 'Detection', 'Understanding', 'Recommendation', 'Action', 'Measurement'], 'good')}
         <p class="sg-pb__note">Not a churn predictor and not a CRM: <b>an intelligence and action layer on
           top of the systems businesses already use.</b> The ICP tab says what we believe; the ten steps
@@ -3178,7 +3141,7 @@ function renderPlaybook() {
 
       <div class="sg-pb__part">
         <h3>The strategic rule</h3>
-        <p class="sg-pb__rule"><b>Do not sell &ldquo;Retention + Growth&rdquo; as the first product.</b>
+        <p class="sg-pb__rule"><b>Do not sell &ldquo;retention&rdquo; as the first product.</b>
           It is the strategic territory; the product wedge is much narrower.</p>
         ${seq(['Territory', 'Problem', 'ICP', 'Workflow', 'Signal', 'Action', 'Outcome'])}
         ${LADDER.map((row, i) => `
@@ -3206,8 +3169,8 @@ function renderPlaybook() {
  * eleven to listen, two to say what Svarg is — and the last two only if the
  * eleven produced something.
  *
- * Rewritten 6 October 2026 for Retention & Growth: the goal is to find out
- * whether the business already has a recurring customer retention or growth
+ * Rewritten 6 October 2026, retention only since 7 October: the goal is to find out
+ * whether the business already has a recurring customer retention
  * problem that it discovers too late. The opener asks about customers, the
  * key question asks when they realise a customer was drifting or an
  * opportunity had passed, and the page ends on the matrix every interview
@@ -3269,14 +3232,12 @@ function renderInterview() {
    * would make every other room hear it as somebody else's script.
    */
   const KEEP_TRACK = ['Customers becoming inactive', 'Customers not returning', 'Missed appointments',
-    'Declining usage', 'Complaints', 'Renewals', 'Customers asking for more',
-    'Customers not buying additional services', 'Follow-ups', 'Customers going quiet',
-    'Buying intent', 'Customers who should be contacted', 'Customers who may leave'];
+    'Declining usage', 'Complaints', 'Renewals', 'Follow-ups', 'Customers going quiet',
+    'Customers who should be contacted', 'Customers who may leave'];
 
   const SIGNALS = ['Attendance dropped', 'Usage declined', 'Appointments missed', 'Complaints increased',
     'Payment behaviour changed', 'Response time changed', 'Fewer purchases', 'Fewer enquiries',
-    'More support requests', 'Increased product usage', 'Repeated requests', 'Communication stopped',
-    'Asked about another service'];
+    'More support requests', 'Repeated requests', 'Communication stopped'];
 
   const SOURCES = ['CRM', 'ERP', 'Appointment system', 'Attendance system', 'Billing', 'Email', 'Phone',
     'WhatsApp', 'Support system', 'Spreadsheets', 'Product usage', 'Multiple databases'];
@@ -3287,14 +3248,12 @@ function renderInterview() {
 
   const ACTIONS = ['We would call them.', 'We would speak to the customer.', 'We would offer another service.',
     'We would assign someone to follow up.', 'We would intervene before they stop coming.',
-    'We would offer an upgrade.', 'We would resolve the complaint.', 'We would change their plan.'];
+    'We would offer a time to come back.', 'We would resolve the complaint.', 'We would change their plan.'];
 
   /** What late discovery is allowed to cost — rupees are not the only answer. */
   const COSTS_KEEP = ['Lost customers', 'Lost renewals', 'Lost revenue', 'Unused capacity',
     'Reduced lifetime value', 'Staff time spent recovering customers', 'Customer dissatisfaction',
     'Refunds', 'Lost future purchases'];
-  const COSTS_GROW = ['Missed upgrades', 'Missed cross-sells', 'Lost expansion revenue', 'Missed opportunities',
-    'Under-utilisation', 'Sales-team time', 'Delayed purchases', 'Customers buying elsewhere'];
 
   /*
    * The four questions since 6 October 2026, from ICP_QUESTIONS — the same
@@ -3357,10 +3316,7 @@ function renderInterview() {
         + heard(ACTIONS)
         + note('&ldquo;We would know&rdquo; is not enough: detection is worth something only with an '
              + 'action behind it &mdash; detect, decide, act, outcome.')
-        + `<div class="sg-iv__pair">
-             <div><p class="sg-iv__label">Retention</p>${chips(COSTS_KEEP)}</div>
-             <div><p class="sg-iv__label">Growth</p>${chips(COSTS_GROW)}</div>
-           </div>`
+        + chips(COSTS_KEEP)
         + note('The strongest answer is one they already measure: &ldquo;We lose around 15 customers a '
              + 'month&rdquo; beats &ldquo;it probably costs us a lot&rdquo;. File all four answers on the '
              + 'Target Audience tab &mdash; the playbook fills from them.'),
@@ -3374,8 +3330,8 @@ function renderInterview() {
             + 'exploring with Svarg.')
         + label('Then thirty seconds, no more')
         + say('Svarg looks at signals across the systems you&rsquo;re already using, identifies '
-            + 'patterns that indicate a customer may be at risk or that there may be an opportunity '
-            + 'to grow the customer, explains why it thinks that, and helps the team act earlier.')
+            + 'patterns that indicate a customer may be at risk of leaving, explains why it thinks '
+            + 'that, and helps the team act earlier.')
         + label('Stop. Do not add')
         + chips(['AI agents', 'Autonomous workflows', 'Dozens of models', 'Dashboards',
           'Technical architecture', 'Integrations', 'Future roadmap'])
@@ -3417,7 +3373,7 @@ function renderInterview() {
   ];
 
   const CHAIN = ['Customer behaviour changes', 'A signal appears', 'The signal exists somewhere in the business',
-    'Nobody connects it', 'The customer keeps drifting, or the opportunity keeps disappearing',
+    'Nobody connects it', 'The customer keeps drifting away',
     'The business notices later', 'There was a clear action they could have taken earlier',
     'Late discovery has a measurable economic impact'];
 
@@ -3426,14 +3382,14 @@ function renderInterview() {
   el.innerHTML = `
     <section class="sg-iv">
       <div class="sg-iv__lead">
-        <p class="sg-iv__kicker">Svarg ICP Interview &mdash; Retention &amp; Growth</p>
+        <p class="sg-iv__kicker">Svarg ICP Interview &mdash; Retention</p>
         <p class="sg-iv__headline">Two minutes to set up, eleven to listen, two to say what Svarg is.</p>
         <p class="sg-iv__note">The failure mode of this conversation is always the same one: the
           seller starts explaining. The clock is there to stop that. Read the questions as written
           &mdash; each one fills a row of the validation matrix, and a question whose purpose you have
           forgotten comes back as an opinion instead of evidence.</p>
         <p class="sg-iv__note"><b>The goal is not to convince them Svarg is useful.</b> It is to find
-          out whether they already have a <b>recurring customer retention or growth problem that they
+          out whether they already have a <b>recurring customer retention problem that they
           discover too late.</b></p>
         <p class="sg-iv__note"><b>One script, every business.</b> Nothing spoken below names an
           industry, and only the opening blank changes from meeting to meeting. That is what makes the
@@ -3470,22 +3426,6 @@ function renderInterview() {
         ${label('The chain you are listening for')}
         ${seq(CHAIN)}
         <p class="sg-iv__note">That is the Svarg opportunity.</p>
-      </div>
-
-      <div class="sg-iv__part">
-        <h3>The two kinds of interview to expect</h3>
-        <p class="sg-iv__note">Do not force a business into retention or growth during the opening. Let
-          the interview show which it is.</p>
-        <div class="sg-iv__pair">
-          <div class="sg-iv__kind is-keep"><p class="sg-iv__label">Retention</p>
-            ${seq(['The customer is drifting', 'Signals exist', 'Nobody connects them', 'Found too late',
-              'An intervention could have saved them', 'Measurable value'])}</div>
-          <div class="sg-iv__kind is-grow"><p class="sg-iv__label">Growth</p>
-            ${seq(['The customer shows expansion intent', 'Signals exist', 'Nobody connects them',
-              'The opportunity is missed', 'An intervention could have created revenue', 'Measurable value'])}</div>
-        </div>
-        <p class="sg-iv__note">Both fit the same mechanism: <b>find important customer signals earlier, and
-          help the business act on them.</b></p>
       </div>
 
       <div class="sg-iv__part sg-iv__part--rule">
@@ -3567,19 +3507,17 @@ const VERTICALS = [
     examples: 'Clinics, wellness, gyms, salons, spas, physiotherapy',
     overlay: 'Clinics &amp; Wellness',
     hypothesis: 'Clinics and wellness businesses lose clients part-way through a course of '
-      + 'treatment, and growth from the clients they keep, because the signals sit across the booking system, '
-      + 'the phone and WhatsApp and nobody joins them. The cost is revenue: a client who stops, a package not '
-      + 'renewed, a treated session never billed.',
-    note: 'Narrowed on 6 October 2026, by decision, from &ldquo;reality does not reach '
-      + 'the business system&rdquo; to retention and growth; the earlier wording survives as the mechanism. What '
-      + 'carries it: Vesoma &mdash; a treated patient left marked no-show is revenue earned and never billed, '
-      + 'which now counts as growth; a package used past what was sold is a renewal or upgrade signal; a client '
-      + 'stopping mid-course is retention. The Wellness Co. &mdash; a converted customer drifting over three '
-      + 'months &mdash; is retention exactly, and is now the same category as Vesoma rather than a different '
-      + 'problem; whether it costs them anything is still unasked. iSPAN: last-minute cancellations sit near '
-      + 'retention; lead conversion is acquisition, outside the wedge. Two honest caveats: the cancellation '
-      + 'variant at Vesoma is our inference from the systems they described, not something they reported; and '
-      + 'the same category is not the same problem until the cost has been asked.',
+      + 'treatment because the signs that a client is drifting &mdash; missed appointments, longer gaps, '
+      + 'unanswered messages &mdash; sit across the booking system, the phone and WhatsApp, and nobody joins '
+      + 'them. The cost is revenue: a client who stops, a package not renewed.',
+    note: 'Narrowed on 7 October 2026, by decision, to retention only: growth &mdash; upgrades and '
+      + 'unbilled work &mdash; is a second thing to explain and comes later. What carries it now: The Wellness '
+      + 'Co. &mdash; a converted customer drifting over three months &mdash; is retention exactly; whether it '
+      + 'costs them anything is still unasked. Vesoma &mdash; about twenty appointments a month recorded as '
+      + 'No Show; which of those clients are drifting away is our inference, not something they reported, and '
+      + 'it is the next thing to ask them. The problem Vesoma did report &mdash; treated patients left marked '
+      + 'No Show, packages used past what was sold &mdash; is growth, and now outside the wedge. iSPAN: '
+      + 'last-minute cancellations sit near retention; lead conversion is acquisition, outside it.',
   },
   /*
    * Engineering & Project Operations replaced Automotive on 5 October 2026.
@@ -3616,7 +3554,7 @@ const VERTICALS = [
     examples: 'D2C subscriptions, food subscriptions, pet care, consumables',
     overlay: null,
     hypothesis: 'Untested. Subscription and repeat-purchase brands lose customers who skip, pause or slow '
-      + 'their reorders, and miss the ones ready for a bigger plan, because order history, support and '
+      + 'their reorders, because order history, support and '
       + 'messages sit apart and churn shows up only as a cancelled subscription.',
     note: 'Drafted on 7 October 2026; nobody has been interviewed. The risk to test early: one commerce '
       + 'platform may already hold most of the signals and flag churn itself, which would leave little for '
@@ -3644,7 +3582,7 @@ const VERTICALS = [
     examples: 'Hotels, resorts, travel, clubs, experiences',
     overlay: null,
     hypothesis: 'Untested. Hotels, clubs and experiences lose repeat guests and members between visits, '
-      + 'and miss upgrades and renewals, because stays, spend and feedback sit in separate systems and nobody '
+      + 'and miss renewals, because stays, spend and feedback sit in separate systems and nobody '
       + 'acts on them before the guest books elsewhere.',
     note: 'Drafted on 7 October 2026; nobody has been interviewed. The weakest fit on frequency: a guest may '
       + 'come once a year, so whether there is an early signal at all is the first thing to find out. Clubs '
@@ -4091,10 +4029,10 @@ function wireAudience(root) {
  */
 const FIRST_MESSAGE = {
   'clinics': {
-    subject: 'Customers who drift away &mdash; or are ready for more',
+    subject: 'Customers who drift away &mdash; and are noticed too late',
     /*
      * Recurring Services, 7 October 2026: the owner's rewrite, opening on
-     * customers drifting or ready for more. One line was changed before it
+     * customers drifting away (retention only since the same day). One line was changed before it
      * shipped: the draft said the centre reported patients leaving part-way
      * through their treatment, which is our inference, not what Vesoma
      * reported. The example below is what they said. The link is the lead's
@@ -4103,8 +4041,7 @@ const FIRST_MESSAGE = {
     email: [
       'Hi [Name],',
       'I&rsquo;m exploring a problem in recurring-service businesses: <b>customers often show signs '
-        + 'that they are starting to drift, or are ready for more, but the business notices only after '
-        + 'the opportunity has passed.</b>',
+        + 'that they are starting to drift away, but the business notices only after they have gone.</b>',
       /*
        * The owner's example, 7 October 2026, with two words held to what the
        * centre said: they reported about twenty BOOKINGS a month marked No
@@ -4130,8 +4067,7 @@ const FIRST_MESSAGE = {
      */
     short: [
       'Hi [Name] &mdash; I&rsquo;m exploring a problem in recurring-service businesses: customers often '
-        + 'show signs that they&rsquo;re starting to drift or are ready for more, but the business notices '
-        + 'too late.',
+        + 'show signs that they&rsquo;re starting to drift away, but the business notices too late.',
       'A wellness centre in Bengaluru found that around 20 appointments a month were being recorded as '
         + '&ldquo;No Show&rdquo;. The question it raises: which of those customers are simply missing an '
         + 'appointment, and which are starting to disengage?',
@@ -4431,7 +4367,7 @@ function renderFirstMessage(seg) {
           -->
           <a class="sg-fm__pdf" href="proposals/recurring-services-one-page-proposal.pdf" target="_blank" rel="noopener">
             <img src="proposals/recurring-services-one-page-proposal.png" loading="lazy"
-                 alt="The one-page proposal for recurring-service businesses: your customers show you before they leave, and before they are ready for more.">
+                 alt="The one-page proposal for recurring-service businesses: your customers show you before they leave.">
           </a>
         </article>` : ''}
       </div>
@@ -4562,28 +4498,22 @@ let deckFacts = null;
  * id, and an id the catalogue no longer has is dropped before it is drawn.
  */
 /*
- * Retention and growth, since 6 October 2026: the patients a clinic is
- * about to lose, and the revenue it is leaving with the ones it keeps. The
- * slide used to show every kind of check -- appointments, payments,
- * follow-ups -- under a count of the whole catalogue, which sold breadth the
- * ICP now says not to sell. Two in each group, still.
+ * Retention only, since 7 October 2026: the customers a business is about to
+ * lose. The slide used to show every kind of check under a count of the whole
+ * catalogue, which sold breadth the ICP says not to sell. Two in each group.
  */
 const CLINIC_WATCHERS = [
   { group: 'Retention — drifting away', items: [
-    ['stopped-coming', 'Stopped coming mid-treatment'],
-    ['gone-quiet', 'Patient gone quiet'],
+    ['stopped-coming', 'Stopped coming mid-course'],
+    ['gone-quiet', 'Customer gone quiet'],
   ] },
   { group: 'Retention — warning signs', items: [
-    ['no-show', 'Patient did not turn up'],
+    ['no-show', 'Did not turn up'],
     ['repeat-complaint', 'Complained more than once'],
   ] },
-  { group: 'Growth — ready for more', items: [
-    ['asked-to-upgrade', 'Asked about upgrading'],
-    ['renewal-due', 'Package ending with sessions left'],
-  ] },
-  { group: 'Growth — revenue left behind', items: [
-    ['absent-but-attended', 'Treated, but never billed'],
-    ['package-overused', 'Package used past what was sold'],
+  { group: 'Retention — at renewal', items: [
+    ['renewal-due', 'Package or plan ending soon'],
+    ['expiring-soon', 'Something they bought about to expire'],
   ] },
 ];
 
@@ -4595,12 +4525,12 @@ const DECK = [
     cover: true,
     /*
      * Recurring Services since 7 October 2026: clinics, wellness, gyms,
-     * salons, spas — the customer who drifts, and the one ready for more.
+     * salons, spas — the customer who drifts away (retention only, 7 October).
      */
     title: 'Your Customers Show You Before They Leave.',
-    titleAccent: 'And Before They’re Ready for More.',
-    sub: 'SvargAI reads the systems you already use to find the customers who are drifting away and '
-      + 'the ones ready for more — and tells your team who needs attention, why, and what to do next. '
+    titleAccent: 'Most Businesses Notice After.',
+    sub: 'SvargAI reads the systems you already use to find the customers who are starting to drift away '
+      + '— and tells your team who needs attention, why, and what to do next. '
       + 'No new software to learn. No workflows to replace.',
     hub: ['Bookings', 'Packages', 'Phone', 'WhatsApp', 'Payments'],
   },
@@ -4627,7 +4557,7 @@ const DECK = [
     n: '02',
     kicker: 'What it does',
     title: 'SvargAI Watches Your Customers While Your Team Runs the Business',
-    sub: 'For the customers you could lose, and the ones you could grow. Nothing to replace.',
+    sub: 'For the customers you could lose. Nothing to replace.',
     live: 'watchers',
   },
   {
@@ -4833,7 +4763,7 @@ function deckWatchers() {
   const shown = groups.reduce((n, g) => n + g.items.length, 0);
 
   return `
-    ${f ? `<p class="sg-deck__count"><b>${shown}</b> retention and growth checks available today</p>
+    ${f ? `<p class="sg-deck__count"><b>${shown}</b> retention checks available today</p>
       <p class="sg-deck__countsub">for your clinic — <b>you choose what to watch.</b></p>` : ''}
     <div class="sg-deck__groups">
       ${groups.map((g) => `

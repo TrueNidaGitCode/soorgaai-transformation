@@ -168,7 +168,7 @@ describe('one hypothesis, argued once', () => {
   it('leads with the problem, not with the customer profile', () => {
     // Problem -> ICP -> GTM. The ICP only means anything as "where the problem
     // in the first block costs money".
-    const problem = view.indexOf('businesses lose customers and growth because they are reactive by default');
+    const problem = view.indexOf('businesses lose customers because they are reactive by default');
     const icp = view.indexOf('the customer relationship, not the company size');
     const gtm = view.indexOf('win one customer problem, then expand');
     expect(problem).toBeGreaterThan(-1);
@@ -187,11 +187,11 @@ describe('one hypothesis, argued once', () => {
     }
   });
 
-  it('does not exclude sales workflows', () => {
-    // A quotation going cold between the inbox and the ERP is a sales
-    // workflow, and it is growth. The old "not this" card ruled it out by
-    // function; the walk-away card now says it is in.
-    expect(view).toMatch(/quotation going cold between the inbox and the ERP\s+is a sales workflow, and it is in/);
+  it('walks away from growth for now, and says why', () => {
+    // Retention only since 7 October 2026: growth is a second thing to
+    // explain, so it is named as outside the wedge rather than left implied.
+    expect(view).toMatch(/a problem outside retention, however costly &mdash; growth included/);
+    expect(view).toMatch(/pitching them now makes Svarg two products to explain/);
     expect(view).not.toMatch(/<p>Sales workflows\./);
   });
 
@@ -267,16 +267,17 @@ describe('what the page admits about itself', () => {
 describe('the problem, as two interviews described it', () => {
   const view = icpView();
 
-  it('names the outcome, keeps the cause, and keeps the record gap as one way it shows', () => {
-    // Retention and growth since 6 October 2026. Reactive-by-default stays as
-    // why; the record disagreeing with what happened stays as one way it shows,
-    // and unbilled delivered work counts as growth, by decision.
-    expect(view).toMatch(/lose customers, and growth from the customers they keep, because they are reactive by default/);
-    expect(view).toMatch(/revenue earned and never\s+billed, which is growth/);
+  it('names the outcome, keeps the cause, and shows it with the No Show example', () => {
+    // Retention only since 7 October 2026. Reactive-by-default stays as why;
+    // the No Show example is the one every pitch tells.
+    expect(view).toMatch(/businesses lose customers because they are reactive by default: customer behaviour/);
+    expect(view).toMatch(/twenty appointments a month recorded as No Show/);
+    expect(view).not.toMatch(/never\s+billed, which is growth/);
   });
 
   it('carries the one sentence a buyer repeats back', () => {
-    expect(view).toMatch(/to find the customers\s+you are at risk of losing and the customers you could grow/);
+    expect(view).toMatch(/to find the customers\s+you are at risk of losing &mdash; and tells your team what to do next/);
+    expect(view).not.toMatch(/customers you could grow/);
   });
 
   it('never ships that sentence without what it may not claim', () => {
@@ -344,6 +345,6 @@ describe('the problem is argued once, not twice', () => {
      */
     const view = icpView().replace(/\/\*[\s\S]*?\*\//g, '');
     expect(view).not.toMatch(/discover important problems too\s+late because/);
-    expect(view).toMatch(/the record says otherwise<\/b>/);
+    expect(view).toMatch(/look the same in the records<\/b>/);
   });
 });

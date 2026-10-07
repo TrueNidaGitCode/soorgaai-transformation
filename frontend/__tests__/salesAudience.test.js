@@ -178,7 +178,9 @@ describe('the verticals', () => {
   it('keeps the clinics hypothesis on customers at stake, with a cost', () => {
     const clinics = verticals.find((v) => v.id === 'clinics');
     expect(clinics.hypothesis).toMatch(/lose clients/i);
-    expect(clinics.hypothesis).toMatch(/growth/i);
+    // Retention only since 7 October 2026; the note says growth is outside.
+    expect(clinics.hypothesis).not.toMatch(/growth/i);
+    expect(clinics.note).toMatch(/retention only/i);
     expect(clinics.hypothesis).toMatch(/cost|revenue/i);
     expect(clinics.note).toMatch(/Vesoma/);
     expect(clinics.note).toMatch(/inference|inferred/i);

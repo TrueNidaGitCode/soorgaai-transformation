@@ -84,7 +84,7 @@ describe('seven slides, as approved', () => {
     // Recurring Services since 7 October 2026: the customer who drifts, and
     // the one ready for more.
     expect(deck).toContain('Your Customers Show You Before They Leave.');
-    expect(deck).toContain('And Before They\u2019re Ready for More.');
+    expect(deck).toContain('Most Businesses Notice After.');
     expect(deck).toContain('No new software to learn. No workflows to replace.');
   });
 
@@ -139,11 +139,11 @@ describe('one customer, carried through the deck', () => {
 });
 
 describe('what it says it watches', () => {
-  it('names them in four groups, two for retention and two for growth', () => {
+  it('names them in three retention groups', () => {
     // Since 6 October 2026: patients a clinic could lose, and revenue it could
     // grow, rather than every kind of check the catalogue holds.
     expect([...deck.matchAll(/group: '([^']+)'/g)].map((m) => m[1].replace(' — ', ' - ')))
-      .toEqual(['Retention - drifting away', 'Retention - warning signs', 'Growth - ready for more', 'Growth - revenue left behind']);
+      .toEqual(['Retention - drifting away', 'Retention - warning signs', 'Retention - at renewal']);
   });
 
   it('shows two in each, because a slide is taken in at a glance', () => {
@@ -155,7 +155,7 @@ describe('what it says it watches', () => {
 
   it('checks every one against the live catalogue before drawing it', () => {
     expect(deck).toContain('g.items.filter(([id]) => !f || known.has(id))');
-    for (const id of ['no-show', 'stopped-coming', 'gone-quiet', 'asked-to-upgrade', 'absent-but-attended', 'package-overused']) {
+    for (const id of ['no-show', 'stopped-coming', 'gone-quiet', 'repeat-complaint', 'renewal-due', 'expiring-soon']) {
       expect(deck).toContain(`'${id}'`);
     }
   });
@@ -164,7 +164,7 @@ describe('what it says it watches', () => {
     // The retention and growth checks drawn, each confirmed in the live
     // catalogue -- not the whole catalogue's total, which counts invoices.
     expect(deck).toContain('const shown = groups.reduce((n, g) => n + g.items.length, 0);');
-    expect(deck).toContain('retention and growth checks available today');
+    expect(deck).toContain('retention checks available today');
     expect(deck).toContain("api('/deck')");
     expect(slides).not.toMatch(/\b36\b/);
   });

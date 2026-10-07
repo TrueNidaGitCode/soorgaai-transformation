@@ -109,7 +109,7 @@ describe('ten steps, and the order is the content', () => {
 
   // Steps 1 and 8 renamed on 6 October 2026, for Retention & Growth.
   const TITLES = [
-    'Find the Acute Retention/Growth Problem',
+    'Find the Acute Retention Problem',
     'Find the Acute ICP',
     'Separate Acute ICP from Vanity Users',
     'Embed Yourself in the ICP',

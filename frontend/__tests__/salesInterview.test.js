@@ -170,7 +170,9 @@ describe('fifteen minutes, and the clock is the content', () => {
 
   it('accepts impact in something other than rupees', () => {
     expect(view).toContain('do not push for rupees');
-    for (const c of ['Lost customers', 'Unused capacity', 'Staff time', 'Missed upgrades']) expect(view, c).toContain(c);
+    for (const c of ['Lost customers', 'Unused capacity', 'Staff time', 'Lost renewals']) expect(view, c).toContain(c);
+    // Retention only since 7 October 2026.
+    expect(view).not.toMatch(/Missed upgrades|COSTS_GROW|Buying intent/);
   });
 
   it('is one script for every business, with one blank in it', () => {

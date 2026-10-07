@@ -254,3 +254,19 @@ describe('one example, everywhere it is told', () => {
     expect(page).not.toMatch(/10-session package|were treated/);
   });
 });
+
+describe('retention only, in everything a customer reads', () => {
+  it('pitches no growth in the messages, the deck or the one-pager', () => {
+    // 7 October 2026: explaining retention and growth together was one thing
+    // too many. Growth may be named as "later" on the internal tabs; it is
+    // not pitched where a customer reads.
+    const GROWTH = /growth|ready for more|grow them|upgrad|cross-sell|expansion|never billed/i;
+    const msg = copy().replace(/'\s*\+\s*'/g, '');
+    const clinic = msg.slice(msg.indexOf("'clinics'"), msg.indexOf("'engineering'")).replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(clinic).not.toMatch(GROWTH);
+    const deck = js.slice(js.indexOf('const CLINIC_WATCHERS'), js.indexOf('function deckHub')).replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(deck).not.toMatch(GROWTH);
+    const page = read('../../docs/proposals/recurring-services-one-page.html').replace(/<!--[\s\S]*?-->/g, '');
+    expect(page).not.toMatch(GROWTH);
+  });
+});

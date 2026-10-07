@@ -205,19 +205,33 @@ function table(cols, rows, row) {
  * And the segment being sold to is always shown, even at zero. A chip reading
  * "Clinics & Wellness 0" is the most useful thing on this screen.
  */
+/*
+ * Grouped by customer relationship since 7 October 2026 — the five B2C
+ * categories and the one B2B vertical the Target Audience tab is organised
+ * into, with the same ids, so a lead filtered here is the same group whose
+ * interviews are filed there.
+ *
+ * Order matters: the first match wins. High-value repeat services come
+ * before Recurring Services, because "dental clinic" is the occasional,
+ * high-ticket visit, not a course of sessions; academies and coaching are
+ * Education & Memberships, whatever the sport.
+ */
 const FUNNEL_SEGMENTS = [
-  { id: 'clinics', name: 'Clinics &amp; Wellness', always: true,
-    is: /clinic|wellness|physio|rehab|therap|spa\b|salon|dental|health|hospital|fitness|gym|yoga|nutrition|medic/i },
-  { id: 'sports', name: 'Sports &amp; coaching',
-    is: /academy|academies|sport|cricket|tennis|football|badminton|coaching|athlet/i },
-  { id: 'education', name: 'Education',
-    is: /school|edtech|education|tuition|learning|college|university|institute/i },
-  { id: 'electronics', name: 'Electronics &amp; industrial',
-    is: /electronic|semiconductor|pcb|embedded|automation|robot|sensor|metrology|machine|instrument|component|power|material|chemical|cable|connector|smt|solder|manufactur|engineering software|eda|iot|vision|energy|warehouse|wire|surface treatment|test|media|tool/i },
+  { id: 'highvalue', group: 'B2C', name: '4 High-Value Repeat Services', always: true,
+    is: /dental|dentist|auto ?service|car service|garage|automobile service|home service|premium health|hospital(?!ity)|diagnostic|eye care|dermatolog/i },
+  { id: 'clinics', group: 'B2C', name: '1 Recurring Services', always: true,
+    is: /clinic|wellness|physio|rehab|therap|spa\b|salon|beauty|health|fitness|gym|yoga|pilates|nutrition|medic/i },
+  { id: 'education', group: 'B2C', name: '2 Education &amp; Memberships', always: true,
+    is: /academy|academies|sport|cricket|tennis|football|badminton|coaching|athlet|school|edtech|education|tuition|learning|college|university|institute|music|dance|membership/i },
+  { id: 'subscription', group: 'B2C', name: '3 Subscription &amp; Repeat Purchase', always: true,
+    is: /subscription|d2c|direct.to.consumer|meal|food|\bpets?\b|pet care|consumable|grocery|e-?commerce|repeat purchase/i },
+  { id: 'hospitality', group: 'B2C', name: '5 Hospitality &amp; Leisure', always: true,
+    is: /hotel|resort|hospitality|travel|tour|club|leisure|experience|restaurant|cafe|homestay/i },
+  { id: 'engineering', group: 'B2B', name: 'Engineering &amp; industrial', always: true,
+    is: /engineering|project|epc|electronic|semiconductor|pcb|embedded|automation|robot|sensor|metrology|machine|instrument|component|power|material|chemical|cable|connector|smt|solder|manufactur|eda|iot|vision|energy|warehouse|wire|surface treatment|test|media|tool/i },
   { id: 'other', name: 'Other' },
   { id: 'unset', name: 'Not set' },
 ];
-
 /** Which group a row falls in. Never null: everything lands somewhere. */
 function segmentOf(row) {
   const text = String(row?.industry || '').trim();
@@ -242,12 +256,17 @@ function renderIndustryFilter() {
   const totals = {};
   for (const r of all) totals[segmentOf(r)] = (totals[segmentOf(r)] || 0) + 1;
 
-  const shown = FUNNEL_SEGMENTS.filter(s => totals[s.id] || s.always);
+  const shown = FUNNEL_SEGMENTS.filter(s => totals[s.id] || s.always)
+    .sort((a, b) => (a.group ? 0 : 1) - (b.group ? 0 : 1) || String(a.group || '').localeCompare(String(b.group || ''))
+      || a.name.localeCompare(b.name));
+  // A label before the first chip of each group: B2C, B2B, then the rest.
+  const label = (s, i) => (s.group && s.group !== (shown[i - 1] || {}).group
+    ? `<span class="sg-kinds__label">${s.group}</span>` : '');
 
   el.innerHTML = `<span class="sg-kinds__label">Industry</span>`
     + `<button type="button" data-ind="all" class="sg-ind${state.industry === 'all' ? ' sg-ind--on' : ''}">`
     + `All <span class="sg-kind__n">${all.length}</span></button>`
-    + shown.map(s => `
+    + shown.map((s, i) => `${label(s, i)}
       <button type="button" data-ind="${s.id}"
               class="sg-ind${state.industry === s.id ? ' sg-ind--on' : ''}${s.always ? ' sg-ind--focus' : ''}">
         ${s.name} <span class="sg-kind__n">${totals[s.id] || 0}</span>
@@ -3986,7 +4005,7 @@ function renderAudience() {
   el.innerHTML = `
     <section class="sg-ta">
       ${[['B2C', 'B2C &mdash; by customer relationship'], ['B2B', 'B2B']].map(([g, title]) => `
-      <p class="sg-ta__glabel">${title}</p>
+      <p class="sg-seg__group">${title}</p>
       <div class="sg-seg" role="tablist" aria-label="${g} vertical">
         ${VERTICALS.filter((v) => v.group === g).map((v) => `
           <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
@@ -4230,9 +4249,19 @@ const ENGINEERING_NEXT = ['Zettaone Technologies', 'Ramdisk', 'iTWINE Technologi
   'TalentRabbit', 'Evenion Technologies', 'RDMC', 'Mechano Engineering', 'Raj Engineering Industries'];
 
 /** Which industries the Pitches tab is organised into. */
+/*
+ * Since 7 October 2026 these are the Target Audience categories, read from
+ * VERTICALS rather than kept a second time: five B2C by customer
+ * relationship, then B2B. A category with no first message yet says so.
+ */
+const PITCH_NOTE = {
+  clinics: 'Where the effort is going now',
+  engineering: 'Discovery &mdash; nobody interviewed yet',
+};
 const PITCH_SEGMENTS = [
-  { id: 'clinics', name: 'Clinics &amp; Wellness', note: 'Where the effort is going now' },
-  { id: 'engineering', name: 'Engineering &amp; Project Operations', note: 'The second vertical &mdash; discovery' },
+  ...VERTICALS.map((v) => ({
+    id: v.id, group: v.group, name: `${v.n ? `${v.n} ` : ''}${v.name}`, note: PITCH_NOTE[v.id] || 'No pitch yet',
+  })),
   { id: 'other', name: 'Other industries', note: 'Patterns kept from earlier conversations' },
 ];
 
@@ -4995,15 +5024,20 @@ function renderPitches() {
   const mine = PITCHES.filter((p) => (PITCH_SEGMENT_OF[p.id] || 'other') === pitchSegment);
 
   el.innerHTML = `
-    <div class="sg-seg" role="tablist" aria-label="Industry">
-      ${PITCH_SEGMENTS.map((s) => `
+    ${[['B2C', 'B2C &mdash; by customer relationship'], ['B2B', 'B2B'], ['', 'Earlier conversations']].map(([g, title]) => `
+    <p class="sg-seg__group">${title}</p>
+    <div class="sg-seg" role="tablist" aria-label="${title}">
+      ${PITCH_SEGMENTS.filter((s) => (s.group || '') === g).map((s) => `
         <button type="button" class="sg-seg__b${s.id === pitchSegment ? ' is-on' : ''}"
                 data-seg="${s.id}" aria-selected="${s.id === pitchSegment}">
           ${s.name}<span>${s.note}</span>
         </button>`).join('')}
-    </div>
+    </div>`).join('')}
 
-    ${renderFirstMessage(pitchSegment)}
+    ${renderFirstMessage(pitchSegment) || (pitchSegment === 'other' ? '' : `
+    <p class="sg-fm__sub sg-pitch__none">No first message for this category yet. It is written after the
+      first interviews here, in the words those customers used &mdash; not before. The draft hypothesis
+      is on the Target Audience tab.</p>`)}
 
     <div class="sg-pitches">${mine.map(renderPitch).join('')}</div>
 
@@ -5014,10 +5048,15 @@ function renderPitches() {
   // Drawn immediately from what is already known, and again when /deck answers.
   if (pitchSegment === 'clinics') loadDeckFacts();
 
-  el.querySelector('.sg-seg').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-seg]');
-    if (b) setPitchSegment(b.dataset.seg);
-  });
+  // Wired once: the panel outlives every redraw, and a second listener per
+  // redraw would switch the segment twice per click.
+  if (!el.dataset.segWired) {
+    el.dataset.segWired = '1';
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-seg]');
+      if (b) setPitchSegment(b.dataset.seg);
+    });
+  }
 
   // Choosing somebody re-renders both messages with their name and link.
   const who = el.querySelector('#sg-fm-lead');

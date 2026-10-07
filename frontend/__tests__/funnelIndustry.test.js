@@ -94,23 +94,48 @@ describe('the spellings actually in the funnel', () => {
     'Cables & Connectors',
   ];
 
-  it('collapses thirty-one spellings into one industry', () => {
-    for (const s of ELECTRONICS) expect(segmentOf({ industry: s }), s).toBe('electronics');
+  it('collapses thirty-one spellings into the one B2B group', () => {
+    // Electronics and industrial is Engineering & industrial since 7 October
+    // 2026, the B2B side of the Target Audience categories.
+    for (const s of ELECTRONICS) expect(segmentOf({ industry: s }), s).toBe('engineering');
   });
 
   it('recognises the segment being sold to, in the words a clinic would use', () => {
     for (const s of ['Physiotherapy', 'Physiotherapy clinic', 'Wellness centre',
-      'Health & wellness', 'Rehabilitation', 'Dental clinic', 'Fitness & gym',
-      'Sports medicine', 'Yoga studio']) {
+      'Health & wellness', 'Rehabilitation', 'Fitness & gym', 'Sports medicine', 'Yoga studio', 'Salon']) {
       expect(segmentOf({ industry: s }), s).toBe('clinics');
     }
   });
 
-  it('keeps academies and schools apart from clinics', () => {
-    expect(segmentOf({ industry: 'Cricket academy' })).toBe('sports');
-    expect(segmentOf({ industry: 'Coaching centre' })).toBe('sports');
-    expect(segmentOf({ industry: 'School' })).toBe('education');
-    expect(segmentOf({ industry: 'EdTech' })).toBe('education');
+  it('puts occasional, high-ticket visits in High-Value Repeat Services, not Recurring', () => {
+    for (const s of ['Dental clinic', 'Dentist', 'Auto service', 'Home services', 'Hospital']) {
+      expect(segmentOf({ industry: s }), s).toBe('highvalue');
+    }
+  });
+
+  it('recognises subscriptions and hospitality', () => {
+    expect(segmentOf({ industry: 'D2C subscription' })).toBe('subscription');
+    expect(segmentOf({ industry: 'Pet care' })).toBe('subscription');
+    expect(segmentOf({ industry: 'Pets' })).toBe('subscription');
+    expect(segmentOf({ industry: 'Boutique hotel' })).toBe('hospitality');
+    expect(segmentOf({ industry: 'Country club' })).toBe('hospitality');
+    // Two words that contain other words: hospitality is not a hospital, and
+    // petrochemicals are not pet care.
+    expect(segmentOf({ industry: 'Hospitality' })).toBe('hospitality');
+    expect(segmentOf({ industry: 'Petrochemicals' })).not.toBe('subscription');
+  });
+
+  it('keeps academies and schools apart from clinics, in Education & Memberships', () => {
+    for (const s of ['Cricket academy', 'Coaching centre', 'School', 'EdTech', 'Dance school']) {
+      expect(segmentOf({ industry: s }), s).toBe('education');
+    }
+  });
+
+  it('uses the Target Audience categories, by the same ids', () => {
+    expect(FUNNEL_SEGMENTS.filter((s) => s.group).map((s) => [s.group, s.id]).sort()).toEqual([
+      ['B2B', 'engineering'], ['B2C', 'clinics'], ['B2C', 'education'], ['B2C', 'highvalue'],
+      ['B2C', 'hospitality'], ['B2C', 'subscription'],
+    ]);
   });
 });
 

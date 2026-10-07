@@ -1760,33 +1760,6 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
 .sg-who__more > summary:hover { color: #fff; }
 .sg-who__more[open] > summary { margin-bottom: 14px; }
 
-.sg-who__matrix { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-.sg-who__matrix thead th {
-  padding: 0 12px 7px 0;
-  text-align: left;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-.sg-who__matrix tbody th {
-  width: 11rem;
-  padding: 8px 14px 8px 0;
-  text-align: left;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  vertical-align: top;
-}
-.sg-who__matrix td {
-  padding: 8px 12px 8px 0;
-  color: rgba(255, 255, 255, 0.68);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  vertical-align: top;
-}
-.sg-who__ev { color: rgba(255, 255, 255, 0.45) !important; }
 
 .sg-who__k {
   display: inline-block;
@@ -1795,36 +1768,10 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
   font-weight: 700;
 }
 
-.sg-who__formula {
-  margin: 16px 0 8px;
-  padding: 10px 14px;
-  background: rgba(92, 197, 167, 0.07);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
 
 /* ── Clusters and the evidence bar ───────────────────────────────────────── */
 
-.sg-who__clusters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
 
-.sg-who__cluster {
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.025);
-  border-radius: 9px;
-  min-width: 0;
-}
-.sg-who__cluster h4 { margin: 0 0 7px; font-size: 0.92rem; font-weight: 700; color: #fff; }
-.sg-who__cluster p { margin: 0 0 6px; font-size: 0.85rem; line-height: 1.5; color: rgba(255, 255, 255, 0.7); }
-.sg-who__cluster p:last-child { margin-bottom: 0; }
 
 /* Ordered, and the order is the point: each rung is stronger evidence than
    the one above it. */
@@ -1841,7 +1788,6 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
 @media (max-width: 620px) {
   .sg-who__attrs th { width: auto; display: block; padding-bottom: 2px; border-bottom: 0; }
   .sg-who__attrs td { display: block; padding-top: 0; }
-  .sg-who__matrix tbody th { width: auto; }
 }
 
 /* ── The ICP tab: flows, the pitch spine, criteria, GTM ─────────────────────

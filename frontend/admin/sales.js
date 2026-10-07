@@ -2455,62 +2455,6 @@ function renderIcpView() {
   ];
 
   /*
-   * The validation instrument: the criteria above as questions, in the same
-   * order, plus the two about us. One instrument, asked out loud.
-   */
-  const MATRIX = [
-    ['Recurrence', 'Do customers come back &mdash; buy, visit or renew repeatedly?', 'How often, and how many customers'],
-    ['Signal availability', 'What would have warned you that a customer was drifting, or ready to buy more?', 'Which system holds it'],
-    ['Fragmentation', 'Is it spread across more than one system or channel?', 'CRM + phone + WhatsApp'],
-    ['Manual effort', 'Who joins those up today, and how?', 'The person and the actual steps'],
-    ['Lateness', 'How long after a customer changes do you notice?', 'Days, weeks, or at renewal'],
-    ['Cost of lateness', 'What does losing one customer, or missing one upgrade, cost?', 'Rupees per customer'],
-    ['Actionability', 'Once you know, what do you do?', 'The named intervention'],
-    ['Measurability', 'Could we show that it worked in a number?', 'The number, and who owns it'],
-    ['Buying access', 'Can we reach whoever approves a pilot?', 'Name and role'],
-    ['Deployment friction', 'Can we be running on your data in days?', 'Days / weeks / months'],
-  ];
-
-  /**
-   * Scoring, grouped by what it answers, with reach as a gate.
-   *
-   * The old formula added everything and subtracted integration difficulty,
-   * so a strong enough problem could outscore a company nobody could reach.
-   * This page's own rule is that a perfect problem at a company we cannot
-   * reach or deploy into is not an opportunity -- so reach is a gate, not a
-   * term in the sum.
-   */
-  const SCORE = [
-    ['A', 'Customer recurrence', 'Problem strength', 'Do customers interact or buy repeatedly?'],
-    ['B', 'Economic impact', 'Problem strength', 'What does a lost customer or a missed upgrade cost?'],
-    ['C', 'Signal availability', 'Observability', 'Do the signals already exist digitally?'],
-    ['D', 'Signal fragmentation', 'Observability', 'How many systems and channels hold them?'],
-    ['E', 'Manual effort', 'Observability', 'How much human dot-joining is there today?'],
-    ['F', 'Actionability', 'Actionability', 'Is the intervention clear once the customer is found?'],
-    ['G', 'Measurability', 'Actionability', 'Can the outcome be shown in a number?'],
-    ['H', 'Buying access', 'Reach (gate)', 'Can we reach whoever approves a pilot?'],
-    ['I', 'Deployment friction', 'Reach (gate)', 'Can we be running in days or weeks?'],
-  ];
-
-  /**
-   * Where to look, as market hypotheses. None is a validated ICP: the point of
-   * early GTM is to find which problem-and-industry pair produces the
-   * strongest evidence. Engineering services is here as account retention --
-   * in a services firm the client is the customer, and a missed milestone is
-   * how an account, or the next statement of work, is lost.
-   */
-  const CLUSTERS = [
-    ['A', 'Clinics &amp; wellness', 'Physiotherapy &middot; sports medicine &middot; wellness &middot; specialty clinics',
-      'Three interviews, one live application. Retention: a course abandoned part-way, a converted customer drifting over three months. Growth: packages renewed or upgraded, and treated sessions left unbilled.'],
-    ['B', 'Distribution', 'Electronic component distributors &middot; industrial distributors &middot; B2B trading',
-      'No interviews. Growth: an enquiry or quotation goes cold between email, WhatsApp and the ERP. Retention: a repeat buyer quietly stops ordering.'],
-    ['C', 'Engineering services', 'Product, embedded and industrial engineering firms of 50&ndash;500 people',
-      'No interviews. Account retention: a client project slips while the committed date stands, and the account or the next statement of work is lost. Growth: the next phase not proposed in time.'],
-    ['D', 'Sports academies &amp; coaching', 'Academies &middot; coaching centres &middot; training businesses',
-      'One live application. Retention: a student drifts out and nobody notices before the fee renewal. Growth: renewals and upgrades to the next programme.'],
-  ];
-
-  /*
    * sg-chain, NOT sg-flow: the Pitches tab already owns .sg-flow as a section
    * wrapper with its own __steps and __step children. Reusing the name here
    * turned that section into a wrapping flex row and put a border on every one
@@ -2648,43 +2592,6 @@ function renderIcpView() {
               everyone agreeing it was interesting. A quotation going cold between the inbox and the ERP
               is a sales workflow, and it is in: it is growth from a customer already asking.</p>
           </div>`)}
-
-        <details class="sg-who__more">
-          <summary>The validation instrument &mdash; what to ask in every conversation</summary>
-          <table class="sg-who__matrix">
-            <thead><tr><th>Dimension</th><th>Question</th><th>Evidence</th></tr></thead>
-            <tbody>${MATRIX.map(([d, q, e]) =>
-              `<tr><th>${d}</th><td>${q}</td><td class="sg-who__ev">${e}</td></tr>`).join('')}</tbody>
-          </table>
-        </details>
-
-        <details class="sg-who__more">
-          <summary>Scoring a prospect &mdash; 1 to 5 on each</summary>
-          <table class="sg-who__matrix">
-            <tbody>${SCORE.map(([k, name, group, q]) =>
-              `<tr><th><span class="sg-who__k">${k}</span> ${name}</th><td>${q}</td><td class="sg-who__ev">${group}</td></tr>`).join('')}</tbody>
-          </table>
-          <p class="sg-who__formula">Fit = (A + B) + (C + D + E) + (F + G) &mdash; counted only when H and I are both 3 or more</p>
-          <p class="sg-who__note">How strong the problem is, how observable, how actionable &mdash; and
-            whether Svarg can reach and deploy into the customer at all, as a gate rather than a term in
-            the sum. Not a scientific formula and not pretending to be one: its value is that two people
-            score the same prospect differently and then have to say why.</p>
-        </details>
-
-        <details class="sg-who__more">
-          <summary>Where to look first &mdash; market hypotheses, not validated ICPs</summary>
-          <p class="sg-who__note"><b>Choose the recurring retention or growth problem first</b>, then use
-            industries as places to test whether it repeats. None of these is a validated ICP; the
-            Target Audience tab is where one becomes one.</p>
-          <div class="sg-who__clusters">
-            ${CLUSTERS.map(([k, name, list, why]) => `
-              <div class="sg-who__cluster">
-                <h4><span class="sg-who__k">${k}</span> ${name}</h4>
-                <p>${list}</p>
-                <p class="sg-who__note">${why}</p>
-              </div>`).join('')}
-          </div>
-        </details>
       </div>
 
       <div class="sg-who__panel" data-panel="gtm"${on === 'gtm' ? '' : ' hidden'}>

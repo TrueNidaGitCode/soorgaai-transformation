@@ -224,12 +224,12 @@ describe('what the page admits while somebody is reading it aloud', () => {
     expect(view).toMatch(/nothing is sent outward yet/);
   });
 
-  it('fills the ICP tab’s own matrix rows, not a second vocabulary', () => {
-    const icp = fn('renderIcpView');
+  it('fills its own matrix rows, the one matrix the Sales page keeps', () => {
+    // Since 7 October 2026 the ICP tab no longer carries a copy of the matrix;
+    // every "Fills" tag here names a row of the matrix on this tab.
     for (const dimension of ['Recurrence', 'Lateness', 'Signal availability',
-      'Fragmentation', 'Manual effort', 'Actionability', 'Cost of lateness']) {
-      expect(view, `interview: ${dimension}`).toContain(dimension);
-      expect(icp, `icp: ${dimension}`).toContain(`'${dimension}'`);
+      'Fragmentation', 'Manual effort', 'Actionability', 'Cost of lateness', 'Measurability']) {
+      expect(view, `interview: ${dimension}`).toContain(`['${dimension}',`);
     }
   });
 });

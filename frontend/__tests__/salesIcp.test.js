@@ -59,6 +59,18 @@ function pitchesView() {
   throw new Error('renderPitches is unbalanced');
 }
 
+/** Any one top-level function's source. */
+function fn(name) {
+  const start = js.indexOf(`function ${name}() {`);
+  expect(start, `${name} not found`).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = js.indexOf('{', start); i < js.length; i++) {
+    if (js[i] === '{') depth++;
+    else if (js[i] === '}' && --depth === 0) return js.slice(start, i + 1);
+  }
+  throw new Error(`${name} is unbalanced`);
+}
+
 /**
  * The block-level class names a view renders, ignoring __element and --modifier
  * suffixes: `sg-chain__foo` and `sg-chain--down` both belong to `sg-chain`.
@@ -175,31 +187,39 @@ describe('one hypothesis, argued once', () => {
     }
   });
 
-  it('does not exclude sales workflows, because cluster B is one', () => {
-    // "An enquiry or quotation goes cold between email, WhatsApp and the ERP"
-    // is a sales workflow. The old "not this" card ruled it out by function.
-    expect(view).toMatch(/quotation goes cold/);
+  it('does not exclude sales workflows', () => {
+    // A quotation going cold between the inbox and the ERP is a sales
+    // workflow, and it is growth. The old "not this" card ruled it out by
+    // function; the walk-away card now says it is in.
+    expect(view).toMatch(/quotation going cold between the inbox and the ERP\s+is a sales workflow, and it is in/);
     expect(view).not.toMatch(/<p>Sales workflows\./);
   });
 
-  it('asks the matrix and the criteria for the same seven things', () => {
+  it('asks the matrix and the criteria for the same things', () => {
     /*
      * Two instruments in two vocabularies is how a prospect qualifies on one
-     * screen and fails on the next. Each criterion needs its matrix row.
+     * screen and fails on the next. Since 7 October 2026 the matrix lives
+     * only on the ICP Interview tab ("What you are actually measuring"); the
+     * ICP tab keeps the criteria. Each criterion still needs its row there.
      */
+    const interview = fn('renderInterview');
     for (const dimension of ['Recurrence', 'Signal availability', 'Fragmentation',
       'Manual effort', 'Lateness', 'Cost of lateness', 'Actionability', 'Measurability']) {
-      expect(view, dimension).toContain(`'${dimension}'`);
+      expect(interview, dimension).toContain(`['${dimension}',`);
     }
+    // And the ICP tab no longer carries a second copy.
+    expect(view).not.toMatch(/const (MATRIX|SCORE|CLUSTERS) = /);
   });
 
   it('keeps the two qualifiers that are about us, in both instruments', () => {
     // A perfect problem at a company we cannot reach is not an opportunity —
     // and these were the rows most easily lost in a rewrite.
-    // Three since the scoring names them too, as the reach gate.
-    expect((view.match(/Buying access/g) || []).length).toBeGreaterThanOrEqual(2);
-    expect((view.match(/Deployment friction/g) || []).length).toBeGreaterThanOrEqual(2);
-    expect(view).toMatch(/counted only when H and I are both 3 or more/);
+    expect(view).toContain("['Buying access', 'Can we reach whoever approves a pilot?']");
+    expect(view).toContain("['Deployment friction', 'Can we be running on their data in days or weeks, not quarters?']");
+    // And the interview asks both, by the same names or the shorter one.
+    const interview = fn('renderInterview');
+    expect(interview).toContain("['Access', 'Can you get to the required systems and data?']");
+    expect(interview).toContain("['Deployment friction', 'How difficult would it be to connect?']");
   });
 });
 

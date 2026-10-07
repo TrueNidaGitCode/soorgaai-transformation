@@ -20,11 +20,15 @@
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="marketing.css?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="landing-hero.css?v=2">
 
   <script src="login/config.js"></script>
   <script src="shared/ctaRouter.js"></script>
 </head>
-<body class="mkt">
+<body class="mkt mkt--home">
 
   <!-- ── Top nav ──────────────────────────────────────────────── -->
   <header class="mkt-nav">
@@ -114,111 +118,83 @@
 
   <main>
 
-    <!-- ── Hero ───────────────────────────────────────────────── -->
-    <section class="mkt-hero">
-      <div class="mkt-hero__grid">
+    <!-- ── Hero — retention ───────────────────────────────────── -->
+    <section class="lh-hero">
 
-        <div class="mkt-hero__content">
-          <p class="mkt-hero__eyebrow">Find problems before they become costly</p>
-          <h1 class="mkt-hero__heading">Your business changes every day.<br>You shouldn't find out late.</h1>
-          <p class="mkt-hero__sub">
-            The signs that something is going wrong are already in your systems —
-            spread across a CRM, a spreadsheet, an inbox and a chat thread, where
-            nobody is joining them up. Svarg watches them for you, finds what
-            needs attention, and shows you the records it read.
-          </p>
+      <div class="lh-hero__content">
+        <p class="lh-hero__eyebrow">Customer retention</p>
+        <h1 class="lh-hero__heading">Your customers are giving you signals. <span class="lh-hero__heading-accent">Know what they mean before it’s too late.</span></h1>
+        <p class="lh-hero__sub">Svarg connects signals across your existing systems to find customers who are quietly drifting away — and tells you why, while there’s still time to win them back.</p>
 
-          <div class="mkt-hero__actions">
-            <button type="button" id="mkt-cta-hero" class="cta-button cta-button--primary">Tell Svarg what to watch</button>
-            <a href="#stack" class="mkt-hero__secondary">See how it works ↓</a>
-          </div>
+        <div class="lh-hero__actions">
+          <button type="button" id="mkt-cta-hero" class="lh-btn">See who’s at risk</button>
+          <a href="/company/contact-us.html" class="lh-link">Get a demonstration</a>
         </div>
+      </div>
 
-        <!-- Decorative product visualization — mirrors Cob's actual generation
-             flow. Hidden from assistive tech; the flow is already described
-             in the text column. -->
-        <div class="mkt-hero__visual" aria-hidden="true">
-          <div class="mkt-blueprint">
-            <div class="mkt-blueprint__header">
-              <span class="mkt-blueprint__title">AI Transformation</span>
-              <span class="mkt-blueprint__live"><span class="mkt-blueprint__dot"></span>Generating</span>
+      <!-- Sources → Svarg → six-step loop. The sources, curves and node
+           are decoration; the steps are real content and stay readable. -->
+      <div class="lh-hero__visual">
+        <div class="lh-diagram-fit" id="lh-diagram-fit">
+          <div class="lh-diagram">
+            <svg class="lh-flow" width="340" height="520" viewBox="0 0 340 520" aria-hidden="true">
+              <path d="M148 69 C178 69 170 259 200 259"/>
+              <path d="M148 145 C178 145 170 259 200 259"/>
+              <path d="M148 221 C178 221 170 259 200 259"/>
+              <path d="M148 297 C178 297 170 259 200 259"/>
+              <path d="M148 373 C178 373 170 259 200 259"/>
+              <path d="M148 449 C178 449 170 259 200 259"/>
+              <path d="M308 259 L340 259"/>
+            </svg>
+
+            <ul class="lh-sources" aria-hidden="true">
+              <li class="lh-source"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>CRM</li>
+              <li class="lh-source"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Bookings</li>
+              <li class="lh-source"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>Usage</li>
+              <li class="lh-source"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Calls</li>
+              <li class="lh-source"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>Payments</li>
+              <li class="lh-source"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>More</li>
+            </ul>
+
+            <div class="lh-node" aria-hidden="true">
+              <span class="lh-node__mark"><img src="assets/logo-nav.png" alt=""></span>
+              Svarg
             </div>
 
-            <ol class="mkt-blueprint__stages">
-              <li class="mkt-blueprint__stage" style="--i:0">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">1</span>
-                  <span class="mkt-blueprint__line"><span class="mkt-blueprint__flow"></span></span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">Business Problem</span>
-                  <span class="mkt-blueprint__meta">Your objective, described</span>
-                </div>
-              </li>
-              <li class="mkt-blueprint__stage" style="--i:1">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">2</span>
-                  <span class="mkt-blueprint__line"><span class="mkt-blueprint__flow"></span></span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">AI Blueprint</span>
-                  <span class="mkt-blueprint__meta">Cob — strategy, ranked &amp; justified</span>
-                </div>
-              </li>
-              <li class="mkt-blueprint__stage" style="--i:2">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">3</span>
-                  <span class="mkt-blueprint__line"><span class="mkt-blueprint__flow"></span></span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">Data Ready</span>
-                  <span class="mkt-blueprint__meta">Aria — structured, sensitive data removed</span>
-                </div>
-              </li>
-              <li class="mkt-blueprint__stage" style="--i:3">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">4</span>
-                  <span class="mkt-blueprint__line"><span class="mkt-blueprint__flow"></span></span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">AI Infrastructure</span>
-                  <span class="mkt-blueprint__meta">Arth — model &amp; compute, ready</span>
-                </div>
-              </li>
-              <li class="mkt-blueprint__stage" style="--i:4">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">5</span>
-                  <span class="mkt-blueprint__line"><span class="mkt-blueprint__flow"></span></span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">AI Application</span>
-                  <span class="mkt-blueprint__meta">Eame — agent built, mapped to your process</span>
-                </div>
-              </li>
-              <li class="mkt-blueprint__stage" style="--i:5">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">6</span>
-                  <span class="mkt-blueprint__line"><span class="mkt-blueprint__flow"></span></span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">Enterprise Integration</span>
-                  <span class="mkt-blueprint__meta">Yusu — deployed into your tools</span>
-                </div>
-              </li>
-              <li class="mkt-blueprint__stage" style="--i:6">
-                <div class="mkt-blueprint__track">
-                  <span class="mkt-blueprint__node">7</span>
-                </div>
-                <div class="mkt-blueprint__body">
-                  <span class="mkt-blueprint__name">Working AI Solution</span>
-                  <span class="mkt-blueprint__progress"><span class="mkt-blueprint__progress-bar"></span></span>
-                </div>
-              </li>
-            </ol>
+            <div class="lh-panel">
+              <p class="lh-panel__label">How Svarg keeps customers</p>
+              <ol class="lh-steps" id="lh-steps">
+                <li class="lh-step is-active">
+                  <span class="lh-step__icon" aria-hidden="true"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+                  <span class="lh-step__body"><span class="lh-step__title">Detect</span><span class="lh-step__desc">Spot customers drifting away across all your systems.</span></span>
+                </li>
+                <li class="lh-step">
+                  <span class="lh-step__icon" aria-hidden="true"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                  <span class="lh-step__body"><span class="lh-step__title">Explain</span><span class="lh-step__desc">See the real signals behind every risk.</span></span>
+                </li>
+                <li class="lh-step">
+                  <span class="lh-step__icon" aria-hidden="true"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+                  <span class="lh-step__body"><span class="lh-step__title">Recommend</span><span class="lh-step__desc">Get the next best action for each customer.</span></span>
+                </li>
+                <li class="lh-step">
+                  <span class="lh-step__icon" aria-hidden="true"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></span>
+                  <span class="lh-step__body"><span class="lh-step__title">Act</span><span class="lh-step__desc">Reach out through the tools your team already uses.</span></span>
+                </li>
+                <li class="lh-step">
+                  <span class="lh-step__icon" aria-hidden="true"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+                  <span class="lh-step__body"><span class="lh-step__title">Measure</span><span class="lh-step__desc">Track who stayed and which actions worked.</span></span>
+                </li>
+                <li class="lh-step">
+                  <span class="lh-step__icon" aria-hidden="true"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></span>
+                  <span class="lh-step__body"><span class="lh-step__title">Learn</span><span class="lh-step__desc">Every outcome makes the next prediction sharper.</span></span>
+                </li>
+              </ol>
+              <p class="lh-panel__note"><svg class="lh-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Every outcome feeds back into Detect</p>
+            </div>
           </div>
         </div>
-
       </div>
+
     </section>
 
     <!-- ── AI Maturity Journey ─────────────────────────────────── -->
@@ -361,6 +337,6 @@
     <a href="mailto:hello@svargai.com">Contact</a>
   </footer>
 
-  <script type="module" src="marketing.js?v=2"></script>
+  <script type="module" src="marketing.js?v=3"></script>
 </body>
 </html>

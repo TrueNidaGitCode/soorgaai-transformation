@@ -30,7 +30,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(path.join(here, '..', p), 'utf8');
 
 const html = read('index.html');
-const hero = html.slice(html.indexOf('class="mkt-hero"'), html.indexOf('mkt-hero__visual'));
+const hero = html.slice(html.indexOf('class="lh-hero"'), html.indexOf('lh-hero__visual'));
 
 describe('the hero speaks to the reader who is actually arriving', () => {
   it('does not size them out of it with "enterprise"', () => {
@@ -46,44 +46,34 @@ describe('the hero speaks to the reader who is actually arriving', () => {
 
   it('names the failure of timing, not a shortage of software', () => {
     /*
-     * ── Why this replaced "the path between them" ──────────────────────────
-     *
-     * The path framing was right about the market and wrong about the product.
-     * It described what Svarg BUILDS — strategy, then data, then models, then
-     * an application — which is the setup, not the thing the customer keeps.
-     * What they keep is something that watches, and the pain it removes is
-     * finding out too late.
-     *
-     * So the headline is now about timing: the business is changing, the signs
-     * are already there, and nobody is joining them up.
+     * Since 2026-10-07 the hero pitches retention only (handoff:
+     * design_handoff_landing_hero). The timing idea survived the rewrite —
+     * the customer is already sending signals, and the cost is reading them
+     * too late — it is now about customers rather than "your business".
      */
     const h1 = hero.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1];
+    expect(h1).toMatch(/signals/i);
     expect(h1).toMatch(/late/i);
 
-    const sub = hero.match(/class="mkt-hero__sub">([\s\S]*?)<\/p>/)[1];
-    // The mechanism, and the half that makes it recognisable: the information
-    // exists, it is scattered, and no person is joining it up.
-    expect(sub).toMatch(/already in your systems/i);
-    expect(sub).toMatch(/nobody is joining them up/i);
+    const sub = hero.match(/class="lh-hero__sub">([\s\S]*?)<\/p>/)[1];
+    // The mechanism: it works from systems they already have.
+    expect(sub).toMatch(/existing systems/i);
+    expect(sub).toMatch(/drifting away/i);
   });
 
-  it('promises watching and evidence, not a build', () => {
+  it('promises a reason and a window, not a build', () => {
     /*
-     * A hero that only names the pain is an essay. The reader has to learn
-     * what they get — and what they get is no longer "an application in a
-     * week". It is something that watches and can show its working, which is
-     * the claim the product can actually keep today.
+     * A hero that only names the pain is an essay. What they get is the why
+     * behind each at-risk customer, while it can still be acted on.
      */
-    const sub = hero.match(/class="mkt-hero__sub">([\s\S]*?)<\/p>/)[1];
-    expect(sub).toMatch(/watches/i);
-    expect(sub).toMatch(/needs attention/i);
-    // Evidence is the differentiator and belongs above the fold.
-    expect(sub).toMatch(/records it read/i);
+    const sub = hero.match(/class="lh-hero__sub">([\s\S]*?)<\/p>/)[1];
+    expect(sub).toMatch(/tells you why/i);
+    expect(sub).toMatch(/still time/i);
   });
 
-  it('asks them to say what to watch, not to begin a journey', () => {
+  it('asks them to look at their own customers, not to begin a journey', () => {
     const cta = hero.match(/id="mkt-cta-hero"[^>]*>([^<]+)</)[1];
-    expect(cta).toMatch(/watch/i);
+    expect(cta).toMatch(/at risk/i);
     expect(cta).not.toMatch(/journey/i);
   });
 });

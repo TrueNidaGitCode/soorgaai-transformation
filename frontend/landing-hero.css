@@ -1,0 +1,397 @@
+/* ============================================================
+   Svarg — Home page retention hero
+   Source: design_handoff_landing_hero (Landing Page.dc.html, 2a).
+   Everything is scoped to body.mkt--home so the shared .mkt-nav
+   on the product / industry / company pages is untouched.
+   ============================================================ */
+
+body.mkt--home {
+  --font-primary: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --lh-bg: #061217;
+  --lh-text: #e6f1f2;
+  --lh-nav-text: #d4e3e5;
+  --lh-body: #a9bfc2;
+  --lh-muted: #8ea7ab;
+  --lh-accent: #2dd4bf;
+  --lh-accent-soft: #5eead4;
+  --lh-icon: #7ee8dc;
+  --lh-on-accent: #04211f;
+  --lh-gradient: linear-gradient(90deg, #34e3b0, #22d3ee);
+  --lh-gradient-btn: linear-gradient(90deg, #2dd4bf, #22d3ee);
+
+  font-family: var(--font-primary);
+  background-color: var(--lh-bg);
+  /* The design's glow sits over the nav + hero canvas (1440 × ~830),
+     so it is sized to that band and does not follow the page down. */
+  background-image: radial-gradient(ellipse 900px 600px at 78% 35%, rgba(34, 211, 238, 0.07), transparent 70%);
+  background-size: 100% 830px;
+  background-repeat: no-repeat;
+  color: var(--lh-text);
+}
+
+/* ── Nav ────────────────────────────────────────────────────── */
+.mkt--home .mkt-nav__inner {
+  max-width: 1440px;
+  padding: 28px 64px;
+  background: transparent;
+  backdrop-filter: none;
+}
+.mkt--home .mkt-nav.is-scrolled .mkt-nav__inner {
+  max-width: 1100px;
+  padding: 8px 24px;
+  background: rgba(8, 28, 34, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid #1d3a40;
+}
+.mkt--home .mkt-logo__img { height: 54px; }
+.mkt--home .mkt-nav.is-scrolled .mkt-logo__img { height: 36px; }
+
+/* Centred between logo and pill, 44px between labels (14 + 16 + 14). */
+.mkt--home .mkt-menu { margin: 0 auto; gap: 16px; }
+.mkt--home .mkt-menu__trigger,
+.mkt--home .mkt-menu__direct {
+  font-size: 16px;
+  line-height: normal;
+  color: var(--lh-nav-text);
+}
+.mkt--home .mkt-menu__panel {
+  background: #0b1e24;
+  border-color: #1d3a40;
+}
+
+.mkt--home .mkt-btn--primary {
+  padding: 15px 28px;
+  font-size: 16px;
+  background: var(--lh-gradient-btn);
+  color: var(--lh-on-accent);
+}
+.mkt--home .mkt-btn--primary:hover {
+  opacity: 1;
+  filter: brightness(1.08);
+  box-shadow: 0 0 40px rgba(45, 212, 191, 0.25);
+}
+
+/* ── Hero row ───────────────────────────────────────────────── */
+.lh-hero {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 56px 64px 64px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  /* style.css sets body line-height 1.6; the design uses the font's own. */
+  line-height: normal;
+}
+
+.lh-hero__content {
+  width: 540px;
+  flex: none;
+  padding-top: 36px;
+}
+
+.lh-hero__eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lh-accent);
+}
+
+.lh-hero__heading {
+  margin: 22px 0 0;
+  font-size: 54px;
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--lh-text);
+  text-wrap: balance;
+}
+.lh-hero__heading-accent {
+  background: var(--lh-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lh-hero__sub {
+  margin: 28px 0 0;
+  max-width: 470px;
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--lh-body);
+  text-wrap: pretty;
+}
+
+.lh-hero__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 44px;
+}
+
+.lh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 32px;
+  border: none;
+  border-radius: 999px;
+  background: var(--lh-gradient);
+  color: var(--lh-on-accent);
+  font-family: var(--font-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: filter 0.15s, box-shadow 0.15s;
+}
+.lh-btn:hover,
+.lh-btn:focus-visible {
+  filter: brightness(1.08);
+  box-shadow: 0 0 40px rgba(45, 212, 191, 0.25);
+}
+.lh-btn:focus-visible { outline: 2px solid #a5f3fc; outline-offset: 3px; }
+
+.lh-link {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--lh-nav-text);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  transition: color 0.15s;
+}
+.lh-link:hover,
+.lh-link:focus-visible { color: #a5f3fc; }
+
+/* ── Diagram ────────────────────────────────────────────────── */
+/* Drawn on a fixed 740 × 600 canvas and scaled to the column by
+   marketing.js (--lh-scale), so the curves always meet the pills. */
+.lh-hero__visual {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lh-diagram-fit {
+  width: calc(740px * var(--lh-scale, 1));
+  height: calc(600px * var(--lh-scale, 1));
+  flex: none;
+}
+
+.lh-diagram {
+  position: relative;
+  width: 740px;
+  height: 600px;
+  transform: scale(var(--lh-scale, 1));
+  transform-origin: top left;
+}
+
+.lh-flow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+.lh-flow path {
+  fill: none;
+  stroke: var(--lh-accent);
+  stroke-opacity: 0.6;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 6;
+  animation: lh-flow 1s linear infinite;
+}
+@keyframes lh-flow {
+  from { stroke-dashoffset: 22; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.lh-sources {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lh-source {
+  width: 148px;
+  height: 58px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  border-radius: 18px;
+  background: #0b1e24;
+  border: 1px solid #1d3a40;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lh-text);
+}
+.lh-source .lh-ico { width: 20px; height: 20px; color: var(--lh-icon); }
+
+.lh-node {
+  position: absolute;
+  left: 200px;
+  top: 205px;
+  width: 108px;
+  height: 108px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: #08232a;
+  border: 1.5px solid var(--lh-accent);
+  box-shadow: 0 0 36px rgba(45, 212, 191, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+/* The mark is the left third of the full logo, cropped in CSS so the
+   node uses the same high-resolution artwork as the nav. */
+.lh-node__mark {
+  width: 40px;
+  height: 44px;
+  overflow: hidden;
+}
+.lh-node__mark img {
+  display: block;
+  height: 44px;
+  width: auto;
+  margin-left: -4px;
+}
+
+.lh-panel {
+  position: absolute;
+  left: 340px;
+  top: 0;
+  width: 400px;
+  box-sizing: border-box;
+  padding: 22px 20px 18px;
+  border-radius: 22px;
+  background: rgba(10, 30, 36, 0.85);
+  border: 1px solid #1f4a4f;
+  box-shadow: 0 0 60px rgba(34, 211, 238, 0.08);
+}
+.lh-panel__label {
+  margin: 0 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lh-accent-soft);
+}
+
+.lh-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lh-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #0c1c22;
+  border: 1px solid #1a3036;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: background 0.5s, border-color 0.5s, box-shadow 0.5s;
+}
+.lh-step.is-active {
+  background: rgba(45, 212, 191, 0.10);
+  border-color: rgba(94, 234, 212, 0.7);
+  box-shadow: 0 0 28px rgba(45, 212, 191, 0.25);
+}
+.lh-step__icon {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 11px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lh-step__icon .lh-ico { width: 18px; height: 18px; color: var(--lh-accent-soft); }
+.lh-step__body { flex: 1; min-width: 0; }
+.lh-step__title {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lh-text);
+}
+.lh-step__desc {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--lh-muted);
+}
+
+.lh-panel__note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 4px 0;
+  font-size: 12.5px;
+  color: var(--lh-accent-soft);
+}
+.lh-panel__note .lh-ico { width: 14px; height: 14px; }
+
+.lh-ico { display: block; flex: none; }
+
+/* ── Motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lh-flow path { animation: none; }
+  .lh-step { transition: none; }
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1199px) {
+  .mkt--home .mkt-nav__inner { padding: 22px 32px; }
+  .lh-hero {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 48px;
+    padding: 40px 32px 64px;
+  }
+  .lh-hero__content { width: auto; max-width: 600px; padding-top: 0; }
+  .lh-hero__visual { justify-content: center; }
+}
+
+@media (max-width: 860px) {
+  .mkt--home .mkt-nav__inner { padding: 16px 20px; }
+  .mkt--home .mkt-logo__img { height: 42px; }
+  .mkt--home .mkt-mobile-panel { background: rgba(8, 28, 34, 0.97); }
+}
+
+/* Phones: drop the sources and the Svarg node, keep the loop itself
+   at full width as an ordinary block. */
+@media (max-width: 767px) {
+  .lh-hero { padding: 24px 16px 56px; gap: 40px; }
+  .lh-hero__heading { font-size: 38px; }
+  .lh-hero__sub { font-size: 16.5px; margin-top: 22px; }
+  .lh-hero__actions { gap: 22px; margin-top: 32px; }
+  .lh-btn { padding: 17px 28px; font-size: 17px; }
+
+  .lh-diagram-fit { width: 100%; height: auto; }
+  .lh-diagram { width: auto; height: auto; transform: none; }
+  .lh-flow,
+  .lh-sources,
+  .lh-node { display: none; }
+  .lh-panel { position: static; width: 100%; padding: 18px 14px 16px; }
+}

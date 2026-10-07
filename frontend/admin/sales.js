@@ -4105,14 +4105,20 @@ const FIRST_MESSAGE = {
       'I&rsquo;m exploring a problem in recurring-service businesses: <b>customers often show signs '
         + 'that they are starting to drift, or are ready for more, but the business notices only after '
         + 'the opportunity has passed.</b>',
-      'For example, a wellness centre in Bengaluru recently shared that some patients who came in and '
-        + 'were treated were still recorded as &ldquo;No Show&rdquo;, while other customers were using '
-        + 'more sessions than their package covered &mdash; which could have been the moment to offer a '
-        + 'renewal or additional services.',
-      'The signals were already present in the systems they use, but nobody was continuously '
-        + 'connecting them.',
-      'I&rsquo;m speaking with recurring-service businesses to understand how they currently identify '
-        + 'customers who are at risk of leaving or could be grown.',
+      /*
+       * The owner's example, 7 October 2026, with two words held to what the
+       * centre said: they reported about twenty BOOKINGS a month marked No
+       * Show (not twenty customers), and their own question was how many had
+       * actually attended. Missing an appointment versus starting to
+       * disengage is our question, so it is "the question it raises", not
+       * theirs.
+       */
+      'For example, a wellness centre in Bengaluru found that around 20 appointments a month were being '
+        + 'recorded as &ldquo;No Show&rdquo;. The question it raises is: which of these customers are '
+        + 'simply missing an appointment, and which are starting to disengage and may not come back?',
+      'The information to answer that may already exist across their booking, CRM and customer '
+        + 'interaction data, but it isn&rsquo;t always connected.',
+      'Do you face similar challenges in identifying customers who may be about to drop off?',
       'Would you be open to a <b>15-minute conversation</b> to share how you handle this today?',
       'You can learn more about what we&rsquo;re building at SvargAI: {{link}}',
     ],

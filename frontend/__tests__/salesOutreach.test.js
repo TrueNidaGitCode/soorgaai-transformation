@@ -115,7 +115,13 @@ describe('what the first message claims', () => {
      * "Patients stopping during their treatment journey" was in the draft and
      * is our inference, so it does not go out as theirs.
      */
-    expect(sent).toMatch(/a wellness centre in Bengaluru recently shared that some patients who came in and\s+were treated/);
+    // The email's example since 7 October 2026: about twenty appointments a
+    // month marked No Show — bookings, as they reported it — and the
+    // disengagement question framed as ours, not theirs.
+    expect(sent).toMatch(/a wellness centre in Bengaluru found that around 20 appointments a month were being\s+recorded as &ldquo;No Show&rdquo;/);
+    expect(sent).toMatch(/The question it raises is:/);
+    expect(sent).not.toMatch(/The bigger question for them was/);
+    expect(sent).not.toMatch(/around 20 customers a month/);
     expect(sent).toMatch(/A wellness centre in Bengaluru recently shared examples of patients who were treated/);
     expect(sent).not.toMatch(/stopp(ed|ing) (coming|during)/i);
     expect(sent).not.toMatch(/we found/i);

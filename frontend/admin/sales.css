@@ -3868,3 +3868,15 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   font-size: 0.68rem;
   color: #5CC5A7;
 }
+
+/* ── The Target Audience switcher, grouped (7 October 2026) ─────────────── */
+.sg-ta__glabel {
+  margin: 14px 0 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sg-ta__glabel:first-child { margin-top: 0; }
+.sg-ta__examples { margin: 0 0 8px; font-size: 0.84rem; color: rgba(255, 255, 255, 0.55); }

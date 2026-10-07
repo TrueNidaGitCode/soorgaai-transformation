@@ -144,12 +144,34 @@ describe('the verticals', () => {
   // eslint-disable-next-line no-new-func
   const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
 
-  it('names the segment as the knowledge base names it', () => {
-    expect(verticals.map((v) => v.name)).toEqual(['Clinics &amp; Wellness', 'Engineering &amp; Project Operations']);
+  it('groups the verticals by customer relationship: five B2C, then B2B', () => {
+    // 7 October 2026. Recurring Services is the clinics vertical renamed: its
+    // id stays 'clinics', so the interviews already filed under it stay too.
+    expect(verticals.map((v) => [v.group, v.n || null, v.name])).toEqual([
+      ['B2C', 1, 'Recurring Services'],
+      ['B2C', 2, 'Education &amp; Memberships'],
+      ['B2C', 3, 'Subscription &amp; Repeat Purchase'],
+      ['B2C', 4, 'High-Value Repeat Services'],
+      ['B2C', 5, 'Hospitality &amp; Leisure'],
+      ['B2B', null, 'Engineering &amp; Project Operations'],
+    ]);
+    expect(verticals[0].id).toBe('clinics');
+    for (const v of verticals.filter((x) => x.group === 'B2C')) expect(v.examples, v.name).toBeTruthy();
+  });
+
+  it('names a knowledge base overlay only where one exists, and says so where none does', () => {
     for (const v of verticals) {
+      if (v.overlay === null) continue;
       const overlay = join(dirname(fileURLToPath(import.meta.url)),
-        '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases', (v.overlay || v.name).replace('&amp;', '&'));
+        '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases', v.overlay.replace('&amp;', '&'));
       expect(existsSync(overlay), `no overlay for ${v.name}`).toBe(true);
+    }
+    expect(view).toContain("'no knowledge base overlay yet'");
+  });
+
+  it('marks every new category untested, because nobody in it has been interviewed', () => {
+    for (const v of verticals.filter((x) => !['clinics'].includes(x.id))) {
+      expect(v.hypothesis, v.name).toMatch(/^Untested\./);
     }
   });
 

@@ -3581,10 +3581,27 @@ function renderInterview() {
  * a plausible example typed here in advance is indistinguishable from
  * evidence by the third conversation.
  */
+/*
+ * Grouped by the customer relationship, not by industry (7 October 2026):
+ * five B2C categories, and Engineering as B2B. A category is the kind of
+ * relationship a business has with its customers — a course of visits, a
+ * term, a subscription, an occasional high-value service, a stay — because
+ * that decides which signals exist and how a customer drifts away.
+ *
+ * Recurring Services is the clinics vertical renamed: its id stays 'clinics',
+ * so Vesoma, The Wellness Co. and iSPAN stay with it. `overlay` names the
+ * knowledge base overlay its delivered applications are built on, or null
+ * where none exists yet. The four new categories' hypotheses are drafts:
+ * nobody in them has been interviewed.
+ */
 const VERTICALS = [
   {
     id: 'clinics',
-    name: 'Clinics &amp; Wellness',
+    group: 'B2C',
+    n: 1,
+    name: 'Recurring Services',
+    examples: 'Clinics, wellness, gyms, salons, spas, physiotherapy',
+    overlay: 'Clinics &amp; Wellness',
     hypothesis: 'Clinics and wellness businesses lose clients part-way through a course of '
       + 'treatment, and growth from the clients they keep, because the signals sit across the booking system, '
       + 'the phone and WhatsApp and nobody joins them. The cost is revenue: a client who stops, a package not '
@@ -3614,7 +3631,65 @@ const VERTICALS = [
    * another name would say so in `overlay`; this one needs none.
    */
   {
+    id: 'education',
+    group: 'B2C',
+    n: 2,
+    name: 'Education &amp; Memberships',
+    examples: 'Coaching centres, academies, music and dance schools, sports academies',
+    overlay: 'Sports Academies',
+    hypothesis: 'Untested. Academies and schools lose students part-way through a term &mdash; and the '
+      + 'renewal of the next term or batch &mdash; because attendance, fee payments and parent messages sit '
+      + 'in different places and nobody joins them until the fee is not paid.',
+    note: 'Drafted on 7 October 2026; nobody in this category has been interviewed. The closest evidence is '
+      + 'the cricket academy we built for, which is not an interview. What to test first: whether a falling '
+      + 'attendance shows up before a missed renewal, and whether anybody would act on it.',
+  },
+  {
+    id: 'subscription',
+    group: 'B2C',
+    n: 3,
+    name: 'Subscription &amp; Repeat Purchase',
+    examples: 'D2C subscriptions, food subscriptions, pet care, consumables',
+    overlay: null,
+    hypothesis: 'Untested. Subscription and repeat-purchase brands lose customers who skip, pause or slow '
+      + 'their reorders, and miss the ones ready for a bigger plan, because order history, support and '
+      + 'messages sit apart and churn shows up only as a cancelled subscription.',
+    note: 'Drafted on 7 October 2026; nobody has been interviewed. The risk to test early: one commerce '
+      + 'platform may already hold most of the signals and flag churn itself, which would leave little for '
+      + 'anybody to join by hand.',
+  },
+  {
+    id: 'highvalue',
+    group: 'B2C',
+    n: 4,
+    name: 'High-Value Repeat Services',
+    examples: 'Auto service, dental, premium healthcare, home services',
+    overlay: null,
+    hypothesis: 'Untested. High-value repeat services lose the next visit &mdash; the service due, the '
+      + 'follow-up treatment, the annual check &mdash; because the due date lives in one system and the '
+      + 'conversation in another, and the customer books elsewhere before anybody calls.',
+    note: 'Drafted on 7 October 2026; nobody has been interviewed. Close to Recurring Services, with fewer, '
+      + 'larger visits: the question is whether one missed visit is worth enough to chase, and whether the '
+      + 'due date is recorded anywhere at all.',
+  },
+  {
+    id: 'hospitality',
+    group: 'B2C',
+    n: 5,
+    name: 'Hospitality &amp; Leisure',
+    examples: 'Hotels, resorts, travel, clubs, experiences',
+    overlay: null,
+    hypothesis: 'Untested. Hotels, clubs and experiences lose repeat guests and members between visits, '
+      + 'and miss upgrades and renewals, because stays, spend and feedback sit in separate systems and nobody '
+      + 'acts on them before the guest books elsewhere.',
+    note: 'Drafted on 7 October 2026; nobody has been interviewed. The weakest fit on frequency: a guest may '
+      + 'come once a year, so whether there is an early signal at all is the first thing to find out. Clubs '
+      + 'and memberships are the likelier start.',
+  },
+  {
     id: 'engineering',
+    group: 'B2B',
+    overlay: 'Engineering &amp; Project Operations',
     name: 'Engineering &amp; Project Operations',
     hypothesis: 'Untested. Account retention: in an engineering services firm the '
       + 'client is the customer, and the account &mdash; or the next statement of work &mdash; is lost when a '
@@ -3712,7 +3787,11 @@ function renderAudience() {
       build: ['', 'Nothing to choose between. A candidate before an interview is a guess with a '
         + 'roadmap attached'],
     },
-  }[audienceVertical] || {};
+  }[audienceVertical] || {
+    // A category nobody has been interviewed in yet.
+    embed: ['', 'Not started. Nobody here has been spoken to yet &mdash; step 2 comes first'],
+    build: ['', 'Nothing to choose between until somebody has been interviewed'],
+  };
 
   const REPEATABILITY = [
     ['same', 'Same problem'],
@@ -3906,17 +3985,20 @@ function renderAudience() {
 
   el.innerHTML = `
     <section class="sg-ta">
-      <div class="sg-seg" role="tablist" aria-label="Vertical">
-        ${VERTICALS.map((v) => `
+      ${[['B2C', 'B2C &mdash; by customer relationship'], ['B2B', 'B2B']].map(([g, title]) => `
+      <p class="sg-ta__glabel">${title}</p>
+      <div class="sg-seg" role="tablist" aria-label="${g} vertical">
+        ${VERTICALS.filter((v) => v.group === g).map((v) => `
           <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
                   data-vert="${v.id}" aria-selected="${v.id === audienceVertical}">
-            ${v.name}<span>${icpCounts[v.id] || 0} of 5 interviewed</span>
+            ${v.n ? `${v.n} ` : ''}${v.name}<span>${icpCounts[v.id] || 0} of 5 interviewed</span>
           </button>`).join('')}
-      </div>
+      </div>`).join('')}
 
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">${SEGMENT}<span>${done.length} of 5 interviewed</span>
-          <em class="sg-ta__kb">${V.overlay ? `knowledge base overlay: ${V.overlay}` : 'knowledge base overlay'}</em></p>
+          <em class="sg-ta__kb">${V.overlay ? `knowledge base overlay: ${V.overlay}` : 'no knowledge base overlay yet'}</em></p>
+        ${V.examples ? `<p class="sg-ta__examples">${V.examples}</p>` : ''}
         <p class="sg-ta__hyp">${V.hypothesis}</p>
         <p class="sg-ta__note">${V.note}</p>
       </div>
@@ -4019,7 +4101,7 @@ function renderAudience() {
 /** The tab's one control: which vertical is on screen. */
 function wireAudience(root) {
   if (!root) return;
-  root.querySelector('.sg-seg').addEventListener('click', (e) => {
+  root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-vert]');
     if (b) setAudienceVertical(b.dataset.vert);
   });

@@ -34,7 +34,7 @@ const TABS = [
  */
 let state = {
   signals: null, mail: null, template: null, tab: 'outreach',
-  kinds: new Set(['real']), view: 'funnel',
+  kinds: new Set(['real']), view: 'icp',
   /** Which industry the funnel is being read for. 'all' or a segment id. */
   industry: 'all',
   /**
@@ -1751,6 +1751,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sg-refresh-btn').addEventListener('click', () => load(state.tab));
 
   renderNole();
+  // The page opens on the ICP tab (7 October 2026). Shown now rather than when
+  // the funnel data arrives: the ICP tab does not wait on it.
+  setView(state.view);
   load();
 });
 

@@ -104,10 +104,11 @@ describe('one customer, carried through the deck', () => {
   it('tells the story on the problem slide in the order it happened', () => {
     const one = deck.slice(deck.indexOf("n: '01'"), deck.indexOf("n: '02'"));
     expect([...one.matchAll(/\['(Bookings|Front desk)', '([^']*)/g)].map((m) => `${m[1]}: ${m[2]}`)).toEqual([
-      'Bookings: Customer buys a 10-session package.',
-      'Bookings: Uses all ten, and books three more.',
-      'Bookings: Then misses the next two appointments.',
-      'Front desk: Nobody offers the next package. Nobody calls.',
+      // The No Show example, uniform with the messages and the one-pager.
+      'Bookings: Customer has come every week for three months.',
+      'Bookings: Misses an appointment. Recorded as No Show.',
+      'Bookings: Misses the next one too. No Show again.',
+      'Front desk: One of twenty No Shows this month. Nobody calls.',
     ]);
   });
 
@@ -120,8 +121,8 @@ describe('one customer, carried through the deck', () => {
 
   it('marks the one line where something went wrong, twice, in one colour', () => {
     // Nobody acted, on the problem slide and again on the finding.
-    expect(deck).toContain("['Front desk', 'Nobody offers the next package. Nobody calls.', true]");
-    expect(deck).toContain("['Front desk', 'No renewal offered, no call made', true]");
+    expect(deck).toContain("['Front desk', 'One of twenty No Shows this month. Nobody calls.', true]");
+    expect(deck).toContain("['Front desk', 'No call made since', true]");
     expect(css).toContain('.sg-deck__steps li.is-bad .sg-deck__chev');
     expect(css).toContain('.sg-deck__what li.is-bad span, .sg-deck__what li.is-bad b');
   });
@@ -129,7 +130,7 @@ describe('one customer, carried through the deck', () => {
   it('pays the story off with the same customer, the evidence and the next step', () => {
     const three = deck.slice(deck.indexOf("n: '03'"), deck.indexOf("n: '04'"));
     expect(three).toContain('Meera Iyer');
-    expect(three).toContain('Retention and growth');
+    expect(three).toContain('Starting to drift');
     expect(three).toContain('An example customer');
     expect(three).toContain('evidence: [');
     expect(deck).toContain('The evidence behind it');
@@ -205,7 +206,7 @@ describe('what the deck stopped saying, and where it went', () => {
     // Since 7 October 2026: the example is said to be one, its two checks
     // are named, and the phone promise is kept out unless they have one.
     expect(card).toContain('Meera on slide 3 is an example, not a customer');
-    expect(card).toContain('Package Over-used and No Show');
+    expect(card).toContain('No Show and Stopped Coming');
     expect(card).toContain('need the model provider funded');
     expect(card).toContain('do not add it to the story unless they have one');
   });

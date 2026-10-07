@@ -4124,19 +4124,19 @@ const FIRST_MESSAGE = {
     ],
     sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
     /*
-     * LinkedIn and WhatsApp, 7 October 2026: the owner's rewrite, with the
-     * same one-line correction as the email — the centre reported treated
-     * patients left marked No Show, not patients stopping mid-treatment.
+     * LinkedIn and WhatsApp: the same example as the email, the deck and the
+     * one-pager (7 October 2026) — about twenty appointments a month marked
+     * No Show, and which of those customers are drifting away.
      */
     short: [
       'Hi [Name] &mdash; I&rsquo;m exploring a problem in recurring-service businesses: customers often '
         + 'show signs that they&rsquo;re starting to drift or are ready for more, but the business notices '
         + 'too late.',
-      'A wellness centre in Bengaluru recently shared examples of patients who were treated but still '
-        + 'recorded as &ldquo;No Show&rdquo;, and customers using more sessions than their package '
-        + 'allowed &mdash; signals that could have helped the team act earlier.',
-      'I&rsquo;m speaking with businesses to understand how they identify these customers today.',
-      'Do you see similar challenges? Happy to have a short chat.',
+      'A wellness centre in Bengaluru found that around 20 appointments a month were being recorded as '
+        + '&ldquo;No Show&rdquo;. The question it raises: which of those customers are simply missing an '
+        + 'appointment, and which are starting to disengage?',
+      'Do you face similar challenges in identifying customers who may be about to drop off? Happy to '
+        + 'have a short chat.',
       'Learn more about SvargAI: {{link}}',
     ],
   },
@@ -4369,7 +4369,7 @@ function renderFirstMessage(seg) {
               not there.</p>
             <p><b>Two things the deck no longer says, that you should know.</b></p>
             <p>Meera on slide 3 is an example, not a customer &mdash; say so if asked.
-              Her card is two checks today, Package Over-used and No Show, shown together
+              Her card is two checks today, No Show and Stopped Coming, shown together
               on one customer card with the reason and the next step. The reason and the
               next step are written by the AI service and need the model provider funded;
               without it the card shows the standard wording, labelled as such.</p>
@@ -4404,15 +4404,15 @@ function renderFirstMessage(seg) {
           <p class="sg-fm__kind">One-page proposal</p>
           <p class="sg-fm__subject"><span>For</span>Recurring-service businesses &mdash; after the first conversation.</p>
           <div class="sg-fm__body">
-            <p>One page, in the Recurring Services framing: customers who drift away, and the ones
-              ready for more. It is built on what the Bengaluru centre actually reported &mdash;
-              treated patients left marked No Show, and packages used past what was sold &mdash;
-              and every check it names exists today.</p>
-            <p><b>Meera is an example, not a customer.</b> The page says so. Her card is Package
-              Over-used and No Show shown together; the &ldquo;why it matters&rdquo; and the next
-              step are written by the AI service, which needs the model provider funded.</p>
+            <p>One page, in the Recurring Services framing, with the same example as the email:
+              about twenty appointments a month recorded as No Show at the Bengaluru centre, and the
+              question it raises &mdash; which of those customers are drifting away. Every check it
+              names exists today.</p>
+            <p><b>Meera is an example, not a customer.</b> The page says so. Her card is No Show and
+              Stopped Coming shown together; the &ldquo;why it matters&rdquo; and the next step are
+              written by the AI service, which needs the model provider funded.</p>
             <p><b>&ldquo;Did it work&rdquo;</b> means the finding stopped being true after your team
-              marked a step &mdash; a new booking, a paid package. Rupees recovered are not measured
+              marked a step &mdash; here, a new booking she attends. Rupees recovered are not measured
               yet; do not promise a figure.</p>
             <p>The source is <code>docs/proposals/recurring-services-one-page.html</code>; edit it and run
               <code>node scripts/make_one_pager.mjs</code> to rebuild the PDF and this preview. The
@@ -4616,12 +4616,12 @@ const DECK = [
      */
     caseTitle: 'One customer. One month.',
     case: [
-      ['Bookings', 'Customer buys a 10-session package.', false],
-      ['Bookings', 'Uses all ten, and books three more.', false],
-      ['Bookings', 'Then misses the next two appointments.', false],
-      ['Front desk', 'Nobody offers the next package. Nobody calls.', true],
+      ['Bookings', 'Customer has come every week for three months.', false],
+      ['Bookings', 'Misses an appointment. Recorded as No Show.', false],
+      ['Bookings', 'Misses the next one too. No Show again.', false],
+      ['Front desk', 'One of twenty No Shows this month. Nobody calls.', true],
     ],
-    close: 'She was ready for more, then she started to drift. Both were in the records.',
+    close: 'Twenty No Shows a month look the same in the records. Some of them are customers about to leave.',
   },
   {
     n: '02',
@@ -4637,17 +4637,17 @@ const DECK = [
     sub: 'Not a dashboard to go and check. An example customer:',
     finding: {
       who: 'Meera Iyer',
-      verdict: 'Retention and growth',
+      verdict: 'Starting to drift',
       what: [
-        ['Package', 'Used 13 sessions on a 10-session package', false],
+        ['Visits', 'Came every week for three months', false],
         ['Appointments', 'Did not turn up for the last two', false],
-        ['Front desk', 'No renewal offered, no call made', true],
+        ['Front desk', 'No call made since', true],
       ],
-      why: 'Meera is ready for more <b>and</b> starting to drift. Next step: call her this week and '
-        + 'offer the next package.',
+      why: 'Meera is not just missing an appointment: she came every week, and has now missed two in '
+        + 'a row. Next step: call her this week and offer a time to come back.',
       evidence: [
-        'Her package in your booking system — <b>13 of 10</b> sessions used',
-        'The two appointments marked <b>No Show</b>',
+        'Her bookings — weekly for three months, then <b>two No Shows</b> in a row',
+        'No follow-up recorded since',
       ],
     },
     close: 'SvargAI shows why each customer was raised, and the next step to take.',

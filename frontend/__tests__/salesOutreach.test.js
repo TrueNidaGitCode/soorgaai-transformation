@@ -122,7 +122,7 @@ describe('what the first message claims', () => {
     expect(sent).toMatch(/The question it raises is:/);
     expect(sent).not.toMatch(/The bigger question for them was/);
     expect(sent).not.toMatch(/around 20 customers a month/);
-    expect(sent).toMatch(/A wellness centre in Bengaluru recently shared examples of patients who were treated/);
+    expect(sent).toMatch(/A wellness centre in Bengaluru found that around 20 appointments a month were being recorded as\s+&ldquo;No Show&rdquo;/);
     expect(sent).not.toMatch(/stopp(ed|ing) (coming|during)/i);
     expect(sent).not.toMatch(/we found/i);
     expect(sent).not.toMatch(/we detected/i);
@@ -228,8 +228,29 @@ describe('the one-page proposal for Recurring Services', () => {
     // What is attributed to the centre is only what it reported. "Customer stopped
     // coming" further down is the name of a check, not their claim.
     const shared = src.slice(src.indexOf('What a wellness centre in Bengaluru shared'), src.indexOf('One customer, as SvargAI shows it'));
-    expect(shared).toContain('were treated were still recorded as');
+    expect(shared).toContain('Around 20 appointments a month were being recorded as &ldquo;No Show&rdquo;');
+    expect(shared).toContain('The question it raises');
     expect(shared).not.toMatch(/stopp(ed|ing)/i);
     expect(src).toContain('SvargAI never contacts a customer.');
+  });
+});
+
+describe('one example, everywhere it is told', () => {
+  it('tells the same No Show example in the email, the short message, the deck and the one-pager', () => {
+    // 7 October 2026: the owner asked for the example to be uniform. About
+    // twenty appointments a month marked No Show, and which of those
+    // customers are starting to drift.
+    const msg = copy().replace(/'\s*\+\s*'/g, '');
+    const clinic = msg.slice(msg.indexOf("'clinics'"), msg.indexOf("'engineering'"));
+    expect(clinic.match(/around 20 appointments a month were being\s+recorded as &ldquo;No Show&rdquo;/g) || []).toHaveLength(2);
+    expect(clinic).not.toMatch(/were treated|more sessions than their package/);
+
+    const deck = js.slice(js.indexOf('const DECK = ['), js.indexOf('function deckHub'));
+    expect(deck).toContain('One of twenty No Shows this month.');
+    expect(deck).not.toMatch(/10-session package/);
+
+    const page = read('../../docs/proposals/recurring-services-one-page.html');
+    expect(page).toContain('Around 20 appointments a month were being recorded as &ldquo;No Show&rdquo;');
+    expect(page).not.toMatch(/10-session package|were treated/);
   });
 });

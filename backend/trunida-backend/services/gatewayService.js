@@ -131,7 +131,7 @@ export function estimateEmbeddingCostUsd(tokens = 0) {
 
 // ── Cap ─────────────────────────────────────────────────────────────────────
 
-const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+export const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Whether this deployment may make another call. Checked BEFORE forwarding:

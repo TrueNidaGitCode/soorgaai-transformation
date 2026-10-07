@@ -16,13 +16,15 @@ import express from 'express';
 import protect from '../middleware/authMiddleware.js';
 import adminOnly from '../middleware/adminMiddleware.js';
 import {
-  getMyPlan, setArchived, adminSetPlan, adminGetUsage,
+  getMyPlan, getMyUsage, setArchived, adminSetPlan, adminGetUsage,
   requestUpgrade, cancelSubscription, resumeSubscription,
 } from '../controllers/billingController.js';
 
 const router = express.Router();
 
 router.get ('/plan',                   protect, getMyPlan);
+// Allowance used per application, as a percentage — never the model cost.
+router.get ('/usage',                  protect, getMyUsage);
 router.post('/archive/:blueprintId',   protect, setArchived);
 
 // Asking for more, and stopping. Neither takes money — there is no checkout —

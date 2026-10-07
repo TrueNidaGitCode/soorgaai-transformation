@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Svarg — Account</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="account.css?v=1">
+  <link rel="stylesheet" href="../shared/rail.css?v=2">
+  <script src="../login/config.js"></script>
+  <script src="../login/sessionGuard.js"></script>
+  <script type="module" src="../shared/rail.js?v=4"></script>
+  <script type="module" src="account.js?v=1"></script>
+</head>
+<body class="workspace-page ac-page">
+
+  <nav class="workspace-nav" aria-label="Account navigation">
+    <div class="workspace-nav__left">
+      <img src="/assets/logo-nav.png" alt="Svarg" class="workspace-nav__logo">
+    </div>
+    <div class="workspace-nav__right">
+      <span id="ac-username" class="workspace-nav__username"></span>
+      <button id="ac-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <main class="workspace-main ac-main" aria-label="Your account">
+
+    <header class="ac-head">
+      <h1 class="ac-title">Account</h1>
+      <p class="ac-sub">Your plan, what your applications have used, and your details.</p>
+    </header>
+
+    <div class="ac-tabs" role="tablist" aria-label="Account sections">
+      <button type="button" role="tab" class="ac-tab" id="tab-billing" aria-controls="panel-billing" aria-selected="true">Billing &amp; usage</button>
+      <button type="button" role="tab" class="ac-tab" id="tab-info" aria-controls="panel-info" aria-selected="false" tabindex="-1">Account info</button>
+    </div>
+
+    <!-- ── Billing & usage ─────────────────────────────────────────────── -->
+    <section id="panel-billing" class="ac-panel" role="tabpanel" aria-labelledby="tab-billing">
+
+      <div class="ac-card ac-plan" id="ac-plan">
+        <div class="ac-plan__top">
+          <div>
+            <p class="ac-label">Current plan</p>
+            <p class="ac-plan__name" id="ac-plan-name">—</p>
+            <p class="ac-plan__status" id="ac-plan-status"></p>
+          </div>
+          <div class="ac-plan__price">
+            <p class="ac-label">Your bill</p>
+            <p class="ac-plan__amount" id="ac-plan-price">—</p>
+            <p class="ac-plan__renew" id="ac-plan-renew"></p>
+          </div>
+        </div>
+        <dl class="ac-cover" id="ac-cover"></dl>
+        <div class="ac-plan__actions">
+          <a class="ac-btn" href="/pricing/pricing.html">Compare plans</a>
+          <a class="ac-link" href="/company/contact-us.html">Talk to us about your plan</a>
+        </div>
+      </div>
+
+      <div class="ac-section-head">
+        <h2 class="ac-h2">Usage by application</h2>
+        <p class="ac-note">Each application has its own AI allowance, renewed every 30 days. Your bill is your plan, not this usage.</p>
+      </div>
+      <p class="ac-state" id="ac-usage-state" role="status">Loading your applications…</p>
+      <div class="ac-apps" id="ac-apps"></div>
+    </section>
+
+    <!-- ── Account info ────────────────────────────────────────────────── -->
+    <section id="panel-info" class="ac-panel" role="tabpanel" aria-labelledby="tab-info" hidden>
+
+      <div class="ac-card">
+        <h2 class="ac-h2 ac-h2--card">Your details</h2>
+        <dl class="ac-fields" id="ac-user">
+          <div><dt>Name</dt><dd id="ac-name">—</dd></div>
+          <div><dt>Email</dt><dd id="ac-email">—</dd></div>
+          <div><dt>Signs in with</dt><dd id="ac-provider">—</dd></div>
+          <div><dt>Member since</dt><dd id="ac-since">—</dd></div>
+          <div><dt>Organisation</dt><dd id="ac-org">—</dd></div>
+          <div><dt>Website</dt><dd id="ac-site">—</dd></div>
+        </dl>
+      </div>
+
+      <!-- No payment provider is connected yet, so this says so. When one is,
+           the card lives with the provider and only its brand and last four
+           digits are shown here. Svarg never stores a card number. -->
+      <div class="ac-card">
+        <h2 class="ac-h2 ac-h2--card">Payment information</h2>
+        <div class="ac-pay">
+          <span class="ac-pay__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          </span>
+          <div>
+            <p class="ac-pay__title">No card on file</p>
+            <p class="ac-pay__body">Online payment isn’t set up yet. For now, paid plans are arranged with our team.</p>
+            <p class="ac-pay__body">When card payments arrive, your card will be held by our payment provider. Svarg never stores your card number.</p>
+          </div>
+        </div>
+        <a class="ac-btn ac-btn--ghost" href="/company/contact-us.html">Talk to us about payment</a>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

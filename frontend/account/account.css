@@ -1,0 +1,182 @@
+/* ── Account ────────────────────────────────────────────────────────────────
+   The workspace palette, as on Blueprints: the same deep ground and teal, so
+   this reads as part of the same product. Two tabs, cards inside each. */
+
+.ac-page {
+  --ac-accent: #5CC5A7;
+  --ac-line: rgba(255, 255, 255, 0.08);
+  --ac-panel: rgba(255, 255, 255, 0.025);
+  --ac-muted: rgba(255, 255, 255, 0.58);
+  --ac-ok: #5CC5A7;
+  --ac-warn: #FCD34D;
+  --ac-bad: #FCA5A5;
+}
+.workspace-page.ac-page { padding-left: var(--rail, 0px); box-sizing: border-box; }
+.ac-page [hidden] { display: none !important; }
+.ac-main { max-width: 980px; }
+
+.ac-head { margin-bottom: 22px; }
+.ac-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.ac-sub { margin: 8px 0 0; font-size: 0.92rem; line-height: 1.6; color: var(--ac-muted); }
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+.ac-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--ac-line);
+  margin-bottom: 24px;
+}
+.ac-tab {
+  position: relative;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--ac-muted);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ac-tab:hover { color: #fff; }
+.ac-tab[aria-selected="true"] { color: #fff; }
+.ac-tab[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ac-accent);
+}
+.ac-tab:focus-visible { outline: 2px solid var(--ac-accent); outline-offset: 2px; border-radius: 6px; }
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.ac-card {
+  padding: 22px 24px;
+  border: 1px solid var(--ac-line);
+  border-radius: 16px;
+  background: var(--ac-panel);
+  margin-bottom: 18px;
+}
+.ac-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+.ac-h2 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff; }
+.ac-h2--card { margin-bottom: 16px; }
+
+.ac-plan__top { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.ac-plan__name { margin: 6px 0 0; font-size: 1.6rem; font-weight: 800; color: #fff; }
+.ac-plan__status { margin: 4px 0 0; font-size: 0.86rem; color: var(--ac-muted); }
+.ac-plan__price { text-align: right; }
+.ac-plan__amount { margin: 6px 0 0; font-size: 1.25rem; font-weight: 700; color: #fff; }
+.ac-plan__renew { margin: 4px 0 0; font-size: 0.82rem; color: var(--ac-muted); }
+
+.ac-cover,
+.ac-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 24px;
+  margin: 20px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--ac-line);
+}
+.ac-fields { margin: 0; padding: 0; border: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ac-cover dt,
+.ac-fields dt { font-size: 0.76rem; color: var(--ac-muted); }
+.ac-cover dd,
+.ac-fields dd { margin: 3px 0 0; font-size: 0.95rem; font-weight: 600; color: #fff; overflow-wrap: anywhere; }
+
+.ac-plan__actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 20px; }
+.ac-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ac-btn:hover { opacity: 0.9; }
+.ac-btn--ghost { background: transparent; border: 1px solid var(--ac-line); margin-top: 16px; }
+.ac-btn--ghost:hover { border-color: var(--ac-accent); opacity: 1; }
+.ac-link { color: var(--ac-accent); font-size: 0.86rem; font-weight: 600; text-decoration: none; }
+.ac-link:hover { text-decoration: underline; }
+
+/* ── Usage by application ─────────────────────────────────────────────── */
+.ac-section-head { margin: 30px 0 14px; }
+.ac-note { margin: 6px 0 0; font-size: 0.84rem; line-height: 1.55; color: var(--ac-muted); }
+.ac-state { margin: 0; padding: 18px 20px; border: 1px dashed var(--ac-line); border-radius: 14px; font-size: 0.9rem; color: var(--ac-muted); }
+.ac-apps { display: flex; flex-direction: column; gap: 12px; }
+.ac-app {
+  padding: 18px 20px;
+  border: 1px solid var(--ac-line);
+  border-radius: 14px;
+  background: var(--ac-panel);
+}
+.ac-app__top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.ac-app__id { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.ac-app__name { margin: 0; font-size: 1rem; font-weight: 700; color: #fff; overflow-wrap: anywhere; }
+.ac-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ac-badge--ok    { color: var(--ac-ok);   background: rgba(92, 197, 167, 0.14); }
+.ac-badge--warn  { color: var(--ac-warn); background: rgba(251, 191, 36, 0.12); }
+.ac-badge--bad   { color: var(--ac-bad);  background: rgba(248, 113, 113, 0.14); }
+.ac-badge--muted { color: var(--ac-muted); background: rgba(255, 255, 255, 0.06); }
+
+.ac-meter {
+  height: 8px;
+  margin: 14px 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.ac-meter__fill { display: block; height: 100%; border-radius: inherit; }
+.ac-meter__fill--ok   { background: linear-gradient(90deg, #5CC5A7, #3DAFD3); }
+.ac-meter__fill--warn { background: var(--ac-warn); }
+.ac-meter__fill--bad  { background: var(--ac-bad); }
+.ac-app__facts { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 0.82rem; color: var(--ac-muted); }
+.ac-app__facts strong { color: #fff; }
+.ac-app__paused { color: var(--ac-bad); font-weight: 600; }
+
+/* ── Payment ──────────────────────────────────────────────────────────── */
+.ac-pay { display: flex; gap: 14px; align-items: flex-start; }
+.ac-pay__icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 10px;
+  border: 1px solid var(--ac-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ac-accent);
+}
+.ac-pay__icon svg { width: 20px; height: 20px; }
+.ac-pay__title { margin: 0; font-weight: 700; color: #fff; }
+.ac-pay__body { margin: 4px 0 0; font-size: 0.86rem; line-height: 1.55; color: var(--ac-muted); }
+
+@media (max-width: 720px) {
+  .ac-card { padding: 18px; }
+  .ac-plan__price { text-align: left; }
+  .ac-cover { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ac-fields { grid-template-columns: 1fr; }
+  .ac-app__top { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

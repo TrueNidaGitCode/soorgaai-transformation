@@ -5,8 +5,12 @@
  *
  *   Home               /cob.html
  *   Blueprints         /blueprints/ -- every objective and what became of it
- *   Knowledge sources  /knowledge-sources/
- *   Privacy            /privacy/
+ *   Account            /account/    -- plan, usage per application, details
+ *
+ * Knowledge sources and Privacy were on it too, and came off on 2026-10-07:
+ * two controls are enough for now. Both pages still exist and still load the
+ * rail; they simply have no item of their own to light. Privacy stays
+ * reachable from the marketing footer.
  *
  * Four pages used to draw four different things in this space. The home page
  * had a rail with a hamburger that did nothing, the workspace built its own
@@ -17,7 +21,7 @@
  * a list on the home page and a link to the current page in the workspace.
  *
  * Now the rail is one element built by one function. Every page loads this
- * module and rail.css and gets the same four controls, in the same order, at
+ * module and rail.css and gets the same controls, in the same order, at
  * the same width, with the page it is on lit — and the page's own layout
  * starts at --rail, which rail.css defines and sets to 0 when the rail hides.
  *
@@ -39,10 +43,8 @@ const ITEMS = [
     d: 'M3 10.5 12 3l9 7.5 M5 9.6V21h14V9.6' },
   { key: 'blueprints', label: 'Blueprints',        href: '/blueprints/blueprints.html',
     d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6' },
-  { key: 'knowledge',  label: 'Knowledge sources', href: '/knowledge-sources/knowledge-sources.html',
-    d: 'M3 3v18h18 M7 15l4-5 3 3 5-7' },
-  { key: 'privacy',    label: 'Privacy',           href: '/privacy/privacy.html',
-    d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+  { key: 'account',    label: 'Account',           href: '/account/account.html',
+    d: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z' },
 ];
 
 /** Which item is the page we are on. A blueprint opened in the workspace is
@@ -52,6 +54,7 @@ function currentKey(pathname = window.location.pathname) {
   if (pathname.startsWith('/domain/'))            return 'blueprints';
   if (pathname.startsWith('/knowledge-sources/')) return 'knowledge';
   if (pathname.startsWith('/privacy/'))           return 'privacy';
+  if (pathname.startsWith('/account/'))           return 'account';
   return 'home';
 }
 

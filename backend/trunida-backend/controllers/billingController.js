@@ -17,6 +17,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { User } from '../models/user.js';
 import { usageSummary, PLANS, planKey } from '../services/entitlements.js';
 import { ledgerFor } from '../services/usageLedgerService.js';
+import { applicationAllowances } from '../services/accountUsageService.js';
 
 function auditLog(action, actorId, extra = {}) {
   console.log(JSON.stringify({
@@ -39,6 +40,9 @@ export async function getMyPlan(req, res) {
     return res.json({
       plan: s.plan,
       planLabel: PLANS[planKey(s.plan)].label,
+      // What the plan costs. This, not the model meter, is the bill.
+      priceInrMonthly: PLANS[planKey(s.plan)].priceInrMonthly ?? null,
+      priceInrYearly: PLANS[planKey(s.plan)].priceInrYearly ?? null,
       status: s.status,
       // What they can actually do right now, which differs from `plan` only
       // while a subscription is unpaid.
@@ -195,6 +199,23 @@ export async function adminGetUsage(req, res) {
   } catch (err) {
     console.error('[billing] admin usage error:', err.message);
     return res.status(500).json({ error: 'Could not read usage.' });
+  }
+}
+
+// ── GET /api/billing/usage ──────────────────────────────────────────────────
+
+/**
+ * How much of its allowance each of the account's applications has used.
+ * A percentage per application, never the model cost behind it — see
+ * services/accountUsageService.js for why.
+ */
+export async function getMyUsage(req, res) {
+  try {
+    const applications = await applicationAllowances(req.user._id);
+    return res.json({ applications });
+  } catch (err) {
+    console.error('[billing] usage read error:', err.message);
+    return res.status(500).json({ error: 'Could not read your usage.' });
   }
 }
 

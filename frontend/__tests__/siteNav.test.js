@@ -32,8 +32,10 @@ describe('the nav offers one solution and five business types', () => {
   });
 });
 
+// The Vercel project's root directory is frontend/, so only frontend/vercel.json
+// is read; the repo-root vercel.json is not applied (found 2026-10-08).
 describe('retired pages redirect instead of breaking', () => {
-  const vercel = JSON.parse(readFileSync(path.join(here, '..', '..', 'vercel.json'), 'utf8'));
+  const vercel = JSON.parse(readFileSync(path.join(here, '..', 'vercel.json'), 'utf8'));
   const to = (src) => vercel.redirects?.find((r) => r.source === src)?.destination;
 
   it('sends each product page to its section of How it works', () => {

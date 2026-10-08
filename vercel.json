@@ -5,113 +5,31 @@
   "outputDirectory": "frontend",
   "installCommand": "",
   "framework": null,
-  "redirects": [
-    {
-      "source": "/products/cob.html",
-      "destination": "/how-it-works/#cob",
-      "permanent": false
-    },
-    {
-      "source": "/products/aria.html",
-      "destination": "/how-it-works/#aria",
-      "permanent": false
-    },
-    {
-      "source": "/products/arth.html",
-      "destination": "/how-it-works/#arth",
-      "permanent": false
-    },
-    {
-      "source": "/products/eame.html",
-      "destination": "/how-it-works/#eame",
-      "permanent": false
-    },
-    {
-      "source": "/products/yusu.html",
-      "destination": "/how-it-works/#yusu",
-      "permanent": false
-    },
-    {
-      "source": "/industry/automotive.html",
-      "destination": "/business-types/",
-      "permanent": false
-    }
-  ],
   "rewrites": [
-    {
-      "source": "/assessment/:path*",
-      "destination": "/assessment/:path*"
-    },
-    {
-      "source": "/dynamic-assessment/:path*",
-      "destination": "/dynamic-assessment/:path*"
-    },
-    {
-      "source": "/results/:path*",
-      "destination": "/results/:path*"
-    },
-    {
-      "source": "/login/:path*",
-      "destination": "/login/:path*"
-    },
-    {
-      "source": "/signup/:path*",
-      "destination": "/signup/:path*"
-    },
-    {
-      "source": "/dashboard/:path*",
-      "destination": "/dashboard/:path*"
-    },
-    {
-      "source": "/admin/:path*",
-      "destination": "/admin/:path*"
-    },
-    {
-      "source": "/navbar/:path*",
-      "destination": "/navbar/:path*"
-    },
-    {
-      "source": "/platform/:path*",
-      "destination": "/platform/:path*"
-    },
-    {
-      "source": "/shared/:path*",
-      "destination": "/shared/:path*"
-    },
-    {
-      "source": "/workspace/:path*",
-      "destination": "/workspace/:path*"
-    },
-    {
-      "source": "/profile-setup/:path*",
-      "destination": "/profile-setup/:path*"
-    },
-    {
-      "source": "/domain/:path*",
-      "destination": "/domain/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
+    { "source": "/assessment/:path*",         "destination": "/assessment/:path*" },
+    { "source": "/dynamic-assessment/:path*", "destination": "/dynamic-assessment/:path*" },
+    { "source": "/results/:path*",            "destination": "/results/:path*" },
+    { "source": "/login/:path*",              "destination": "/login/:path*" },
+    { "source": "/signup/:path*",             "destination": "/signup/:path*" },
+    { "source": "/dashboard/:path*",          "destination": "/dashboard/:path*" },
+    { "source": "/admin/:path*",              "destination": "/admin/:path*" },
+    { "source": "/navbar/:path*",             "destination": "/navbar/:path*" },
+    { "source": "/platform/:path*",           "destination": "/platform/:path*" },
+    { "source": "/shared/:path*",             "destination": "/shared/:path*" },
+    { "source": "/workspace/:path*",          "destination": "/workspace/:path*" },
+    { "source": "/profile-setup/:path*",      "destination": "/profile-setup/:path*" },
+    { "source": "/domain/:path*",             "destination": "/domain/:path*" },
+    { "source": "/(.*)",                      "destination": "/$1" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "X-XSS-Protection",       "value": "1; mode=block" }
       ]
     }
   ]
 }
+

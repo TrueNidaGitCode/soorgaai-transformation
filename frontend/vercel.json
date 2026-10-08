@@ -1,0 +1,34 @@
+{
+  "redirects": [
+    {
+      "source": "/products/cob.html",
+      "destination": "/how-it-works/#cob",
+      "permanent": false
+    },
+    {
+      "source": "/products/aria.html",
+      "destination": "/how-it-works/#aria",
+      "permanent": false
+    },
+    {
+      "source": "/products/arth.html",
+      "destination": "/how-it-works/#arth",
+      "permanent": false
+    },
+    {
+      "source": "/products/eame.html",
+      "destination": "/how-it-works/#eame",
+      "permanent": false
+    },
+    {
+      "source": "/products/yusu.html",
+      "destination": "/how-it-works/#yusu",
+      "permanent": false
+    },
+    {
+      "source": "/industry/automotive.html",
+      "destination": "/business-types/",
+      "permanent": false
+    }
+  ]
+}

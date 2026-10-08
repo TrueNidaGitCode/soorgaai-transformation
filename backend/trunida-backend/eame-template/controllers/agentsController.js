@@ -96,6 +96,12 @@ function categoryOf(watcherId) {
   const cats = plan().categories;
   if (!Array.isArray(cats) || !cats.length) return '';
   for (const c of cats) if ((c.watchers || []).includes(watcherId)) return c.name;
+  // A pattern learned from customers who left is about keeping customers,
+  // whatever the industry calls that column — never the last one by default.
+  if (watcherId === 'learned-pattern') {
+    const keep = cats.find((c) => /retention|customer|member|student|client|player|guest/i.test(c.name));
+    return (keep || cats[0]).name;
+  }
   return cats[cats.length - 1].name;
 }
 

@@ -1,0 +1,105 @@
+/* Learned churn patterns (patterns.js): the panel on the Agents page and the
+   definition card on the Data page. The application's own tokens only. */
+
+.pt {
+  margin: 22px 0 0;
+  padding: 22px 24px;
+  background: var(--ch-panel);
+  border: 1px solid var(--ch-line);
+  border-radius: var(--ch-radius);
+}
+.pt--lost { margin-top: 26px; }
+.pt__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ch-accent);
+}
+.pt__title { margin: 0 0 8px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: var(--ch-text); }
+.pt__title em { font-style: normal; color: var(--ch-accent); }
+.pt__lede { margin: 0 0 6px; font-size: 14.5px; line-height: 1.55; color: var(--ch-text); }
+.pt__fine,
+.pt-fine { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ch-dim); }
+.pt__more { margin: 14px 0 0; }
+
+.pt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.pt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--ch-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.pt-card__top { display: flex; flex-wrap: wrap; gap: 6px; }
+.pt-card__signals { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.pt-card__signals li {
+  padding-left: 12px;
+  border-left: 2px solid var(--ch-accent);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ch-text);
+}
+.pt-card__why { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ch-dim); }
+.pt-card__now { margin: 0; font-size: 13px; font-weight: 600; color: var(--ch-accent); }
+.pt-card__actions { display: flex; gap: 8px; margin-top: 2px; }
+
+.pt-badge {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ch-dim);
+  background: rgba(255, 255, 255, 0.06);
+}
+.pt-badge--on { color: #04211f; background: var(--ch-accent); }
+.pt-badge--fade { color: var(--ch-warn); background: rgba(252, 211, 77, 0.12); }
+.pt-badge--sample { color: var(--ch-warn); background: rgba(252, 211, 77, 0.08); }
+
+.pt-go,
+.pt-no,
+.pt-link {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 9px;
+}
+.pt-go { padding: 8px 14px; border: 0; background: var(--ch-accent); color: #04211f; }
+.pt-go:hover { filter: brightness(1.08); }
+.pt-no { padding: 8px 14px; border: 1px solid var(--ch-line); background: transparent; color: var(--ch-dim); }
+.pt-no:hover { color: var(--ch-text); }
+.pt-link { padding: 0; border: 0; background: none; color: var(--ch-accent); }
+.pt-link:hover { text-decoration: underline; }
+.pt-go:disabled, .pt-no:disabled, .pt-link:disabled { opacity: 0.55; cursor: progress; }
+
+.pt-form { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.pt-form__row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14px; color: var(--ch-text); }
+.pt-input {
+  width: 90px;
+  padding: 8px 10px;
+  border: 1px solid var(--ch-line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ch-text);
+  font: inherit;
+  font-size: 14px;
+}
+.pt-input--wide { width: min(420px, 100%); }
+.pt-form__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+.pt-note { margin: 12px 0 0; font-size: 13px; color: var(--ch-dim); }
+.pt-note--bad { color: var(--ch-bad); }
+
+@media (max-width: 640px) {
+  .pt { padding: 18px 16px; }
+  .pt-card__actions { flex-direction: column; }
+}

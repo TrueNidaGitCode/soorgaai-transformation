@@ -73,6 +73,14 @@ export const DO = {
  *            6 October 2026).
  */
 export const PLAYBOOK = {
+  // A pattern learned from this business's own customers who left
+  // (churnPatterns.js), approved by the owner.
+  'learned-pattern': {
+    kind: 'retention',
+    why: 'This customer shows a pattern that came before many of the customers who left this business. It is not certain they will leave, but it is when a call matters most.',
+    steps: ['call', 'message', 'rebook'],
+    won: 'the pattern no longer shows for them',
+  },
   'stopped-coming': {
     kind: 'retention',
     why: 'Someone who used to come regularly has stopped. Most people who drift away never say why, and the first few weeks are when a call still brings them back.',

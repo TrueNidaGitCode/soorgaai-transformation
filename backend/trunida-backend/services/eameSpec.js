@@ -133,6 +133,14 @@ export const FIXED_PATHS = [
   'routes/reportsRoutes.js',
   'frontend/agents.js',
   'frontend/findings.js',
+  // Learned churn patterns: what came before customers left, learned from the
+  // business's own records. server.js imports the first two in every
+  // application, so all five ship with every application.
+  'services/churnPatterns.js',
+  'controllers/patternsController.js',
+  'routes/patternsRoutes.js',
+  'frontend/patterns.js',
+  'frontend/patterns.css',
   'frontend/reports.js',
   'services/turnLog.js',
   'services/selfCheck.js',

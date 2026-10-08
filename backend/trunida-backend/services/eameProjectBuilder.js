@@ -302,6 +302,13 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'routes/reportsRoutes.js':           { template: 'routes/reportsRoutes.js' },
     'frontend/agents.js':                { template: 'frontend/agents.js' },
     'frontend/findings.js':              { template: 'frontend/findings.js' },
+    // Learned churn patterns. server.js imports the service and controller
+    // unconditionally, so every application must ship all five.
+    'services/churnPatterns.js':         { template: 'services/churnPatterns.js' },
+    'controllers/patternsController.js': { template: 'controllers/patternsController.js' },
+    'routes/patternsRoutes.js':          { template: 'routes/patternsRoutes.js' },
+    'frontend/patterns.js':              { template: 'frontend/patterns.js' },
+    'frontend/patterns.css':             { template: 'frontend/patterns.css' },
     'frontend/reports.js':               { template: 'frontend/reports.js' },
     'services/turnLog.js':              { template: 'services/turnLog.js' },
     'services/selfCheck.js':            { template: 'services/selfCheck.js' },

@@ -143,8 +143,10 @@ function solution() {
       + 'step per customer. <b>Act</b> writes the follow-up and stops &mdash; a person sends it, because '
       + 'the application holds no mail credentials by design. <b>Measure</b> counts a step as worked when '
       + 'the finding clears after it, not who stayed in the accountant&rsquo;s sense. <b>Learn</b> learns '
-      + 'which step works in this business, after three tries; it does <b>not</b> yet learn new churn '
-      + 'patterns &mdash; the patterns are the catalogue&rsquo;s rules.')}`);
+      + 'which step works in this business, after three tries, and since 8 October it also learns the '
+      + 'patterns that came before customers left &mdash; built and tested end to end, but <b>not yet '
+      + 'proven on a real customer&rsquo;s history</b>: it needs 20 or more customers who left in the '
+      + 'records before it suggests anything.')}`);
 }
 
 function practice() {
@@ -248,10 +250,11 @@ function competition() {
     ${flag('The ranking and every line about a competitor are the founder&rsquo;s read, not checked '
       + 'research &mdash; verify each company&rsquo;s current product before the meeting, because an '
       + 'investor who knows one of them will test it. The edge statement runs ahead of the product: '
-      + '<b>&ldquo;learns the behavioural patterns&rdquo;</b> is not built: the patterns are the agent '
-      + 'catalogue&rsquo;s fixed rules, and what Learn learns today is which follow-up works. '
-      + '<b>&ldquo;helps your team act&rdquo;</b> is Act, which drafts and stops. Until pattern learning '
-      + 'ships, say &ldquo;learns which actions keep your customers&rdquo; if asked.')}`);
+      + '<b>&ldquo;learns the behavioural patterns&rdquo;</b> is built (8 October) but not yet proven '
+      + 'on a real customer: a business needs 20 or more customers who left in its records before it '
+      + 'suggests a pattern, and the owner approves each one before it alerts. Say &ldquo;learns them from '
+      + 'your own customers who left, once there are enough&rdquo; if asked. <b>&ldquo;helps your team '
+      + 'act&rdquo;</b> is Act, which drafts and stops.')}`);
 }
 
 /** The five business types, in the order the site and the sales pages use. */

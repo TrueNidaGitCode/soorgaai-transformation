@@ -34,6 +34,7 @@
 
 import { CATALOGUE } from '../eame-template/services/agentCatalogue.js';
 import { categoriesFor } from './attentionAreasService.js';
+import { churnDefinitionFor } from './churnDefinitionService.js';
 
 /**
  * The words that mean a watcher, in the language a customer uses.
@@ -265,6 +266,9 @@ export function watcherPlanFile(bp) {
     content: JSON.stringify({
       ...watcherPlan(bp),
       categories: industry ? categoriesFor(industry) : [],
+      // What a lost customer means here, so the application can learn the
+      // patterns that came before one. See churnDefinitionService.
+      churn: churnDefinitionFor(bp),
     }, null, 2) + '\n',
   };
 }

@@ -1616,7 +1616,13 @@ export function startAgentScheduler(ask, { catalogue = null } = {}) {
           console.log(`[agents] this month's ${evaluationLimit()} monitoring evaluations are used; ${due.length - results.length} watcher run(s) wait for next month`);
           break;
         }
-        const r = await runAgent(a, ask);
+        // A learned pattern is evaluated in code by churnPatterns, not asked of
+        // the answer pipeline; it returns the same envelope, so everything
+        // after this line treats it like any other watcher.
+        const runner = a.kind === 'pattern' && patternRunner
+          ? (args) => patternRunner({ ...args, agent: a })
+          : ask;
+        const r = await runAgent(a, runner);
         results.push({ ...r, name: a.name });
         if (r.ran) console.log(`[agents] ${a.name}: ${r.fired ? `${r.new.length} new, ${r.resolved.length} resolved` : 'nothing'}`);
         else console.error(`[agents] ${a.name} failed — ${r.error}`);
@@ -1659,6 +1665,29 @@ let startNewlyPossible = null;
 let findingsChanged = null;
 /** Called after a watcher run that opened or resolved something. */
 export function onFindingsChanged(fn) { findingsChanged = fn; }
+
+// How an agent of kind 'pattern' is run; registered by server.js so this file
+// imports nothing from churnPatterns, which imports from here.
+let patternRunner = null;
+export function onPatternRun(fn) { patternRunner = fn; }
+
+/**
+ * Turn an approved pattern into an agent. Same room check as any watcher, and
+ * the kind and pattern id it needs to be run by the pattern runner.
+ */
+export async function startPatternAgent({ patternId, label, tz = 'UTC' }) {
+  const view = await createAgent({
+    name: `Learned: ${String(label || '').slice(0, 68)}`,
+    question: `Customers who show the pattern learned from those who left: ${label}`,
+    schedule: 'daily', tz,
+    watcherId: 'learned-pattern', severity: 'high',
+  });
+  await agentsCollection().updateOne(
+    { _id: new mongoose.Types.ObjectId(view.id) },
+    { $set: { kind: 'pattern', patternId: String(patternId) } },
+  );
+  return view;
+}
 let lookTimer = null;
 
 export function onLookNow(fn) { startNewlyPossible = fn; }

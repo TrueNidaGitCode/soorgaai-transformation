@@ -59,7 +59,7 @@ process.env.JWT_SECRET = 'svarg-root-e2e';
 const authSecret = tenantAuthSecret(DEP._id);
 const APP_SECRET = 'e2e-app-secret';
 // A clean scratch database: the owner's rows from an earlier run would be restored at boot and merged against.
-{ const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows']) await pre.collection(c).deleteMany({}); await pre.close(); }
+{ const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows', 'svarg_churn_patterns', 'svarg_churn_settings']) await pre.collection(c).deleteMany({}); await pre.collection('svarg_agents').deleteMany({ watcherId: 'learned-pattern' }); await pre.close(); }
 // A stand-in for Meta's Graph API: the number lookup the connect makes.
 const metaHits = [];
 const meta = (await import('http')).createServer((req, res) => { metaHits.push(req.url); res.setHeader('Content-Type', 'application/json'); if (req.url.startsWith("/111222333444555?") && /Bearer EAAB[.]test/.test(req.headers.authorization || '')) res.end(JSON.stringify({ display_phone_number: '+91 98000 00000', verified_name: 'E2E Academy', quality_rating: 'GREEN' })); else { res.statusCode = 400; res.end(JSON.stringify({ error: { message: 'Invalid OAuth access token' } })); } });
@@ -265,6 +265,56 @@ try {
   await F.deleteMany({ key: /^e2e-spine/ });
   await conn.close();
 } catch (err) { check('customer spine', false, err.stack); }
+
+// Learned churn patterns: a year of attendance with a planted pattern — the
+// players who left were absent twice in their last month — learned, listed,
+// redefined and approved over the application's own API.
+try {
+  const tok = (await j('/api/data/owner-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sok_e2e' }) })).body.token;
+  const H = { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
+  const DAYMS = 86400000;
+  const today = Date.now();
+  const dmy = (t) => { const d = new Date(t); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; };
+  let seed = 5;
+  const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const rows = [];
+  const player = (name, leaves) => {
+    const end = leaves ? today - (100 + Math.floor(rand() * 100)) * DAYMS : today - 2 * DAYMS;
+    let absences = 0;
+    for (let t = today - 360 * DAYMS + Math.floor(rand() * 7) * DAYMS; t <= end; t += 7 * DAYMS) {
+      let status = rand() < 0.03 ? 'absent' : 'present';
+      if (leaves && end - t < 30 * DAYMS && absences < 2) { status = 'absent'; absences++; }
+      rows.push([dmy(t), '06:00', name, 'yes', status]);
+    }
+    rows.push([dmy(end), '06:00', name, 'yes', 'present']);
+  };
+  for (let i = 0; i < 30; i++) player(`Left Player ${i}`, true);
+  for (let i = 0; i < 40; i++) player(`Stays Player ${i}`, false);
+  // A player's last visit can fall on a weekly date already there; the
+  // import merges on date + name, so a handful collapse. That is the rule.
+  const imp = await j('/api/data/import', { method: 'POST', headers: H, body: JSON.stringify({ datasetName: 'Attendance', source: 'folder', origin: 'Attendance.xlsx', mode: 'merge', rows }) });
+  check('a year of attendance imports', imp.status === 200 && imp.body?.added >= rows.length * 0.99, JSON.stringify({ s: imp.status, added: imp.body?.added, n: rows.length }));
+
+  const before = await j('/api/patterns', { headers: H });
+  check('the definition reads as one sentence before anything is learned', /^A customer counts as lost when/.test(before.body?.definition?.sentence || ''), before.body?.definition?.sentence);
+  check('a reader without a session is refused', (await j('/api/patterns')).status === 401);
+
+  const learned = await j('/api/patterns/learn', { method: 'POST', headers: H });
+  check('learning reads who left and who stayed', learned.status === 200 && learned.body?.status?.churned >= 20 && learned.body?.status?.enough === true && learned.body?.status?.simulated === false, JSON.stringify(learned.body?.status));
+  const listed = await j('/api/patterns', { headers: H });
+  const absent = (listed.body?.patterns || []).find((p) => /absent in Attendance/i.test(p.label));
+  check('the planted pattern is found, with its numbers', absent && absent.state === 'candidate' && absent.withChurned >= 20 && /Seen before \d+ of the \d+ customers who left/.test(absent.sentence), JSON.stringify(listed.body?.patterns?.map((p) => [p.label, p.withChurned, p.strength])));
+
+  const redef = await j('/api/patterns/definition', { method: 'PUT', headers: H, body: JSON.stringify({ inactiveDays: 60, statusWords: 'withdrawn, left' }) });
+  check('the owner can change what lost means, and it learns again', redef.status === 200 && redef.body?.definition?.inactiveDays === 60 && /60 days/.test(redef.body?.definition?.sentence || '') && redef.body?.status?.churned >= 20, JSON.stringify(redef.body?.definition));
+
+  const again = (await j('/api/patterns', { headers: H })).body?.patterns?.find((p) => /absent in Attendance/i.test(p.label));
+  const ok = again && await j('/api/patterns/' + again.id + '/approve', { method: 'POST', headers: H, body: '{}' });
+  check('approving starts an agent', ok?.status === 200 && !!ok.body?.agentId, JSON.stringify(ok?.body));
+  const ags = await j('/api/agents', { headers: H });
+  check('the agent is on the map as a learned pattern', (ags.body?.agents || []).some((a) => a.watcherId === 'learned-pattern' && /Learned: .*absent/i.test(a.name)), JSON.stringify((ags.body?.agents || []).map((a) => a.name)));
+  check('and the pattern now says it is being watched', (await j('/api/patterns', { headers: H })).body?.patterns?.find((p) => p.id === again.id)?.state === 'approved');
+} catch (err) { check('learned churn patterns', false, err.stack); }
 
 child.kill(); meta.close();
 await new Promise(r => setTimeout(r, 800));

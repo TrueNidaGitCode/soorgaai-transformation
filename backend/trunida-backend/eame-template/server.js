@@ -26,7 +26,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets, indexWithOwnCounts } from './services/connectorService.js';
-import { startAgentScheduler, autoStartWatchers, rebindWatchers, onLookNow, onFindingsChanged } from './services/agentService.js';
+import { startAgentScheduler, autoStartWatchers, rebindWatchers, onLookNow, onFindingsChanged, onPatternRun, findingsCollection } from './services/agentService.js';
+import { patternRunner, learningStatus, RELEARN_DAYS } from './services/churnPatterns.js';
+import { relearnNow } from './controllers/patternsController.js';
 import { refreshAnalyses } from './services/customerAnalysis.js';
 import { catalogueFor } from './services/agentCatalogue.js';
 import { activeCategories, categoryLimit } from './services/coverage.js';
@@ -320,6 +322,29 @@ async function start() {
   // waiting for somebody to open the board. Cheap when nothing changed: each
   // customer is compared by fingerprint and skipped.
   setTimeout(() => { refreshAnalyses(); }, 60 * 1000).unref?.();
+
+  /*
+   * Learned churn patterns. Approved ones are run by the scheduler like any
+   * watcher, through this runner; what is learned is refreshed weekly, and
+   * once shortly after a deploy if it never has been (see churnPatterns.js).
+   */
+  onPatternRun(patternRunner({
+    planned: () => agentPlan().churn || null,
+    findings: () => findingsCollection().find({}).toArray(),
+  }));
+  const relearnIfDue = async () => {
+    try {
+      const s = await learningStatus();
+      const age = s?.learnedAt ? Date.now() - new Date(s.learnedAt).getTime() : Infinity;
+      if (age < RELEARN_DAYS * 24 * 60 * 60 * 1000) return;
+      const out = await relearnNow();
+      console.log(`[patterns] learned from ${out.churned} who left and ${out.stayed} who stayed: ${out.candidates} pattern(s)`);
+    } catch (err) {
+      console.warn('[patterns] learning skipped:', err.message);
+    }
+  };
+  setTimeout(relearnIfDue, 2 * 60 * 1000).unref?.();
+  setInterval(relearnIfDue, 6 * 60 * 60 * 1000).unref?.();
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

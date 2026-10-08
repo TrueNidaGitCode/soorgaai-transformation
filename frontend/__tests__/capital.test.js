@@ -129,7 +129,7 @@ describe('where the deck is ahead of the product, the admin copy says so', () =>
     const steps = data('STEPS');
     expect(steps.find(([, n]) => n === 'Learn')[3]).toBe('part');
     expect(steps.find(([, n]) => n === 'Recommend')[3]).toBe('part');
-    expect(js).toContain('does <b>not</b> yet learn new churn');
+    expect(js).toContain('proven on a real customer&rsquo;s history');
     expect(steps.find(([, n]) => n === 'Act')[3]).toBe('part');
     expect(js).toMatch(/holds no mail credentials by design/);
   });
@@ -184,7 +184,7 @@ describe('the competition slide', () => {
   it('flags that the edge statement is ahead of the product', () => {
     const v = js.slice(js.indexOf('function competition()'), js.indexOf('const SEGMENTS'));
     expect(v).toMatch(/Don&rsquo;t wait for churn/);
-    expect(v).toContain('learns the behavioural patterns&rdquo;</b> is not built');
+    expect(v).toContain('learns the behavioural patterns&rdquo;</b> is built (8 October) but not yet proven');
     expect(v).toMatch(/not checked/);
   });
 });

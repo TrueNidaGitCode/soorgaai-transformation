@@ -6,15 +6,19 @@
     <title>Capital - Svarg Admin</title>
 
     <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="capital.css?v=2">
+    <link rel="stylesheet" href="capital.css?v=5">
     <script src="../login/config.js"></script>
 </head>
 <body class="ck-body">
     <!-- The deck, slide per section, rendered by capital.js. The proof slide
          reads from the live databases rather than from whatever was true on
          the day somebody typed it. -->
+    <!-- The investor copy as a PDF: one slide per 16:9 page, admin flags left
+         out, the proof slide as measured when the button was pressed. -->
+    <button type="button" id="ck-download" class="ck-download" disabled>Preparing&hellip;</button>
+
     <main id="ck-deck" class="ck-deck"></main>
 
-    <script src="capital.js?v=3"></script>
+    <script src="capital.js?v=6"></script>
 </body>
 </html>

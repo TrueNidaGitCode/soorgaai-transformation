@@ -185,11 +185,12 @@
 .ck-grid2 { width: 100%; border-collapse: collapse; }
 .ck-grid2 td { padding: 5px 16px 5px 0; font-size: 1rem; font-weight: 600; }
 
-/* ── The five steps ────────────────────────────────────────────────────────── */
+/* ── The six steps ─────────────────────────────────────────────────────────── */
 
 .ck-steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  /* Six on one row on a laptop, three by two below that: never five and one. */
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -355,11 +356,135 @@
   color: var(--ck-warn);
 }
 
+@media (max-width: 1100px) {
+  .ck-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (max-width: 720px) {
   .ck-slide { padding: 40px 20px 46px; }
+  .ck-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ck-list--two { columns: 1; }
   .ck-ask { grid-template-columns: 1fr; gap: 8px; }
   .ck-rows th { width: auto; display: block; padding-bottom: 4px; border-bottom: 0; }
   .ck-rows td { display: block; padding-top: 0; }
   .ck-years { grid-template-columns: 1fr; }
+}
+
+/* ── Competition ────────────────────────────────────────────────────────────
+ *
+ * A ranked ladder rather than a logo grid: who, why they matter, and a
+ * five-bar threat meter. Red, orange and yellow are the founder's own markers.
+ */
+.ck-comp { align-items: start; }
+.ck-ladder { list-style: none; margin: 0; padding: 0; }
+.ck-ladder__row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ck-line);
+}
+.ck-ladder__rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-line);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--ck-dim);
+}
+.ck-ladder__row:first-child .ck-ladder__rank { color: #0B0B0B; background: #F87171; border-color: #F87171; }
+.ck-ladder__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ck-ladder__who b { font-size: 1rem; color: var(--ck-text); }
+.ck-ladder__who span { font-size: 0.84rem; line-height: 1.45; color: var(--ck-dim); }
+.ck-ladder__threat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ck-meter { display: inline-flex; gap: 3px; }
+.ck-meter i { width: 6px; height: 14px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); }
+.ck-ladder__threat--red    { color: #F87171; }
+.ck-ladder__threat--orange { color: #FB923C; }
+.ck-ladder__threat--yellow { color: #FACC15; }
+.ck-meter i.on { background: currentColor; }
+
+.ck-edge__line {
+  margin: 6px 0 16px;
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ck-text);
+}
+.ck-edge__list { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ck-edge__list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 14px;
+  border-left: 2px solid var(--ck-accent);
+}
+.ck-edge__list b { font-size: 0.92rem; color: var(--ck-text); }
+.ck-edge__list span { font-size: 0.86rem; line-height: 1.5; color: var(--ck-dim); }
+
+/* ── Download as PDF ────────────────────────────────────────────────────────
+ *
+ * The button floats on screen and is never printed. The print rules make the
+ * investor copy: one dark 16:9 page per slide (sized and scaled by
+ * fitSlidesToPages in capital.js), and the admin flags left out entirely.
+ */
+.ck-download {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 10;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ck-accent);
+  color: #04211f;
+  font: 700 14px/1 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.ck-download:hover { filter: brightness(1.08); }
+.ck-download:disabled { opacity: 0.55; cursor: progress; }
+
+/* Measured on screen before printing, so the screen has to match the page. */
+body.is-printing .ck-flag,
+body.is-printing .ck-download { display: none !important; }
+body.is-printing .ck-slide { max-width: none; margin: 0; box-sizing: border-box; }
+
+@page { size: 1280px 720px; margin: 0; }
+
+@media print {
+  html, body.ck-body {
+    background: var(--ck-bg);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .ck-download,
+  .ck-flag { display: none !important; }
+  .ck-slide {
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-bottom: 0;
+    background: var(--ck-bg);
+    break-after: page;
+    break-inside: avoid;
+  }
+  .ck-slide:last-child { break-after: auto; }
 }

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="How Svarg builds a customer retention app around your team: Cob plans, Aria runs the model, Arth connects your data, Eame builds the app and its AI agents, Yusu fits it into your tools.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="How Svarg works — your own customer retention app">
+  <meta property="og:description" content="How Svarg builds a customer retention app around your team: Cob plans, Aria runs the model, Arth connects your data, Eame builds the app and its AI agents, Yusu fits it into your tools.">
+  <meta property="og:url" content="https://www.svargai.com/how-it-works/">
+  <title>How Svarg works — your own customer retention app</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../marketing.css?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../landing-hero.css?v=4">
+  <link rel="stylesheet" href="../site-pages.css?v=1">
+</head>
+<body class="mkt mkt--home sp-page">
+
+  <!-- ── Top nav ──────────────────────────────────────────────── -->
+  <header class="mkt-nav">
+    <div class="mkt-nav__inner">
+      <a href="/" class="mkt-logo" aria-label="Svarg — home">
+        <img src="/assets/logo-nav.png" alt="Svarg" class="mkt-logo__img">
+      </a>
+
+      <!-- div (not <nav>) — style.css has a global `nav {...}` tag selector that would otherwise paint this as an opaque box -->
+      <div class="mkt-menu" role="navigation" aria-label="Primary navigation">
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Solutions
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel mkt-menu__panel--rich">
+            <a href="/" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Customer Retention</span>
+              <span class="mkt-menu__link-desc">Find customers drifting away, and why</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Business type
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel mkt-menu__panel--rich">
+            <a href="/business-types/#recurring" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Recurring Services</span>
+              <span class="mkt-menu__link-desc">Wellness, fitness, salons, physiotherapy</span>
+            </a>
+            <a href="/business-types/#education" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Education &amp; Memberships</span>
+              <span class="mkt-menu__link-desc">Academies, coaching, music and dance schools</span>
+            </a>
+            <a href="/business-types/#subscription" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Subscription &amp; Repeat Purchase</span>
+              <span class="mkt-menu__link-desc">Subscriptions, food, pet care, consumables</span>
+            </a>
+            <a href="/business-types/#high-value" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">High-Value Repeat Services</span>
+              <span class="mkt-menu__link-desc">Auto service, dental, home services</span>
+            </a>
+            <a href="/business-types/#hospitality" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Hospitality &amp; Leisure</span>
+              <span class="mkt-menu__link-desc">Hotels, resorts, travel, clubs</span>
+            </a>
+          </div>
+        </div>
+
+        <a href="/pricing/pricing.html" class="mkt-menu__direct">Pricing</a>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Company
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/company/about.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">About us</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mkt-nav__auth">
+        <a href="/company/contact-us.html" class="mkt-btn mkt-btn--primary">Get Demo</a>
+      </div>
+
+      <button type="button" id="mkt-mobile-toggle" class="mkt-mobile-toggle" aria-label="Open menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="mkt-mobile-panel" class="mkt-mobile-panel">
+      <a href="/" class="mkt-mobile-panel__link">Solutions — Customer Retention</a>
+      <a href="/business-types/#recurring" class="mkt-mobile-panel__link">Business type — Recurring Services</a>
+      <a href="/business-types/#education" class="mkt-mobile-panel__link">Business type — Education &amp; Memberships</a>
+      <a href="/business-types/#subscription" class="mkt-mobile-panel__link">Business type — Subscription &amp; Repeat Purchase</a>
+      <a href="/business-types/#high-value" class="mkt-mobile-panel__link">Business type — High-Value Repeat Services</a>
+      <a href="/business-types/#hospitality" class="mkt-mobile-panel__link">Business type — Hospitality &amp; Leisure</a>
+      <a href="/how-it-works/" class="mkt-mobile-panel__link">How it works</a>
+      <a href="/pricing/pricing.html" class="mkt-mobile-panel__link">Pricing</a>
+      <a href="/company/about.html" class="mkt-mobile-panel__link">Company — About us</a>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="sp-hero">
+      <p class="lh-eyebrow">How it works</p>
+      <h1 class="sp-h1">From the systems you already have to <span class="lh-grad">your own retention app.</span></h1>
+      <p class="sp-lead">Five steps, each handled by one part of Svarg. Your team describes the problem; Svarg plans, connects, builds and fits the app around how you already work.</p>
+      <ol class="sp-journey" aria-label="The five steps">
+        <li><a href="#cob" style="--c:#2dd4bf"><span class="sp-journey__n">01</span><span class="sp-journey__name">Cob</span><span class="sp-journey__role">Plan</span></a></li>
+        <li><a href="#aria" style="--c:#22d3ee"><span class="sp-journey__n">02</span><span class="sp-journey__name">Aria</span><span class="sp-journey__role">Run</span></a></li>
+        <li><a href="#arth" style="--c:#34d399"><span class="sp-journey__n">03</span><span class="sp-journey__name">Arth</span><span class="sp-journey__role">Connect</span></a></li>
+        <li><a href="#eame" style="--c:#5eead4"><span class="sp-journey__n">04</span><span class="sp-journey__name">Eame</span><span class="sp-journey__role">Build</span></a></li>
+        <li><a href="#yusu" style="--c:#67e8f9"><span class="sp-journey__n">05</span><span class="sp-journey__name">Yusu</span><span class="sp-journey__role">Fit in</span></a></li>
+      </ol>
+    </section>
+
+    <section id="cob" class="sp-step" style="--c:#2dd4bf" aria-labelledby="cob-title">
+      <div class="sp-step__text">
+        <p class="sp-step__meta"><span class="sp-step__n">01</span><span class="sp-step__name">Cob</span><span class="sp-step__role">Plan</span><span class="sp-step__tag">Built by Svarg</span></p>
+        <h2 class="lh-h2 sp-step__title" id="cob-title">It starts from how your team works, not a template.</h2>
+        <p class="sp-step__p">Describe your business and what you find out too late, in your own words. Cob works out which customer signals matter, where they live, and which risk to watch first, with the reasoning written out.</p>
+        <p class="sp-step__note">Cob is live today. Try it on your own business in a few minutes, no call needed.</p>
+        <a class="sp-step__link" href="/cob.html">Try Cob →</a>
+      </div>
+      <ol class="sp-cards">
+        <li class="sp-card"><span class="sp-card__n">01</span><h3 class="sp-card__title">Which signals matter</h3><p class="sp-card__body">The signs of a customer drifting away in your business, named in your own words: missed visits, longer gaps, unanswered messages, failed payments.</p></li>
+        <li class="sp-card"><span class="sp-card__n">02</span><h3 class="sp-card__title">Where to start, and why</h3><p class="sp-card__body">Every risk is weighed by what it costs you and how quickly it can be watched. One is recommended first, with the reason attached.</p></li>
+        <li class="sp-card"><span class="sp-card__n">03</span><h3 class="sp-card__title">What it will need</h3><p class="sp-card__body">Each signal carries what it depends on: the data, where it usually lives, and what is missing today. That is what Arth picks up.</p></li>
+      </ol>
+    </section>
+
+    <section id="aria" class="sp-step" style="--c:#22d3ee" aria-labelledby="aria-title">
+      <div class="sp-step__text">
+        <p class="sp-step__meta"><span class="sp-step__n">02</span><span class="sp-step__name">Aria</span><span class="sp-step__role">Run</span><span class="sp-step__tag">Partner-powered</span></p>
+        <h2 class="lh-h2 sp-step__title" id="aria-title">The right model for the job, already running.</h2>
+        <p class="sp-step__p">Your app needs a model to read signals and explain each risk. Aria chooses one for what your app does and the constraints you set, and runs it for you. There is nothing to buy and no keys to manage.</p>
+        <p class="sp-step__note">Aria is delivered with specialist model and compute partners; Svarg makes sure the right one is in place for your app.</p>
+      </div>
+      <ol class="sp-cards">
+        <li class="sp-card"><span class="sp-card__n">01</span><h3 class="sp-card__title">Chosen for the work</h3><p class="sp-card__body">The model is matched to the job your app does and to what matters to you, such as privacy, cost or language. Sarvam’s models, built in India, are an option.</p></li>
+        <li class="sp-card"><span class="sp-card__n">02</span><h3 class="sp-card__title">Nothing to set up</h3><p class="sp-card__body">Hosting and compute are provided. Your application never holds an AI provider key, so there is none to leak.</p></li>
+        <li class="sp-card"><span class="sp-card__n">03</span><h3 class="sp-card__title">A ceiling on spend</h3><p class="sp-card__body">Every application has its own allowance, so a runaway loop cannot run up a bill. You can see how much each one has used on your Account page.</p></li>
+      </ol>
+    </section>
+
+    <section id="arth" class="sp-step" style="--c:#34d399" aria-labelledby="arth-title">
+      <div class="sp-step__text">
+        <p class="sp-step__meta"><span class="sp-step__n">03</span><span class="sp-step__name">Arth</span><span class="sp-step__role">Connect</span><span class="sp-step__tag">Partner-powered</span></p>
+        <h2 class="lh-h2 sp-step__title" id="arth-title">Your data stays where it is. Arth connects to it.</h2>
+        <p class="sp-step__p">The signals already sit in your CRM, inbox, phone system and spreadsheets. Arth connects to them where they are and reads only what your app needs. There is nothing to migrate.</p>
+        <p class="sp-step__note">Arth is delivered with specialist data partners; Svarg makes sure your data arrives where your app needs it.</p>
+      </div>
+      <ol class="sp-cards">
+        <li class="sp-card"><span class="sp-card__n">01</span><h3 class="sp-card__title">Connect where it lives</h3><p class="sp-card__body">Your CRM (such as Zoho or LeadSquared), your phone system, WhatsApp, a database, or a simple upload.</p></li>
+        <li class="sp-card"><span class="sp-card__n">02</span><h3 class="sp-card__title">Only what the job needs</h3><p class="sp-card__body">Your app reads the fields each signal needs. Your records never go into an AI prompt: the model sees summaries such as counts and rankings.</p></li>
+        <li class="sp-card"><span class="sp-card__n">03</span><h3 class="sp-card__title">Gaps shown, not guessed</h3><p class="sp-card__body">Each source is matched against the signals Cob asked for, and anything missing is shown plainly, so you know what the app can and cannot see.</p></li>
+      </ol>
+    </section>
+
+    <section id="eame" class="sp-step" style="--c:#5eead4" aria-labelledby="eame-title">
+      <div class="sp-step__text">
+        <p class="sp-step__meta"><span class="sp-step__n">04</span><span class="sp-step__name">Eame</span><span class="sp-step__role">Build</span><span class="sp-step__tag">Built by Svarg</span></p>
+        <h2 class="lh-h2 sp-step__title" id="eame-title">Your own retention app, with its AI agents.</h2>
+        <p class="sp-step__p">Eame builds the application itself: your own app, at its own address, with AI agents that each watch for one kind of risk and show the records behind every alert.</p>
+      </div>
+      <ol class="sp-cards">
+        <li class="sp-card"><span class="sp-card__n">01</span><h3 class="sp-card__title">Agents for your risks</h3><p class="sp-card__body">Gone Quiet, Renewal Due, Unanswered Enquiry, Repeat Complaint and more, chosen for the risks Cob found in your business.</p></li>
+        <li class="sp-card"><span class="sp-card__n">02</span><h3 class="sp-card__title">Evidence on every alert</h3><p class="sp-card__body">Each alert links to the records it was found in, so your team knows who to call and why. No black box.</p></li>
+        <li class="sp-card"><span class="sp-card__n">03</span><h3 class="sp-card__title">It grows with you</h3><p class="sp-card__body">When your team needs something new, it is added to the same app. There is no new tool to adopt.</p></li>
+      </ol>
+    </section>
+
+    <section id="yusu" class="sp-step" style="--c:#67e8f9" aria-labelledby="yusu-title">
+      <div class="sp-step__text">
+        <p class="sp-step__meta"><span class="sp-step__n">05</span><span class="sp-step__name">Yusu</span><span class="sp-step__role">Fit in</span><span class="sp-step__tag">Built by Svarg</span></p>
+        <h2 class="lh-h2 sp-step__title" id="yusu-title">It works where your team already works.</h2>
+        <p class="sp-step__p">An app nobody opens is worth nothing. Yusu puts alerts and next steps into the tools your team already uses, so acting on a risk is part of the day, not another tab.</p>
+        <p class="sp-step__note">Yusu is under active development. This is the direction, not a finished product.</p>
+      </div>
+      <ol class="sp-cards">
+        <li class="sp-card"><span class="sp-card__n">01</span><h3 class="sp-card__title">Inside your tools</h3><p class="sp-card__body">Alerts and follow-ups reach your team in the tools they already have open, instead of a separate portal.</p></li>
+        <li class="sp-card"><span class="sp-card__n">02</span><h3 class="sp-card__title">One team first</h3><p class="sp-card__body">Rolled out to one team, proven, then widened. The same careful start every Svarg app gets.</p></li>
+        <li class="sp-card"><span class="sp-card__n">03</span><h3 class="sp-card__title">Changes as you do</h3><p class="sp-card__body">As your team changes how it works, the app adapts with it, with no tickets to file and no waiting on us.</p></li>
+      </ol>
+    </section>
+
+    <section class="sp-cta">
+      <h2 class="lh-h2 sp-cta__title">See it on <span class="lh-grad">your own customers.</span></h2>
+      <p class="sp-cta__p">Describe your business in two or three sentences and Svarg shows you what it would watch.</p>
+      <div class="sp-cta__actions">
+        <a class="lh-btn" href="/cob.html">See who’s at risk</a>
+        <a class="sp-cta__ghost" href="/company/contact-us.html">Get Demo</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="lh-footer">
+    <div class="lh-footer__cols">
+      <div class="lh-footer__col" role="navigation" aria-label="Resources">
+        <p class="lh-footer__h">Resources</p>
+        <a href="/how-it-works/">How it works</a>
+        <a href="/#security">Security</a>
+        <a href="/company/about.html">About us</a>
+        <a href="/company/contact-us.html">Contact us</a>
+      </div>
+      <div class="lh-footer__col lh-footer__col--end" role="navigation" aria-label="Legal">
+        <p class="lh-footer__h">Legal</p>
+        <a href="/privacy/privacy.html">Privacy policy</a>
+        <a href="mailto:hello@svargai.com?subject=Privacy%20request">Make a privacy request</a>
+      </div>
+    </div>
+    <div class="lh-footer__bar">
+      <img src="/assets/logo-nav.png" alt="Svarg" class="lh-footer__logo">
+      <p class="lh-footer__tag">©2026 SvargAI<br><span>Built in India · Your own retention system</span></p>
+      <span class="lh-footer__spacer"></span>
+    </div>
+  </footer>
+
+  <script type="module" src="../site-pages.js?v=1"></script>
+</body>
+</html>

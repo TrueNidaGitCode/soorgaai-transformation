@@ -220,8 +220,10 @@ export function wireAgentConsole() {
 // ── 4. Your own system: the robot build ───────────────────────────────
 const BRICKS = [
   ['Cob', 'Plan', 'Maps your workflow and key signals', '#2dd4bf'],
-  ['Aria', 'Connect', 'Readies your data, skips sensitive fields', '#22d3ee'],
-  ['Arth', 'Run', 'The model and infrastructure, ready', '#34d399'],
+  // Aria chooses and runs the model, Arth connects the data: the order and
+  // names the app has used since 11 September 2026.
+  ['Aria', 'Run', 'The model and infrastructure, ready', '#22d3ee'],
+  ['Arth', 'Connect', 'Connects your data where it already lives', '#34d399'],
   ['Eame', 'Build', 'Your application and its AI agents', '#5eead4'],
   ['Yusu', 'Fit in', 'Plugs into the tools you already use', '#67e8f9'],
 ];

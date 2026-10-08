@@ -8,7 +8,7 @@
 
 import { initMarketingNav } from './shared/marketingNav.js';
 import { onArrival, outreachRef } from './shared/visitor.js';
-import { initHomeSections } from './homeSections.js?v=1';
+import { initHomeSections } from './homeSections.js?v=2';
 
 // Before anything renders. This is the page tracked links point at, so it is
 // the only place the ref can be captured — and it was not being captured

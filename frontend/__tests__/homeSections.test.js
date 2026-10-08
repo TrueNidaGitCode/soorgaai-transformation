@@ -47,13 +47,29 @@ describe('security cards say only what is true', () => {
 describe('partners are described as what they are', () => {
   it('does not claim endorsement by or reliance on NVIDIA', () => {
     expect(partners.toLowerCase()).not.toMatch(/endorse|powered by nvidia|nvidia gpus|partnered with nvidia/);
-    expect(partners).toContain('member of NVIDIA Inception');
+    expect(partners).toContain('member of the NVIDIA Inception program');
   });
 
   it('says agents can run on Sarvam, because it is opt-in', () => {
     // sarvam is an opt-in provider in services/llmService.js, not the default.
     expect(partners).toContain('can run on Sarvam');
     expect(partners).not.toMatch(/run on Sarvam’s models by default|runs on Sarvam/);
+  });
+});
+
+describe('NVIDIA Inception is named as NVIDIA asks', () => {
+  /*
+   * From NVIDIA's member guidelines (2026-10-08): never abbreviate, reorder or
+   * misspell the name; NVIDIA in capitals, the program name never in all caps;
+   * capital P in a title, lowercase p in a sentence.
+   */
+  const page = read('index.html');
+  it('uses only allowed forms', () => {
+    expect(page).not.toMatch(/Nvidia|NV Inception|Inception Program by|INCEPTION/);
+    expect(page).not.toMatch(/(?<!NVIDIA )Inception Program/);
+    // NVIDIA's own badge, named for anyone who cannot see it.
+    expect(partners).toContain('src="assets/Inception%20Badges/for-screen/nvidia-inception-program-badge-rgb-for-screen.svg" alt="NVIDIA Inception Program"');
+    expect(partners).toContain('member of the NVIDIA Inception program.');
   });
 });
 

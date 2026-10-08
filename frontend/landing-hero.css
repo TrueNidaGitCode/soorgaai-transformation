@@ -1323,6 +1323,14 @@ body.mkt--home {
 .lh-partner__out { position: absolute; right: 16px; top: 16px; color: #6b7c80; }
 .lh-partner__out .lh-ico { width: 16px; height: 16px; }
 .lh-partner__logo { height: 60px; display: flex; align-items: center; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+/* NVIDIA's own member badge, unaltered: their artwork, colours and white panel. */
+.lh-partner__badge { display: block; height: 72px; width: auto; }
+/* Both cards' titles share the badge's height, so the two stay level. */
+.lh-partner .lh-partner__logo { height: 72px; }
+@media (max-width: 1023px) {
+  .lh-partner__badge { height: 56px; }
+  .lh-partner .lh-partner__logo { height: 56px; }
+}
 .lh-partner__tag { margin-top: 26px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
 .lh-partner__kicker {
   margin-top: 4px;

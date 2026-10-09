@@ -52,13 +52,13 @@ describe('the hero speaks to the reader who is actually arriving', () => {
      * too late — it is now about customers rather than "your business".
      */
     const h1 = hero.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1];
-    expect(h1).toMatch(/signals/i);
-    expect(h1).toMatch(/late/i);
+    // On 2026-10-09 the user rewrote it plainer: the risk of leaving, and
+    // knowing before it happens.
+    expect(h1).toMatch(/at risk of leaving/i);
+    expect(h1).toMatch(/before they do/i);
 
     const sub = hero.match(/class="lh-hero__sub">([\s\S]*?)<\/p>/)[1];
-    // The mechanism: it works from systems they already have.
-    expect(sub).toMatch(/existing systems/i);
-    expect(sub).toMatch(/drifting away/i);
+    expect(sub).toMatch(/losing interest/i);
   });
 
   it('promises a reason and a window, not a build', () => {
@@ -67,8 +67,8 @@ describe('the hero speaks to the reader who is actually arriving', () => {
      * behind each at-risk customer, while it can still be acted on.
      */
     const sub = hero.match(/class="lh-hero__sub">([\s\S]*?)<\/p>/)[1];
-    expect(sub).toMatch(/tells you why/i);
-    expect(sub).toMatch(/still time/i);
+    expect(sub).toMatch(/understand why/i);
+    expect(sub).toMatch(/take action before you lose them/i);
   });
 
   it('asks them to look at their own customers, not to begin a journey', () => {

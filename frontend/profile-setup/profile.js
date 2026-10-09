@@ -76,6 +76,32 @@ function setLoading(on) {
   loader.style.display = on ? 'flex' : 'none';
 }
 
+/**
+ * The company and its website, from the work email they signed in with.
+ *
+ * Read from the company's own site (GET /api/guest/company-brand). Filled in
+ * only where the field is still empty and only if they did not say "Not your
+ * company?" in the sign-in box; both stay theirs to change. The website then
+ * goes through the same reading as one typed by hand, so Cob gets the company
+ * context without anybody pasting it.
+ */
+async function prefillFromWorkEmail() {
+  try {
+    const me = await fetch(`${API}/users/me`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!me.ok) return;
+    const { email } = await me.json();
+    const domain = String(email || '').split('@')[1] || '';
+    if (!domain || localStorage.getItem('svarg_brand_dismissed') === domain.toLowerCase()) return;
+    const r = await fetch(`${API}/guest/company-brand?email=${encodeURIComponent(email)}`);
+    const { brand } = await r.json();
+    if (!brand) return;
+    const org = document.getElementById('orgName');
+    const site = document.getElementById('websiteUrl');
+    if (org && !org.value.trim() && brand.name) org.value = brand.name;
+    if (site && !site.value.trim() && brand.website) site.value = brand.website;
+  } catch { /* nothing filled in; the form works as before */ }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   requireAuth();
 
@@ -93,6 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch { /* network error — continue to form */ }
 
   initConnectorCards();
+  prefillFromWorkEmail();
 
   const form = document.getElementById('profile-form');
   form.addEventListener('submit', async (e) => {

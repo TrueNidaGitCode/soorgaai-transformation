@@ -2623,7 +2623,8 @@ function renderIcpView() {
             <summary>What each phrase may claim today</summary>
             <p class="sg-who__note"><b>&ldquo;The systems you already use&rdquo;</b> means whatever Svarg
               can read: an upload, a database connection, or Zoho CRM, LeadSquared, Clinicea,
-              cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira. LeadSquared was built from its
+              cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira, plus events sent from the
+              customer&rsquo;s own app (an events API, for a business whose customers use its product). LeadSquared was built from its
               published API and has not yet read a real account, so say it connects, not that it has been
               proven to. Clinicea is the same, and it needs Clinicea&rsquo;s paid API add-on; another CRM or
               phone provider is still an export or a database.</p>
@@ -2841,7 +2842,7 @@ function renderPlaybook() {
    */
   const WORKFLOW = [
     ['Connect', 'Connect the systems the customer already uses: CRM, appointments, usage, payments, support, communication.',
-      '', 'Zoho CRM, LeadSquared, Clinicea, Jira, WhatsApp Business, phone systems, a database and file uploads.'],
+      '', 'Zoho CRM, LeadSquared, Clinicea, Jira, WhatsApp Business, phone systems, events from your own app, a database and file uploads.'],
     ['Detect', 'Find customers showing the pattern.',
       'Customer attendance dropped 40% over the last month.',
       'Watchers run on a schedule and evaluate their condition in code.'],

@@ -24,9 +24,10 @@ import fs from 'fs';
 import path from 'path';
 import { KB_ENTERPRISE_ROOT } from './strategyCanvasService.js';
 import { readDatasets } from './eameSpec.js';
+import { takesAppEvents } from './customerSurfaceService.js';
 
 /** Kinds the Data page knows how to draw. Anything else in a block is dropped. */
-export const SOURCE_KINDS = ['folder', 'whatsapp', 'form', 'jira', 'confluence', 'github', 'file', 'database', 'zoho-crm'];
+export const SOURCE_KINDS = ['folder', 'whatsapp', 'form', 'jira', 'confluence', 'github', 'file', 'database', 'zoho-crm', 'app-events'];
 
 /**
  * The connector modules, by the source kind that needs them. A kind with no
@@ -59,6 +60,11 @@ export const CONNECTOR_MODULES = {
   // ALWAYS_SHIPPED for the same reason as the database. Named here so an
   // industry that keeps its records in a CRM can ask for the card as well.
   'zoho-crm': 'services/connectors/zohocrm.js',
+  // The business's own app, telling the application what its users do as it
+  // happens. Asked for only when Cob decided the customers use the business's
+  // own app (customerSurfaceService); in ALWAYS_SHIPPED because its route is
+  // auto-mounted and imports it.
+  'app-events': 'services/connectors/appevents.js',
 };
 
 function normalise(list) {
@@ -142,6 +148,12 @@ const DATABASE_SOURCE = {
   note: 'Read straight from the database your software already writes to.',
 };
 
+/** For a business whose customers use its own app: what they do in it, as it happens. */
+const APP_EVENTS_SOURCE = {
+  kind: 'app-events', label: 'Your app', providers: ['push'], holds: ['events', 'users'],
+  note: 'Your app sends what its users do (signed up, opened, finished, cancelled) to your retention application as it happens.',
+};
+
 const DEFAULT_SOURCES = [
   { kind: 'folder', label: 'Your folder of spreadsheets', providers: ['upload'], holds: [], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' },
 ];
@@ -162,6 +174,9 @@ export function sourcesForBlueprint(bp) {
   // customer recognises first, and the database is the answer for the one
   // who says "it is all in our practice software".
   if (!out.some(s => s.kind === 'database')) out.push({ ...DATABASE_SOURCE });
+  // Their own app, first, when that is where the customers are: it is the
+  // freshest signal they have, and the database beside it holds the history.
+  if (takesAppEvents(bp) && !out.some(s => s.kind === 'app-events')) out.unshift({ ...APP_EVENTS_SOURCE, surface: bp.customerSurface.surface });
   return out;
 }
 

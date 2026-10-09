@@ -9,6 +9,8 @@
  * card to show and nothing pretends otherwise.
  */
 
+import { mountProfileMenu } from '../shared/profileMenu.js?v=1';
+
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const el = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -133,11 +135,8 @@ function renderUser(u, profile) {
 
 // ── Boot ─────────────────────────────────────────────────────────────────
 function wireNav() {
-  el('ac-username').textContent = localStorage.getItem('username') || '';
-  el('ac-logout').addEventListener('click', () => {
-    ['token', 'username', 'userId', 'role'].forEach((k) => localStorage.removeItem(k));
-    window.location.href = '/index.html';
-  });
+  // The account menu the home page draws (shared/profileMenu.js).
+  mountProfileMenu(el('profile-slot'));
 }
 
 async function load() {

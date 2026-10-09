@@ -1,10 +1,10 @@
-# CRM and project tracker integrations
+# CRM, project tracker and app integrations
 
 How each CRM and project tracker connects to a delivered application, written
 the same way for each so they can be compared line by line. When one is added
 or a step changes, this document changes in the same commit.
 
-Last updated: 5 October 2026 (Jira added as the project tracker; Clinicea as the clinic system).
+Last updated: 9 October 2026 (events from the business's own app, decided by Cob; the business's brand from a work email). Before that, 5 October 2026 (Jira added as the project tracker; Clinicea as the clinic system).
 
 ## At a glance
 
@@ -357,6 +357,149 @@ demand, so an application without Jira answers 404 rather than failing to boot).
 
 On Main: `sourceCatalogService.js` decides whether the Jira card and module
 ship. There is no consent screen, so nothing is brokered.
+
+## Your own app (events API)
+
+For a business whose customers use software it built, for example Tenacrity's
+classroom apps, the first sign of a customer leaving is what they stop doing
+in that app. No CRM records that. So the business's app sends each thing a
+user does to the retention application as it happens, the way it would send
+it to an analytics tool.
+
+### Who gets it: Cob decides
+
+Svarg (Main) decides at blueprint creation where the customers show up
+(`services/customerSurfaceService.js`):
+
+| Answer | Means | Data page top row |
+|---|---|---|
+| `own-app` | Customers use software the business built | **Your app**, then **Database** for the history |
+| `both` | A product with a service business around it | **Your app**, then CRM and Phone system |
+| `bought-systems` | Customers are recorded in systems the business bought (Vesoma, the cricket academy) | CRM and Phone system, as before |
+
+The decision counts plain words in the objective and in the company context or
+website: app-store links, "download our app", per-seat pricing, a free trial,
+"tools for teachers" and usage words, against appointments, branches, walk-ins
+and clinical words. Cob's product-vs-workflow reading (`engagement`) adds to
+the count but never decides on its own. With no evidence the answer is
+`bought-systems`, marked low confidence, and nothing about the application
+changes.
+
+The owner sees one line on the Blueprints page ("Your customers use your own
+app…") with a picker to correct it
+(`PATCH /api/strategy-canvas/transformation-blueprint/:id/customer-surface`).
+Their choice is kept as `userSet` and applies at the application's next build.
+A blueprint made before this existed is decided once, at its next build.
+
+### Before you start
+
+- The business's developers, and the places in their app where user actions
+  happen (sign-up, lesson created, subscription cancelled, and so on).
+- Nothing to install. An app already sending to Segment can point a webhook
+  destination at the address and send the key as its write key.
+
+### Steps in the application
+
+1. Data → **Your app** card → **Connect**. Optionally name the app.
+2. **Test and connect.** There is nothing to test against: the connection is
+   ready at once and defines its own dataset, `App Activity`.
+3. Give the developers the **Address** and **Key** shown on the card, with the
+   example request beside them.
+4. Events appear as the app sends them. The card shows "last event … ago".
+
+The key goes in an `Authorization` header as `Bearer <key>`, or the way Segment
+sends a write key (`Basic`, with the key as the username).
+
+### What it accepts
+
+`POST /api/app-events` (also `/batch`, `/track` and `/identify`), in Segment's
+shape: one message, or up to 500 as `{ "batch": [ … ] }`.
+
+```json
+{ "type": "track", "userId": "t-104", "event": "Lesson Created",
+  "properties": { "school": "Hillview School", "plan": "pro" },
+  "timestamp": "2026-10-09T08:15:00Z", "messageId": "…" }
+
+{ "type": "identify", "userId": "t-104",
+  "traits": { "name": "Asha Rao", "email": "asha@hillview.edu", "school": "Hillview School" } }
+```
+
+- A message without a user, or a track without an event name, is refused and
+  counted in the answer (`{ success, accepted, rejected }`).
+- Each event is kept once per `messageId`, so a sender's retries add nothing.
+  Without a `messageId`, the same user, event and moment count as one event.
+- The answer goes first. Landing is gathered into one sync every few seconds,
+  so a busy app does not rebuild the dataset on every click.
+
+### What it reads
+
+One dataset, `App Activity`, keyed by `event_id`:
+
+| Column | From the app |
+|---|---|
+| `customer` | `properties` or `traits`: `customer`, `account`, `company`, `school`, `organisation` or `team` |
+| `user_name`, `user_email`, `user_id` | The latest `identify` for that user, else the event |
+| `event`, `event_date`, `event_time` | The event and its timestamp |
+| `status` | The app's own `properties.status`, else the event name, so a rare event (a cancellation) is a signal the churn-pattern learner can count |
+| `plan`, `amount` | `properties.plan`; `revenue`, `amount`, `value` or `price` |
+| `event_id`, `received_at` | Kept, and marked internal so no agent is about them |
+
+### What can go wrong
+
+| What the developers see | What it means |
+|---|---|
+| `401` "That is not this application's key." | The key is wrong, or the header is missing |
+| `413` "At most 500 events in one request." | The batch is too large; split it |
+| `200` with `rejected` above 0 | Some messages had no `userId` or `anonymousId`, or a track had no `event` |
+| Events accepted but no rows | The **Your app** card is not connected yet; events are kept and land once it is |
+
+### Not yet proven
+
+Built and tested end to end on a composed application
+(`scripts/app-checks/e2e_app.mjs`), but no customer's app has sent to it yet.
+Say it connects, not that it has run in production.
+
+For a demo, `scripts/app-checks/send_sample_app_events.mjs <application url> <key>`
+sends ninety days of invented classroom-app activity: forty teachers in six
+schools, ten of whom fade and then cancel.
+
+### Where it lives
+
+On the Tenant: `eame-template/services/connectors/appevents.js`,
+`controllers/appEventsController.js` and `routes/appEventsRoutes.js` (mounted at
+`/api/app-events`). All three ship to every application (`ALWAYS_SHIPPED`)
+because the route is auto-mounted; the card appears only where
+`data/sources.json` names `app-events`. Events live in `svarg_app_events` and
+`svarg_app_users` in the application's own database. The key is derived from
+the application's own secret, is never stored, and is shown only to the owner.
+
+On Main: `customerSurfaceService.js` decides; `sourceCatalogService.js` adds
+the source; `blueprintOverviewService.js` and the Blueprints page show the line
+and the override.
+
+## The business's brand, from a work email
+
+Not a connector, but part of the same journey: somebody signing in as
+`name@tenacrity.com` has said which company they are from.
+
+- **Sign-in box.** `GET /api/guest/company-brand?email=` reads the company's
+  own home page (through the website reader's guard against private
+  addresses) and answers with its name, site and a small logo. The box shows
+  "Welcome, Tenacrity" with the logo and a "Not your company?" link. Free mail
+  is skipped, and anything that fails shows nothing. A domain is read at most
+  once a month (`svarg_company_brands`), failures included.
+- **Profile.** The company name and website are filled in where still empty,
+  unless the person said "Not your company?". The website then goes through
+  the same reading as one typed by hand, so Cob gets the company context.
+- **The delivered application.** At every build (`ensureFrontDoor`), the
+  owner's logo is stored on the blueprint (`brand`) and replaces the
+  application's initial on the front page and in the side menu. Only an image
+  data URI is ever used; the application never loads it from the company's
+  site.
+
+A site that serves only JavaScript still gives its name and favicon, but no
+text for Cob to read. Tenacrity's serves just a title. There, the objective and
+the owner's override carry the customer-surface decision.
 
 ## Adding the next CRM
 

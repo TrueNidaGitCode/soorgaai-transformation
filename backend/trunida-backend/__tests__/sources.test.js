@@ -55,7 +55,7 @@ describe('where an industry keeps its data', () => {
   it('ships only the connector modules the sources call for', async () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
-    expect(paths({}).length).toBe(9);
+    expect(paths({}).length).toBe(10);
     /*
      * WhatsApp is always among them, and that is not the filter leaking.
      *
@@ -68,9 +68,12 @@ describe('where an industry keeps its data', () => {
      * knowing it: routes/ is auto-mounted, phoneRoutes imports phoneController,
      * and phoneController imports the connector. Ship the route without the
      * module and the application dies on boot in the identical way.
+     *
+     * And your app's events, for the same reason again: appEventsRoutes is
+     * auto-mounted and reaches the module through its controller.
      */
     expect(paths({ connectors: ['jira'] }).sort())
-      .toEqual(['services/connectors/clinicea.js', 'services/connectors/database.js', 'services/connectors/jira.js',
+      .toEqual(['services/connectors/appevents.js', 'services/connectors/clinicea.js', 'services/connectors/database.js', 'services/connectors/jira.js',
         'services/connectors/leadsquared.js', 'services/connectors/phone.js', 'services/connectors/whatsapp.js',
         'services/connectors/zohocrm.js']);
     /*
@@ -81,7 +84,7 @@ describe('where an industry keeps its data', () => {
      * asked to connect, and it belongs with the database rather than with
      * the two above it.
      */
-    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/clinicea.js', 'services/connectors/database.js',
+    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/appevents.js', 'services/connectors/clinicea.js', 'services/connectors/database.js',
       'services/connectors/leadsquared.js', 'services/connectors/phone.js', 'services/connectors/whatsapp.js',
       'services/connectors/zohocrm.js']);
     // Everything else still ships.

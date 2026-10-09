@@ -89,7 +89,7 @@ export function connectorsShipped() {
   const NAME = {
     'zohocrm': 'Zoho CRM', 'leadsquared': 'LeadSquared', 'clinicea': 'Clinicea', 'phone': 'Cloud telephony', 'whatsapp': 'WhatsApp Business',
     'database': 'Your database', 'jira': 'Jira', 'confluence': 'Confluence',
-    'github': 'GitHub', 'svarg': 'Svarg',
+    'github': 'GitHub', 'svarg': 'Svarg', 'appevents': 'Your own app (events API)',
   };
   return files
     .filter((f) => /^[a-z0-9-]+\.js$/.test(f))

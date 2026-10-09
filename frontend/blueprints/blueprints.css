@@ -521,3 +521,25 @@
   .bp-plan__seats::before { content: ""; margin: 0; }
   .bp-plan { flex-wrap: wrap; row-gap: 8px; }
 }
+
+/* Where the customers show up, and the owner's way to correct it. */
+.bp-obj__surface {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.bp-obj__surface select {
+  font: inherit;
+  font-size: 0.78rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+.bp-obj__surface em { font-style: normal; color: rgba(255, 255, 255, 0.42); }

@@ -106,7 +106,7 @@ export async function assertFetchable(rawUrl) {
  * automatically, which would bypass the address check — so redirects are
  * handled manually here.
  */
-async function fetchPage(url) {
+export async function fetchPage(url) {
   let current = url;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {

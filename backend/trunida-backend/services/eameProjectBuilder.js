@@ -96,6 +96,8 @@ const COPY_TOKENS = {
   __APP_HERO_IMAGE__:    'none',
   __APP_HERO_CREDIT__:   '',
   __APP_HERO_CREDIT_URL__: '',
+  // The owner's logo (frontDoorService.frontDoorCopy), '' when there is none.
+  __APP_LOGO__:          '',
 };
 
 // Tokens that land inside a <script type="application/json"> and must not be
@@ -211,6 +213,10 @@ const ALWAYS_SHIPPED = new Set([
   'services/connectors/leadsquared.js',
   // And Clinicea, the clinic system behind the same card; its controller imports it statically.
   'services/connectors/clinicea.js',
+  // Your app's events: routes/appEventsRoutes.js is auto-mounted and imports
+  // its controller, which imports this. The card shows only where Cob decided
+  // the customers use the business's own app (sources.json says so).
+  'services/connectors/appevents.js',
 ]);
 
 /**
@@ -273,6 +279,9 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'controllers/cliniceaConnectController.js': { template: 'controllers/cliniceaConnectController.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
+    'services/connectors/appevents.js': { template: 'services/connectors/appevents.js' },
+    'controllers/appEventsController.js': { template: 'controllers/appEventsController.js' },
+    'routes/appEventsRoutes.js':        { template: 'routes/appEventsRoutes.js' },
     'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },
     'services/phoneProviders.js':       { template: 'services/phoneProviders.js' },
     'services/exotelApi.js':            { template: 'services/exotelApi.js' },

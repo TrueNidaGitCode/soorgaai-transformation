@@ -18,6 +18,9 @@
  * fail a build: every step has a plain fallback.
  */
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
+import { User } from '../models/user.js';
+import { brandForEmail } from './companyBrandService.js';
+import { ensureCustomerSurface } from './customerSurfaceService.js';
 import { resolveUseCase } from './blueprintUseCase.js';
 import { generate } from './llmService.js';
 import { parseLooseJson } from '../utils/looseJson.js';
@@ -190,7 +193,35 @@ export async function findHeroPhoto(query) {
 
 // ── The door, kept on the blueprint ─────────────────────────────────────────
 
+/**
+ * The owner's company brand on the blueprint, read from their work email.
+ * Refreshed monthly; a free-mail owner or an unreadable site leaves it empty
+ * and the application keeps its initial. Never throws.
+ */
+export async function ensureBrand(bp) {
+  try {
+    if (!bp?.userId) return null;
+    const fresh = bp.brand?.checkedAt && Date.now() - new Date(bp.brand.checkedAt).getTime() < 30 * 86400000;
+    if (fresh) return bp.brand;
+    const owner = await User.findById(bp.userId).select('email').lean();
+    const b = owner?.email ? await brandForEmail(owner.email) : null;
+    const brand = { name: b?.name || '', website: b?.website || '', domain: b?.domain || '', logo: b?.logo || '', checkedAt: new Date() };
+    if (bp._id) await TransformationBlueprint.updateOne({ _id: bp._id }, { $set: { brand } }).catch(() => {});
+    bp.brand = brand;
+    return brand;
+  } catch (err) {
+    console.warn('[brand] skipped —', err.message);
+    return null;
+  }
+}
+
 export async function ensureFrontDoor(bp) {
+  // Every build passes through here, new or live-updated, so the logo is
+  // checked on each one without a second call site to keep in step.
+  await ensureBrand(bp);
+  // And where its customers show up, for a blueprint made before Cob decided
+  // it at creation: the sources the build ships depend on it.
+  await ensureCustomerSurface(bp);
   if (bp?.frontDoor?.headline) return bp.frontDoor;
   const fallback = fallbackDoor(bp);
   let door;
@@ -222,5 +253,7 @@ export function frontDoorCopy(bp) {
     __APP_HERO_CREDIT__: photo ? photo.credit : '',
     __APP_HERO_CREDIT_URL__: photo?.creditUrl || '',
     __APP_PREVIEW_JSON__: JSON.stringify({ greeting: d.greeting, role: d.role, nav: d.nav, stats: d.stats, list: d.list }),
+    // The owner's company logo, as a data URI, or '' for the initial. See ensureBrand.
+    __APP_LOGO__: /^data:image\//.test(bp?.brand?.logo || '') ? bp.brand.logo : '',
   };
 }

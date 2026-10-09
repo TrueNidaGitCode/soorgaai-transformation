@@ -97,6 +97,10 @@ export const FIXED_PATHS = [
   'controllers/cliniceaConnectController.js',
   'controllers/whatsappController.js',
   'routes/whatsappRoutes.js',
+  // Your app's events, for a business whose customers use its own app.
+  'services/connectors/appevents.js',
+  'controllers/appEventsController.js',
+  'routes/appEventsRoutes.js',
   'controllers/phoneController.js',
   'routes/phoneRoutes.js',
   'controllers/connectorController.js',

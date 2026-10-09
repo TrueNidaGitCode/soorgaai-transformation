@@ -6,6 +6,7 @@ import {
 } from '../controllers/guestController.js';
 import { recordVisit } from '../controllers/visitController.js';
 import { transcribeAudio, voiceStatus } from '../controllers/voiceController.js';
+import { companyBrand } from '../controllers/companyBrandController.js';
 import { typicalGenerationTime, typicalBuildTime } from '../services/generationTimeService.js';
 
 /**
@@ -38,6 +39,8 @@ router.get('/generation-time', async (req, res) => {
   res.json({ ...run, build });
 });
 router.post('/transcribe',                audioBody, transcribeAudio);
+// The company behind a work email: name, site and logo, for the sign-in box.
+router.get('/company-brand',              companyBrand);
 router.post('/generate-blueprint',        startGuestGeneration);
 router.get('/blueprint/:guestId',         getGuestBlueprint);
 router.get('/blueprint/:guestId/stream',  streamGuestProgress);

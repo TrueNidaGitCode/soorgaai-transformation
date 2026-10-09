@@ -59,7 +59,7 @@ process.env.JWT_SECRET = 'svarg-root-e2e';
 const authSecret = tenantAuthSecret(DEP._id);
 const APP_SECRET = 'e2e-app-secret';
 // A clean scratch database: the owner's rows from an earlier run would be restored at boot and merged against.
-{ const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows', 'svarg_churn_patterns', 'svarg_churn_settings']) await pre.collection(c).deleteMany({}); await pre.collection('svarg_agents').deleteMany({ watcherId: 'learned-pattern' }); await pre.close(); }
+{ const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows', 'svarg_churn_patterns', 'svarg_churn_settings', 'svarg_app_events', 'svarg_app_users']) await pre.collection(c).deleteMany({}); await pre.collection('svarg_connectors').deleteMany({ kind: 'app-events' }); await pre.collection('svarg_datasets').deleteMany({ name: 'App Activity' }); await pre.collection('svarg_agents').deleteMany({ watcherId: 'learned-pattern' }); await pre.close(); }
 // A stand-in for Meta's Graph API: the number lookup the connect makes.
 const metaHits = [];
 const meta = (await import('http')).createServer((req, res) => { metaHits.push(req.url); res.setHeader('Content-Type', 'application/json'); if (req.url.startsWith("/111222333444555?") && /Bearer EAAB[.]test/.test(req.headers.authorization || '')) res.end(JSON.stringify({ display_phone_number: '+91 98000 00000', verified_name: 'E2E Academy', quality_rating: 'GREEN' })); else { res.statusCode = 400; res.end(JSON.stringify({ error: { message: 'Invalid OAuth access token' } })); } });
@@ -72,7 +72,7 @@ const child = spawn(process.execPath, ['server.js'], {
     MONGO_URI: tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch'),
     JWT_SECRET: APP_SECRET, APP_OWNER_KEY: 'sok_e2e', APP_PUBLIC_ACCESS: 'true',
     SVARG_AUTH_URL: 'https://svarg.example/api/auth/oauth/google?tenant=' + DEP._id, SVARG_AUTH_SECRET: authSecret,
-    CONNECTOR_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'), WHATSAPP_GRAPH_URL: META_URL, APP_PUBLIC_URL: 'http://localhost:' + port,
+    CONNECTOR_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'), WHATSAPP_GRAPH_URL: META_URL, APP_PUBLIC_URL: 'http://localhost:' + port, APP_EVENTS_GATHER_MS: '300',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -123,7 +123,7 @@ try {
   check('sources are the industry\'s, then the database', JSON.stringify(srcs.body?.sources?.map(s => s.kind)) === '["folder","whatsapp","database"]', JSON.stringify(srcs.body?.sources?.map(s => s.kind)));
   const kinds = await j('/api/connectors', { headers: O });
   // WhatsApp Business is the industry's; the database, the CRMs (Zoho, LeadSquared, Clinicea) and the phone ship to everyone.
-  check('WhatsApp Business plus what every application gets', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)) === '["clinicea","database","leadsquared","phone","whatsapp-business","zoho-crm"]', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)));
+  check('WhatsApp Business plus what every application gets', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)) === '["app-events","clinicea","database","leadsquared","phone","whatsapp-business","zoho-crm"]', JSON.stringify(kinds.body?.kinds?.map(k => k.kind)));
 
   // A folder import, twice: the rule
   const imp1 = await j('/api/data/import', { method: 'POST', headers: O, body: JSON.stringify({ datasetName: 'Students', source: 'folder', origin: 'Students.xlsx', mode: 'merge', complete: true, rows: [['S1', 'Priya Nair', 'U14'], ['S2', 'Arjun Sharma', 'U16']] }) });
@@ -315,6 +315,39 @@ try {
   check('the agent is on the map as a learned pattern', (ags.body?.agents || []).some((a) => a.watcherId === 'learned-pattern' && /Learned: .*absent/i.test(a.name)), JSON.stringify((ags.body?.agents || []).map((a) => a.name)));
   check('and the pattern now says it is being watched', (await j('/api/patterns', { headers: H })).body?.patterns?.find((p) => p.id === again.id)?.state === 'approved');
 } catch (err) { check('learned churn patterns', false, err.stack); }
+
+// Your app's events: a business's own app sending what its users do, in
+// Segment's shape, with this application's key -- kept once, landed as rows.
+try {
+  const tok = (await j('/api/data/owner-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sok_e2e' }) })).body.token;
+  const H = { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
+  check('the developers\' setup is the owner\'s only', (await j('/api/app-events/setup')).status === 401);
+  const st = await j('/api/app-events/setup', { headers: H });
+  check('setup gives the address and a key', /\/api\/app-events$/.test(st.body?.url || '') && /^sk_app_[0-9a-f]{40}$/.test(st.body?.key || ''), JSON.stringify(st.body).slice(0, 120));
+  const made = await j('/api/connectors', { method: 'POST', headers: H, body: JSON.stringify({ kind: 'app-events', datasetName: '', config: { appName: '' } }) });
+  check('connecting your app defines its own dataset', made.status < 300 && made.body?.connector?.datasetName === 'App Activity', JSON.stringify(made.body).slice(0, 200));
+  const send = (body, key = st.body.key) => j('/api/app-events/batch', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  check('a wrong key is refused', (await send({ batch: [] }, 'sk_app_wrong')).status === 401);
+  const batch = { batch: [
+    { type: 'identify', userId: 't-1', traits: { name: 'Asha Rao', email: 'asha@hillview.edu', school: 'Hillview School' } },
+    { type: 'track', userId: 't-1', event: 'Lesson Created', messageId: 'e2e-ev-1', timestamp: '2026-10-01T08:00:00Z', properties: { school: 'Hillview School' } },
+    { type: 'track', userId: 't-1', event: 'Subscription Cancelled', messageId: 'e2e-ev-2', timestamp: '2026-10-02T08:00:00Z', properties: { status: 'cancelled', plan: 'pro' } },
+    { type: 'track', event: 'No user' },
+  ] };
+  const sent = await send(batch);
+  check('a batch is accepted, the event without a user refused', sent.status === 200 && sent.body?.accepted === 3 && sent.body?.rejected === 1, JSON.stringify(sent.body));
+  await send(batch); // a sender's retry
+  // Basic auth with the key as the username: how Segment sends a write key.
+  const basic = await j('/api/app-events/track', { method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(st.body.key + ':').toString('base64'), 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 't-2', event: 'Quiz Shared', messageId: 'e2e-ev-3' }) });
+  check('Segment\'s Basic write key works too', basic.status === 200 && basic.body?.accepted === 1, JSON.stringify(basic.body));
+  let rows = null;
+  for (let i = 0; i < 30 && !(rows?.total >= 3); i++) { await new Promise((r) => setTimeout(r, 500)); rows = (await j('/api/data/rows?dataset=' + encodeURIComponent('App Activity'), { headers: H })).body; }
+  // Then once the landings the sends asked for have all finished.
+  await new Promise((r) => setTimeout(r, 2500));
+  rows = (await j('/api/data/rows?dataset=' + encodeURIComponent('App Activity'), { headers: H })).body;
+  const flat = JSON.stringify(rows?.rows || []);
+  check('events land once each, with who the user is', rows?.total === 3 && /Asha Rao/.test(flat) && /Hillview School/.test(flat) && /cancelled/.test(flat), JSON.stringify({ total: rows?.total, ids: (rows?.rows || []).map((r) => r.cells[10] + '/' + r.cells[11]) }));
+} catch (err) { check('your app\'s events', false, err.stack); }
 
 child.kill(); meta.close();
 await new Promise(r => setTimeout(r, 800));

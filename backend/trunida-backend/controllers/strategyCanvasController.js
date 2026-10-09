@@ -23,6 +23,7 @@ import { checkEntitlement } from '../services/entitlements.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 import { checkObjective } from '../services/objectiveGuardService.js';
 import { resolveEngagement, CATEGORIES, WORKFLOW_AREAS } from '../services/engagementClassifierService.js';
+import { decideCustomerSurface, SURFACES, SURFACE_LINE } from '../services/customerSurfaceService.js';
 import { getCompanyEvidence } from '../services/companyContextService.js';
 import { requireEntitlement } from '../services/entitlements.js';
 import { beginRun } from '../services/usageContext.js';
@@ -618,6 +619,13 @@ export async function startTransformationGeneration(req, res) {
         reason:     engagement.reason,
         userSet:    false,
       },
+      // Whether the customers use the business's own app, from the same
+      // evidence; decides whether the application takes its app's events.
+      customerSurface: decideCustomerSurface({
+        objective:  businessObjective,
+        evidence:   companyEvidence,
+        engagement: engagement.category || '',
+      }),
     });
 
     console.log(engagement.category
@@ -960,6 +968,35 @@ export async function setEngagement(req, res) {
   } catch (err) {
     console.error('setEngagement error:', err);
     res.status(500).json({ error: 'Failed to save the engagement type.' });
+  }
+}
+
+/**
+ * PATCH /strategy-canvas/transformation-blueprint/:blueprintId/customer-surface
+ * The owner saying where their customers show up, when Cob read it wrong.
+ * Kept as the owner's (userSet) so no later reading replaces it; takes
+ * effect on the application's next build.
+ */
+export async function setCustomerSurface(req, res) {
+  try {
+    const { blueprintId } = req.params;
+    const surface = String(req.body?.surface || '');
+    if (!SURFACES.includes(surface)) {
+      return res.status(400).json({ error: `surface must be one of: ${SURFACES.join(', ')}.` });
+    }
+    const customerSurface = {
+      surface, confidence: 'high', reason: 'Set by you.',
+      evidence: { ownApp: [], boughtSystems: [] }, userSet: true, decidedAt: new Date(),
+    };
+    const result = await TransformationBlueprint.updateOne(
+      { _id: blueprintId, userId: req.user._id },
+      { $set: { customerSurface } },
+    );
+    if (result.matchedCount === 0) return res.status(404).json({ error: 'Blueprint not found.' });
+    return res.json({ ...customerSurface, line: SURFACE_LINE[surface] });
+  } catch (err) {
+    console.error('setCustomerSurface error:', err);
+    res.status(500).json({ error: 'Failed to save where your customers show up.' });
   }
 }
 

@@ -616,6 +616,19 @@ const transformationBlueprintSchema = new mongoose.Schema({
   appNameSource: { type: String, enum: ['', 'customer', 'organisation', 'model', 'fallback'], default: '' },
   /** The application's front door -- headline, photo, preview -- written once by frontDoorService. */
   frontDoor: { type: mongoose.Schema.Types.Mixed, default: null },
+  /**
+   * The owner's company as its own website presents it: name, site and a
+   * small logo (data URI), from their work email. Puts their logo on the
+   * retention application. See services/companyBrandService.js.
+   */
+  brand: { type: mongoose.Schema.Types.Mixed, default: null },
+  /**
+   * Where this business's customers show up: 'own-app', 'bought-systems' or
+   * 'both', with the words that decided it and whether the owner set it.
+   * Own-app businesses get the app-events source. See
+   * services/customerSurfaceService.js.
+   */
+  customerSurface: { type: mongoose.Schema.Types.Mixed, default: undefined },
 
   // Eame (stage 4): what was actually delivered. Hosting deploys from this
   // repository, so it has to outlive the browser session that pushed it.

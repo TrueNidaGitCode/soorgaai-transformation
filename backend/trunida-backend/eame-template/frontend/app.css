@@ -3048,3 +3048,12 @@ body {
 /* Who wrote the card: the AI about this customer, or the standard guidance. */
 .cs__by { font-size: 11.5px; color: var(--ch-faint); }
 .cs__by.is-ai { color: var(--ch-accent); }
+
+/* The owner's logo in the emblems, when there is one (index.html). */
+.ld__emblem.has-logo, .ch-side__emblem.has-logo { background: #fff; border-radius: 14px; overflow: hidden; }
+.ld__emblem .app-logo, .ch-side__emblem .app-logo { width: 78%; height: 78%; object-fit: contain; }
+
+/* Your app's events: the developers' example request (data.js, app-events). */
+.dt-setup__lines dd code { word-break: break-all; }
+.dt-setup__example { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(0, 0, 0, 0.25); font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+.dt-setup__example:empty { display: none; }

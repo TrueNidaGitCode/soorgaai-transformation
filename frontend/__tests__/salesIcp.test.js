@@ -317,6 +317,7 @@ describe('the problem, as two interviews described it', () => {
     const SAID = {
       zohocrm: /Zoho CRM/, leadsquared: /Zoho CRM, LeadSquared/, clinicea: /LeadSquared, Clinicea/, phone: /cloud telephony/i, whatsapp: /WhatsApp/,
       database: /database/, confluence: /Confluence/, github: /GitHub/, jira: /Jira/,
+      appevents: /own app/,
     };
     for (const c of shipped.filter((x) => x !== 'svarg')) {
       expect(SAID[c], `${c} ships but this test does not know what the page calls it`)

@@ -25,6 +25,7 @@ import {
   approveOpportunity,
   setAppName,
   setEngagement,
+  setCustomerSurface,
   claimGuestBlueprint,
   updateTransformationSection,
   regenerateSpecificDomains,
@@ -86,6 +87,7 @@ router.post('/claim-guest-blueprint',                                  protect, 
 router.patch('/transformation-blueprint/:blueprintId/approve-opportunity', protect, approveOpportunity);
 router.patch('/transformation-blueprint/:blueprintId/app-name',            protect, setAppName);
 router.patch('/transformation-blueprint/:blueprintId/engagement',          protect, setEngagement);
+router.patch('/transformation-blueprint/:blueprintId/customer-surface',    protect, setCustomerSurface);
 router.post ('/transformation-blueprint/:blueprintId/recommend-models',    protect, recommendForBlueprint);
 
 // Eame writes the application and verifies it by running it. Asynchronous:

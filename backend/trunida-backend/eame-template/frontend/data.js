@@ -257,7 +257,7 @@
   var imports = [];
   var open = {};         // kind -> the flow open inside that card, if any
 
-  var SOURCE_LABEL = { own: 'a file', folder: 'your documents', whatsapp: 'WhatsApp export', 'whatsapp-business': 'WhatsApp Business', chat: 'the chat', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', sample: 'sample' };
+  var SOURCE_LABEL = { own: 'a file', folder: 'your documents', whatsapp: 'WhatsApp export', 'whatsapp-business': 'WhatsApp Business', 'app-events': 'your app', chat: 'the chat', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', sample: 'sample' };
   function sourceLabel(s) { return SOURCE_LABEL[s] || s || 'a file'; }
 
   async function refresh() {
@@ -392,7 +392,19 @@
    * a conversation about something else.
    */
   var CORE = ['zoho-crm', 'phone'];
-  var CORE_LABEL = { 'zoho-crm': 'CRM', phone: 'Phone system', jira: 'Project tracker' };
+  var CORE_LABEL = { 'zoho-crm': 'CRM', phone: 'Phone system', jira: 'Project tracker', 'app-events': 'Your app', database: 'Database' };
+
+  /*
+   * Where Cob decided the customers show up, from the app-events entry
+   * Svarg writes into sources.json (customerSurfaceService). '' for a
+   * business whose customers are recorded in systems it bought -- the
+   * top row is CORE, as it always was.
+   */
+  function appSurface() {
+    var s = sources.find(function (x) { return x.kind === 'app-events'; });
+    return s && shippedKind('app-events') ? (s.surface || 'own-app') : '';
+  }
+  function shippedKind(kind) { return kinds.some(function (k) { return k.kind === kind; }); }
 
   /*
    * The top row, with the project tracker first wherever this application
@@ -405,7 +417,13 @@
    * page at all. Where it ships, it is the first card.
    */
   function coreKinds() {
-    return (kinds.some(function (k) { return k.kind === 'jira'; }) ? ['jira'] : []).concat(CORE);
+    var jira = kinds.some(function (k) { return k.kind === 'jira'; }) ? ['jira'] : [];
+    // A business with its own app: the app first, and its database beside
+    // it for the history; where it also runs a service, the CRM and phone too.
+    var surface = appSurface();
+    if (surface === 'own-app') return jira.concat(['app-events', 'database']);
+    if (surface === 'both') return jira.concat(['app-events']).concat(CORE);
+    return jira.concat(CORE);
   }
 
   /*
@@ -533,6 +551,7 @@
     database: 'Database',
     whatsapp: 'Messages',
     'whatsapp-business': 'Messages',
+    'app-events': 'App activity',
     jira: 'Issues',
     confluence: 'Documents',
     github: 'Repository',
@@ -682,6 +701,19 @@
           '<ul class="dt-src__list">' + jc.map(renderConnector).join('') + '</ul>');
       }
       if (jk) { d.go = jc.length ? 'Connect another' : 'Connect'; d.goAction = 'jira'; }
+    } else if (s.kind === 'app-events') {
+      var ae = kinds.find(function (x) { return x.kind === 'app-events'; });
+      var aec = connectors.filter(function (c) { return c.kind === 'app-events'; });
+      d.icon = ICON.live; d.title = 'Your app';
+      d.note = 'What your users do in your app, as it happens.';
+      if (!ae) d.status = 'Not available on this application';
+      else if (aec.length) {
+        d.on = true;
+        d.status = 'Connected' + (aec[0].lastSyncAt ? ' · last event ' + ago(aec[0].lastSyncAt) : ' · waiting for the first event');
+        d.held = '<ul class="dt-src__list">' + aec.map(renderConnector).join('') + '</ul>';
+      }
+      // One connection takes every event; a second would only split them.
+      if (ae && !aec.length) { d.go = 'Connect'; d.goAction = 'app-events'; }
     } else if (s.kind === 'phone') {
       var ph = kinds.find(function (x) { return x.kind === 'phone'; });
       var phc = connectors.filter(function (c) { return c.kind === 'phone'; });
@@ -1337,6 +1369,15 @@
     var setupHtml = kindName === 'whatsapp-business'
       ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
       : '';
+    if (kindName === 'app-events') {
+      // The address and key the business's developers send events with:
+      // shown before connecting and on the card after, the way WhatsApp's are.
+      setupHtml = '<div class="dt-setup" id="dt-ae-setup"><p class="dt-setup__head">For your developers: send each thing a user does to</p><dl class="dt-setup__lines"><dt>Address</dt><dd><code id="dt-ae-url">…</code></dd><dt>Key</dt><dd><code id="dt-ae-key">…</code></dd><dt>Shape</dt><dd>Segment\'s track and identify, one at a time or up to 500 as a batch</dd></dl><pre class="dt-setup__example" id="dt-ae-example"></pre></div>';
+      ownerJson('/api/app-events/setup').then(function (st) {
+        var u = document.getElementById('dt-ae-url'), k2 = document.getElementById('dt-ae-key'), ex = document.getElementById('dt-ae-example');
+        if (u) u.textContent = st.url; if (k2) k2.textContent = st.key; if (ex) ex.textContent = st.example || '';
+      }).catch(function () {});
+    }
     if (kindName === 'whatsapp-business') {
       ownerJson('/api/whatsapp/setup').then(function (st) {
         var u = document.getElementById('dt-wa-url'), v = document.getElementById('dt-wa-verify');

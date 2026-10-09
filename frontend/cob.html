@@ -20,14 +20,15 @@
 
   <link rel="stylesheet" href="style.css">
   <!-- landing.css still owns the auth modal; cob.css owns this screen. -->
-  <link rel="stylesheet" href="landing.css?v=2">
+  <link rel="stylesheet" href="landing.css?v=4">
+  <link rel="stylesheet" href="shared/profileMenu.css?v=1">
   <link rel="stylesheet" href="cob.css?v=6">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="shared/rail.css?v=2">
 
   <script src="login/config.js"></script>
   <script type="module" src="shared/rail.js?v=4"></script>
-  <script type="module" src="index.js?v=13"></script>
+  <script type="module" src="index.js?v=15"></script>
 </head>
 <body class="landing2">
 
@@ -149,6 +150,13 @@
           >
           <button type="submit" id="auth-email-continue" class="auth-modal__continue">Continue</button>
         </form>
+        <!-- The company behind a work email, read from its own site
+             (GET /api/guest/company-brand). Shown only when there is one. -->
+        <div id="auth-brand" class="auth-brand" hidden>
+          <span class="auth-brand__logo"><img id="auth-brand-logo" alt=""></span>
+          <span class="auth-brand__text"><b id="auth-brand-name"></b><em id="auth-brand-site"></em></span>
+          <button type="button" id="auth-brand-wrong" class="auth-brand__wrong">Not your company?</button>
+        </div>
       </div>
 
       <!-- Step 2 — enter the emailed code -->

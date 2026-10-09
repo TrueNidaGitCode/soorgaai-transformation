@@ -126,7 +126,9 @@ describe('what each connector reads', () => {
     for (const k of Object.values(KINDS)) {
       expect(typeof k.test).toBe('function');
       expect(typeof k.pull).toBe('function');
-      if (k.usesDeploymentToken) {
+      // Your app's events: the app proves itself with this application's own
+      // key, so the connection holds no credential either.
+      if (k.usesDeploymentToken || k.keyedByApplication) {
         // Svarg's own operations: answered on the deployment token the
         // container already holds, so there is no credential to type and
         // none to mark. The module declares it rather than this test
@@ -144,7 +146,7 @@ describe('what each connector reads', () => {
         expect(k.provides.length).toBeGreaterThan(3);
       }
     }
-    expect(catalog().map(c => c.kind).sort()).toEqual(['clinicea', 'confluence', 'database', 'github', 'jira', 'leadsquared', 'phone', 'svarg', 'whatsapp-business', 'zoho-crm']);
+    expect(catalog().map(c => c.kind).sort()).toEqual(['app-events', 'clinicea', 'confluence', 'database', 'github', 'jira', 'leadsquared', 'phone', 'svarg', 'whatsapp-business', 'zoho-crm']);
     // The catalog never carries a function or a secret.
     expect(JSON.stringify(catalog())).not.toMatch(/function|apiToken":"[^"]+"/);
   });

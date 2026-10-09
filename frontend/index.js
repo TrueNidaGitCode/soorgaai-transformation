@@ -11,6 +11,7 @@ import { MATURITY_STAGES } from './data/maturityStages.js';
 import { captureOutreachRef, outreachRef, clearOutreachRef, visitorId, recordVisit }
   from './shared/visitor.js';
 import { voiceAvailable, createVoiceRecorder } from './shared/voiceInput.js?v=4';
+import { mountProfileMenu } from './shared/profileMenu.js?v=1';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
@@ -89,6 +90,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const authModal = wireAuthModal();
     wireCobConfluenceConnector(authModal?.open);
 });
+
+/**
+ * The company behind a work email, shown as it is typed.
+ *
+ * name@tenacrity.com is somebody from Tenacrity; their own site says what
+ * Tenacrity calls itself and what its logo is (GET /api/guest/company-brand,
+ * services/companyBrandService.js). Shown back in the box it says "we know who
+ * you are"; it never blocks anything, and free mail asks nothing. "Not your
+ * company?" hides it and remembers, so profile setup does not fill it in.
+ */
+const BRAND_DISMISSED = 'svarg_brand_dismissed';
+
+function wireCompanyBrand() {
+    const input = document.getElementById('auth-email');
+    const box = document.getElementById('auth-brand');
+    if (!input || !box) return;
+    const FREE = /@(gmail|googlemail|outlook|hotmail|live|msn|yahoo|ymail|icloud|me|mac|aol|proton|protonmail|rediffmail|zoho|zohomail|gmx|yandex)\./i;
+    let timer = null;
+    let asked = '';
+
+    const hide = () => { box.hidden = true; };
+    const lookUp = async () => {
+        const email = input.value.trim().toLowerCase();
+        const domain = (email.split('@')[1] || '');
+        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email) || FREE.test(email)) { hide(); return; }
+        if (domain === asked) return;
+        asked = domain;
+        let dismissed = '';
+        try { dismissed = localStorage.getItem(BRAND_DISMISSED) || ''; } catch { /* no storage */ }
+        if (dismissed === domain) { hide(); return; }
+        try {
+            const r = await fetch(`${API_BASE()}/guest/company-brand?email=${encodeURIComponent(email)}`);
+            const { brand } = await r.json();
+            if (!brand || asked !== domain) { if (!brand) hide(); return; }
+            const logo = document.getElementById('auth-brand-logo');
+            if (brand.logo && /^data:image\//.test(brand.logo)) { logo.src = brand.logo; logo.parentElement.hidden = false; }
+            else logo.parentElement.hidden = true;
+            document.getElementById('auth-brand-name').textContent = `Welcome, ${brand.name}`;
+            document.getElementById('auth-brand-site').textContent = (brand.website || '').replace(/^https?:\/\//, '');
+            box.hidden = false;
+        } catch { hide(); }
+    };
+
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(lookUp, 450); });
+    input.addEventListener('blur', lookUp);
+    document.getElementById('auth-brand-wrong')?.addEventListener('click', () => {
+        try { localStorage.setItem(BRAND_DISMISSED, asked); } catch { /* no storage */ }
+        hide();
+    });
+}
 
 /**
  * "Log in or sign up" modal — opens from the topbar Log in button.
@@ -173,6 +224,8 @@ export function wireAuthModal() {
         const { delivery } = await resp.json().catch(() => ({}));
         return delivery || 'sent';
     };
+
+    wireCompanyBrand();
 
     // Step 1 — send the code (or hand Gmail addresses straight to Google)
     document.getElementById('auth-email-form')?.addEventListener('submit', async (e) => {
@@ -277,57 +330,9 @@ export function wireAuthModal() {
  * (workspace + log out) instead of the Log in button.
  */
 export function wireTopbarAuth() {
-    const wrap = document.getElementById('topbar-auth');
-    if (!wrap) return;
-    if (!localStorage.getItem('token')) return;
-
-    const username = (localStorage.getItem('username') || 'Account').trim() || 'Account';
-    const initial  = username.charAt(0).toUpperCase();
-
-    wrap.innerHTML = `
-        <div class="profile-menu">
-            <button id="profile-btn" class="profile-btn" aria-haspopup="menu" aria-expanded="false">
-                <span class="profile-avatar" aria-hidden="true"></span>
-                <span class="profile-name"></span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div id="profile-dropdown" class="profile-dropdown" style="display:none" role="menu">
-                <a href="/domain/domain.html" class="profile-dropdown__item" role="menuitem">My Blueprint</a>
-                <button id="profile-logout" class="profile-dropdown__item profile-dropdown__item--danger" role="menuitem">Log out</button>
-            </div>
-        </div>`;
-
-    // textContent keeps any odd characters in the stored name inert
-    wrap.querySelector('.profile-avatar').textContent = initial;
-    wrap.querySelector('.profile-name').textContent   = username;
-
-    const btn      = document.getElementById('profile-btn');
-    const dropdown = document.getElementById('profile-dropdown');
-    const setOpen  = (open) => {
-        if (dropdown) dropdown.style.display = open ? '' : 'none';
-        btn?.setAttribute('aria-expanded', String(open));
-    };
-
-    btn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setOpen(dropdown?.style.display === 'none');
-    });
-    document.addEventListener('click', (e) => {
-        if (!wrap.contains(e.target)) setOpen(false);
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setOpen(false);
-    });
-
-    document.getElementById('profile-logout')?.addEventListener('click', () => {
-        [
-            'token', 'username', 'userId', 'role', 'redirectAfterLogin',
-            'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
-            'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
-            'da_score', 'soorga_assessment_progress',
-        ].forEach(k => localStorage.removeItem(k));
-        window.location.reload();
-    });
+    // The same menu Blueprints and Account draw; see shared/profileMenu.js.
+    // Logging out here stays on the page, now as a guest.
+    mountProfileMenu(document.getElementById('topbar-auth'), { afterLogout: () => window.location.reload() });
 }
 
 /**

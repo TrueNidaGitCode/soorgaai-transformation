@@ -71,3 +71,13 @@ describe('ensureFrontDoor and the tokens', () => {
     expect(JSON.parse(json).nav).toContain('\u003c/script>\u003cb>x\u003c/b>');
   });
 });
+
+describe('the owner\'s logo', () => {
+  it('is passed on only as an image data URI, never as an address or markup', () => {
+    const logo = 'data:image/png;base64,iVBORw0KGgo=';
+    expect(frontDoorCopy({ ...bp(), brand: { logo } }).__APP_LOGO__).toBe(logo);
+    expect(frontDoorCopy({ ...bp(), brand: { logo: 'https://evil.example/x.png' } }).__APP_LOGO__).toBe('');
+    expect(frontDoorCopy({ ...bp(), brand: { logo: 'javascript:alert(1)' } }).__APP_LOGO__).toBe('');
+    expect(frontDoorCopy(bp()).__APP_LOGO__).toBe('');
+  });
+});

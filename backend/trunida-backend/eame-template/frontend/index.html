@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>__APP_NAME__</title>
+  <meta name="app-logo" content="__APP_LOGO__">
 
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="app.css">
@@ -1639,6 +1640,22 @@
        and the grouping happen in code. Loaded BEFORE app.js so its capture-phase
        submit listener runs first; the generated app.js keeps whatever else it
        draws and never sees the question. -->
+  <!-- The owner's company logo in place of the initial, when Svarg found one
+       on their website (frontDoorService.ensureBrand). Only an image data URI
+       is ever used; anything else leaves the initial where it is. -->
+  <script>
+    (function () {
+      var logo = (document.querySelector('meta[name="app-logo"]') || {}).content || '';
+      if (logo.indexOf('data:image/') !== 0) return;
+      document.querySelectorAll('.ld__emblem, .ch-side__emblem').forEach(function (el) {
+        var img = document.createElement('img');
+        img.src = logo; img.alt = ''; img.className = 'app-logo';
+        el.textContent = '';
+        el.appendChild(img);
+        el.classList.add('has-logo');
+      });
+    })();
+  </script>
   <script src="access.js"></script>
   <script src="answer.js"></script>
   <script src="agents.js" defer></script>

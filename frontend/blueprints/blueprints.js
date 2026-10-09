@@ -17,6 +17,8 @@
  * request; this file only draws it.
  */
 
+import { mountProfileMenu } from '../shared/profileMenu.js?v=1';
+
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 
 /** blueprintGenerate.js reads this to know which blueprint was picked. */
@@ -317,6 +319,8 @@ function renderObjective() {
     bp.createdAt ? `Started ${when(bp.createdAt)}` : '',
   ].filter(Boolean).join(' · ');
 
+  renderSurface(bp);
+
   el('bp-count-built').textContent = builtRows.length;
   el('bp-count-pipe').textContent = pipeRows.length;
 
@@ -348,6 +352,51 @@ function renderObjective() {
   document.querySelectorAll('#bp-objs .bp-obj__chip').forEach((c, i) => {
     c.classList.toggle('bp-obj__chip--on', i === picked);
     c.setAttribute('aria-selected', String(i === picked));
+  });
+}
+
+const SURFACE_CHOICES = [
+  ['own-app', 'Our own app'],
+  ['bought-systems', 'Systems we use'],
+  ['both', 'Both'],
+];
+
+/**
+ * Where Cob decided this business's customers show up, in one line, and a
+ * way to say otherwise. It decides whether the application takes events from
+ * the business's own app, so the owner's word wins and applies at the next build.
+ */
+function renderSurface(bp) {
+  const p = el('bp-obj-surface');
+  if (!p) return;
+  if (!bp.surface) { p.hidden = true; return; }
+  p.innerHTML = `<span>${esc(bp.surface.line)}</span>
+    <label>Where your customers show up:
+      <select id="bp-surface-pick" aria-label="Where your customers show up">
+        ${SURFACE_CHOICES.map(([k, l]) => `<option value="${k}"${k === bp.surface.key ? ' selected' : ''}>${l}</option>`).join('')}
+      </select>
+    </label>
+    <em id="bp-surface-said">${esc(bp.surface.userSet ? 'Set by you.' : bp.surface.reason)}</em>`;
+  p.hidden = false;
+  el('bp-surface-pick').addEventListener('change', async (e) => {
+    const said = el('bp-surface-said');
+    const surface = e.target.value;
+    said.textContent = 'Saving…';
+    try {
+      const r = await fetch(`${API_BASE()}/strategy-canvas/transformation-blueprint/${encodeURIComponent(bp.id)}/customer-surface`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+        body: JSON.stringify({ surface }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Could not save that.');
+      bp.surface = { key: surface, line: data.line, reason: 'Set by you.', userSet: true };
+      renderSurface(bp);
+      el('bp-surface-said').textContent = 'Saved. Your application changes at its next update.';
+    } catch (err) {
+      said.textContent = err.message;
+      e.target.value = bp.surface.key;
+    }
   });
 }
 
@@ -578,14 +627,9 @@ async function load() {
 }
 
 function wireNav() {
-  const nameEl = el('bp-username');
-  if (nameEl) nameEl.textContent = localStorage.getItem('username') || '';
-  // The same keys every other page clears: a logout that leaves the role
-  // behind is a logout that half works.
-  el('bp-logout')?.addEventListener('click', () => {
-    ['token', 'username', 'userId', 'role'].forEach(k => localStorage.removeItem(k));
-    window.location.href = '/index.html';
-  });
+  // The account menu the home page draws, so the corner reads the same on
+  // every page (shared/profileMenu.js). It clears the whole session on log out.
+  mountProfileMenu(el('profile-slot'));
 }
 
 wireNav();

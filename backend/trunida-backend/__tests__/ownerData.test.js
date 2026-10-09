@@ -164,7 +164,11 @@ describe('the Data page names the systems a business runs on', () => {
     // The project tracker leads, and only where this application has Jira:
     // an engineering organisation's tracker used to be drawn among the cards
     // that are shown and not offered.
-    expect(ui).toMatch(/function coreKinds\(\) \{\s*return \(kinds\.some\(function \(k\) \{ return k\.kind === 'jira'; \}\) \? \['jira'\] : \[\]\)\.concat\(CORE\);/);
+    expect(ui).toContain("var jira = kinds.some(function (k) { return k.kind === 'jira'; }) ? ['jira'] : [];");
+    expect(ui).toContain('return jira.concat(CORE);');
+    // A business whose customers use its own app: that app first, then its
+    // database for the history (customerSurfaceService, on Svarg's side).
+    expect(ui).toContain("if (surface === 'own-app') return jira.concat(['app-events', 'database']);");
   });
 
   it('leads with the two that carry different kinds of signal', () => {

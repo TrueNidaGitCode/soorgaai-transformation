@@ -25,6 +25,7 @@
  * name inside the justification, then the first.
  */
 
+import { SURFACE_LINE } from './customerSurfaceService.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import HostedDeployment, { isRunning, isServing } from '../models/HostedDeployment.js';
 import CapabilityRequest from '../models/CapabilityRequest.js';
@@ -171,6 +172,7 @@ export async function blueprintsOverview(userId) {
     .find({ userId }, {
       businessObjective: 1, status: 1, createdAt: 1, updatedAt: 1, appName: 1,
       opportunityApproval: 1, eameDelivery: 1, engagement: 1, industryFit: 1, domains: 1,
+      customerSurface: 1,
     })
     .sort({ createdAt: -1 })
     .lean();
@@ -235,6 +237,14 @@ export async function blueprintsOverview(userId) {
       return {
         id,
         objective: bp.businessObjective || '',
+        // Where Cob decided the customers show up, said in one line the owner
+        // can correct. Null for a blueprint not yet decided (made before it).
+        surface: bp.customerSurface?.surface ? {
+          key:     bp.customerSurface.surface,
+          line:    SURFACE_LINE[bp.customerSurface.surface] || '',
+          reason:  bp.customerSurface.reason || '',
+          userSet: !!bp.customerSurface.userSet,
+        } : null,
         appName:   bp.appName || '',
         industry:  bp.industryFit?.industry || '',
         status:    bp.status,

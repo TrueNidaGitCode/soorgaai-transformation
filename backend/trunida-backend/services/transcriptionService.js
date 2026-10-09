@@ -87,8 +87,24 @@ const TIMEOUT_MS = 90000;
  *
  * The variable still decides everything, it just has a default now:
  *
+ *   TRANSCRIPTION_CHAIN=sarvam,gemini       the default: Indian voices first
  *   TRANSCRIPTION_CHAIN=elevenlabs,gemini   best accents, needs a paid plan
  *   TRANSCRIPTION_CHAIN=off                 no microphone, nothing called
+ *
+ * ── Sarvam first, since 8 October 2026 ─────────────────────────────────────
+ *
+ * Sarvam's Saaras model is built for Indian speech: Indian English, Hindi,
+ * Tamil, Telugu, Kannada and the rest, and the Hindi-English mixing people
+ * actually speak. In `translate` mode it hears any of them and writes English,
+ * so a clinic owner can describe the problem in Tamil and the box — and
+ * everything Cob does after it, which is in English — reads it. Set
+ * SARVAM_STT_MODE=transcribe to keep the speaker's own language instead.
+ *
+ * Its REST API takes at most 30 seconds per request, so the browser records in
+ * 25-second pieces (frontend/shared/voiceInput.js) and the controller sends
+ * each one here. A long single recording from an older page is refused by
+ * Sarvam and answered by the next provider, so nothing breaks in between. A
+ * provider without a key is skipped, so the chain is safe to default to.
  *
  * The screen asks the server whether voice is available before offering a
  * microphone, so it appears and disappears with this one setting and no
@@ -96,7 +112,7 @@ const TIMEOUT_MS = 90000;
  */
 const CHAIN = (process.env.TRANSCRIPTION_CHAIN === 'off'
   ? ''
-  : process.env.TRANSCRIPTION_CHAIN || 'gemini')
+  : process.env.TRANSCRIPTION_CHAIN || 'sarvam,gemini')
   .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
 /**
@@ -109,6 +125,29 @@ const CHAIN = (process.env.TRANSCRIPTION_CHAIN === 'off'
  * around. Each `run` returns {text, language} or throws.
  */
 const PROVIDERS = {
+  sarvam: {
+    hasKey: () => !!process.env.SARVAM_API_KEY,
+    async run(audio, mimeType, ext) {
+      const form = new FormData();
+      form.append('file', new Blob([audio], { type: mimeType }), `speech.${ext}`);
+      form.append('model', process.env.SARVAM_STT_MODEL || 'saaras:v4');
+      // translate: any Indian language in, English out. See the note above.
+      form.append('mode', process.env.SARVAM_STT_MODE || 'translate');
+      // Detected, not asked: nobody should have to pick their language first.
+      form.append('language_code', 'unknown');
+
+      const res = await fetch(process.env.SARVAM_STT_URL || 'https://api.sarvam.ai/speech-to-text', {
+        method: 'POST',
+        headers: { 'api-subscription-key': process.env.SARVAM_API_KEY },
+        body: form,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) throw await providerError(res);
+      const d = await res.json().catch(() => null);
+      return { text: d?.transcript || '', language: d?.language_code || '' };
+    },
+  },
+
   elevenlabs: {
     hasKey: () => !!process.env.ELEVENLABS_API_KEY,
     async run(audio, mimeType, ext) {
@@ -283,7 +322,7 @@ export async function transcribe(audio, mimeType = 'audio/webm') {
     throw new TranscriptionError('Nothing was heard. Hold the microphone and speak, then press it again.');
   }
   if (audio.length > MAX_AUDIO_BYTES) {
-    throw new TranscriptionError('That recording is too long. Keep it under two minutes.', 413);
+    throw new TranscriptionError('That recording is too long. Keep it under five minutes.', 413);
   }
 
   // The extension matters to some decoders even though the type is declared.

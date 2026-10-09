@@ -18,7 +18,10 @@
  * there is no reason to hold one.
  */
 
-import { transcribe, transcriptionConfigured, MAX_AUDIO_BYTES } from '../services/transcriptionService.js';
+import { transcribe, transcriptionConfigured, MAX_AUDIO_BYTES, TranscriptionError } from '../services/transcriptionService.js';
+
+/** Five minutes in 25-second pieces is twelve; a little room for timing. */
+const MAX_SEGMENTS = 16;
 
 /** Per-IP, in memory, resets on deploy — same shape as the guest generator's. */
 const MAX_PER_WINDOW = 20;
@@ -52,19 +55,54 @@ export async function transcribeAudio(req, res) {
       return res.status(429).json({ error: 'Too many recordings from here. Try again shortly.' });
     }
 
-    const b64 = String(req.body?.audio || '');
-    if (!b64) return res.status(400).json({ error: 'No audio was sent.' });
+    /*
+     * One recording, or the 25-second pieces the page now sends.
+     *
+     * Pieces because Sarvam, first in the chain for Indian voices, takes at
+     * most 30 seconds a request. Each piece is a whole file the browser closed
+     * on its own, so nothing here has to cut audio. They are transcribed in
+     * order and joined; a piece with nothing in it (a long pause) adds nothing
+     * rather than failing the rest.
+     */
+    const segments = Array.isArray(req.body?.segments)
+      ? req.body.segments
+      : [{ audio: req.body?.audio, mimeType: req.body?.mimeType }];
+    if (!segments.length || segments.length > MAX_SEGMENTS) {
+      return res.status(400).json({ error: segments.length ? 'That recording is too long.' : 'No audio was sent.' });
+    }
+    const b64s = segments.map((s) => String(s?.audio || ''));
+    if (b64s.every((b) => !b)) return res.status(400).json({ error: 'No audio was sent.' });
 
     // Checked before decoding: base64 is about a third larger than the bytes it
     // carries, and decoding a payload we are about to reject wastes the memory
     // the limit exists to protect.
-    if (Buffer.byteLength(b64, 'utf8') > MAX_AUDIO_BYTES * 1.4) {
-      return res.status(413).json({ error: 'That recording is too long. Keep it under two minutes.' });
+    const total = b64s.reduce((n, b) => n + Buffer.byteLength(b, 'utf8'), 0);
+    if (total > MAX_AUDIO_BYTES * 1.4) {
+      return res.status(413).json({ error: 'That recording is too long. Keep it under five minutes.' });
     }
 
-    const audio = Buffer.from(b64, 'base64');
-    const { text, language } = await transcribe(audio, String(req.body?.mimeType || 'audio/webm'));
-    return res.json({ text, language });
+    const texts = [];
+    let language = '';
+    let quiet = null;
+    for (let i = 0; i < segments.length; i += 1) {
+      if (!b64s[i]) continue;
+      const audio = Buffer.from(b64s[i], 'base64');
+      try {
+        const out = await transcribe(audio, String(segments[i]?.mimeType || 'audio/webm'));
+        texts.push(out.text);
+        if (!language && out.language) language = out.language;
+      } catch (err) {
+        // Silence in one piece is a pause, not a failure — unless it is the
+        // only piece, which the check below reports.
+        if (segments.length > 1 && err instanceof TranscriptionError && err.status < 500 && err.status !== 413) {
+          quiet = err;
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (!texts.length) throw quiet || new TranscriptionError('Nothing was heard in that recording.', 422);
+    return res.json({ text: texts.join(' ').replace(/\s+/g, ' ').trim(), language });
   } catch (err) {
     const status = err.status || 500;
 

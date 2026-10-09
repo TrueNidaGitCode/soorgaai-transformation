@@ -62,6 +62,74 @@ function pickMimeType() {
   return '';
 }
 
+/**
+ * Recording in 25-second pieces.
+ *
+ * Sarvam, first in the server's chain because it is built for Indian voices,
+ * takes at most 30 seconds a request. Cutting a WebM file on the server would
+ * need audio tooling it does not have, so the browser closes the file itself
+ * every 25 seconds and starts the next one on the same microphone. Each piece
+ * is a complete recording; the server transcribes them in order and joins the
+ * text. The switch takes a few milliseconds, far shorter than a syllable.
+ *
+ * `state` reads 'recording' for as long as the person is speaking, across
+ * pieces, so callers can treat this exactly like one MediaRecorder.
+ */
+const SEGMENT_MS = 25 * 1000;
+
+function segmentedRecorder(stream, mimeType, onDone) {
+  const pieces = [];
+  let rec = null;
+  let active = true;
+  let timer = null;
+
+  const begin = () => {
+    const parts = [];
+    try {
+      rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    } catch (err) {
+      active = false;
+      onDone(pieces);
+      return;
+    }
+    rec.ondataavailable = (e) => { if (e.data?.size) parts.push(e.data); };
+    rec.onstop = () => {
+      if (parts.length) pieces.push(new Blob(parts, { type: mimeType || 'audio/webm' }));
+      if (active) begin(); else onDone(pieces);
+    };
+    rec.start();
+    timer = setTimeout(() => { if (rec?.state === 'recording') rec.stop(); }, SEGMENT_MS);
+  };
+  begin();
+
+  return {
+    get state() { return active ? 'recording' : 'inactive'; },
+    stop() {
+      if (!active) return;
+      active = false;
+      clearTimeout(timer);
+      if (rec?.state === 'recording') rec.stop(); else onDone(pieces);
+    },
+  };
+}
+
+/** The pieces as the server takes them. A sliver under 2 KB at the end is dropped. */
+async function encodeSegments(pieces) {
+  const keep = pieces.filter((b, i) => b.size >= 2000 || pieces.length === 1 || i === 0);
+  const out = [];
+  for (const blob of keep) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    // Chunked: String.fromCharCode(...bytes) overflows the call stack on
+    // anything longer than a few seconds of audio.
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    out.push({ audio: btoa(binary), mimeType: blob.type || 'audio/webm' });
+  }
+  return out;
+}
+
 function canRecord() {
   return !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
 }
@@ -134,18 +202,16 @@ export async function attachVoiceInput({ field, mountInto, onError = null, onTex
     }
 
     const mimeType = pickMimeType();
-    try {
-      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    } catch {
-      say('This browser could not start a recording.');
-      reset();
-      return;
-    }
-
-    chunks = [];
-    recorder.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
-    recorder.onstop = () => { send(new Blob(chunks, { type: mimeType || 'audio/webm' })); };
-    recorder.start();
+    let failed = false;
+    recorder = segmentedRecorder(stream, mimeType, (pieces) => {
+      if (!pieces.length) {
+        if (!failed) { failed = true; say('This browser could not start a recording.'); }
+        reset();
+        return;
+      }
+      send(pieces);
+    });
+    if (recorder.state !== 'recording') return;
 
     btn.innerHTML = STOP_SVG;
     btn.classList.add('voice-btn--on');
@@ -157,25 +223,16 @@ export async function attachVoiceInput({ field, mountInto, onError = null, onTex
     stopTimer = setTimeout(() => { if (recorder?.state === 'recording') recorder.stop(); }, MAX_MS);
   }
 
-  async function send(blob) {
+  async function send(pieces) {
     reset('Transcribing…');
     btn.classList.add('voice-btn--busy');
     btn.disabled = true;
 
     try {
-      const buf = await blob.arrayBuffer();
-      // Chunked rather than spread: String.fromCharCode(...bytes) blows the
-      // call stack on anything longer than a few seconds of audio.
-      let binary = '';
-      const bytes = new Uint8Array(buf);
-      for (let i = 0; i < bytes.length; i += 0x8000) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-      }
-
       const resp = await fetch(`${API_BASE()}/guest/transcribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: btoa(binary), mimeType: blob.type || 'audio/webm' }),
+        body: JSON.stringify({ segments: await encodeSegments(pieces) }),
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error(data.error || 'Could not transcribe that.');
@@ -296,19 +353,16 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
     }
 
     const mimeType = pickMimeType();
-    try {
-      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    } catch {
-      say('This browser could not start a recording.');
-      teardown();
-      state('idle');
-      return false;
-    }
-
-    chunks = [];
-    recorder.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
-    recorder.onstop = () => { send(new Blob(chunks, { type: mimeType || 'audio/webm' })); };
-    recorder.start();
+    recorder = segmentedRecorder(stream, mimeType, (pieces) => {
+      if (!pieces.length) {
+        say('This browser could not start a recording.');
+        teardown();
+        state('idle');
+        return;
+      }
+      send(pieces);
+    });
+    if (recorder.state !== 'recording') return false;
     watchLevel(stream);
     state('recording');
 
@@ -327,7 +381,7 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
     if (recorder?.state === 'recording') recorder.stop();
   }
 
-  async function send(blob) {
+  async function send(pieces) {
     teardown();
     if (onLevel) onLevel(0);
 
@@ -341,18 +395,10 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
     state('working');
 
     try {
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      // Chunked: String.fromCharCode(...bytes) overflows the call stack on
-      // anything longer than a few seconds of audio.
-      let binary = '';
-      for (let i = 0; i < bytes.length; i += 0x8000) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-      }
-
       const resp = await fetch(`${API_BASE()}/guest/transcribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: btoa(binary), mimeType: blob.type || 'audio/webm' }),
+        body: JSON.stringify({ segments: await encodeSegments(pieces) }),
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error(data.error || 'Could not transcribe that.');

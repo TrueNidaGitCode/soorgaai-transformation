@@ -3785,6 +3785,29 @@ function downloadInterviewSlides() {
  * nobody in them has been interviewed.
  */
 const VERTICALS = [
+  /*
+   * B2B SaaS, first, since 10 October 2026: the ICP tab's first segment, so the
+   * tab opens on it. The five B2C categories below are earlier hypotheses, kept
+   * (and folded) because Vesoma, The Wellness Co. and iSPAN were interviewed
+   * under one of them.
+   */
+  {
+    id: 'saas',
+    group: 'B2B',
+    name: 'B2B SaaS',
+    examples: 'Small SaaS companies selling to businesses: 10&ndash;50 people, recurring subscriptions, 100+ paying accounts',
+    overlay: null,
+    hypothesis: 'Untested. Small B2B SaaS companies lose accounts they could have kept, because the warning '
+      + 'signs &mdash; usage falling, features never adopted, complaints left unresolved, a renewal coming up '
+      + 'unnoticed &mdash; sit in the CRM, the product and the support desk, and nobody joins them until the '
+      + 'customer does not renew. The cost is in dollars: the MRR of accounts that churn and the ARR of '
+      + 'renewals lost.',
+    note: 'The first segment since 10 October 2026; nobody in it has been interviewed. Each of the ICP '
+      + 'tab&rsquo;s five criteria is a hypothesis these interviews test: 10&ndash;50 employees, recurring '
+      + 'subscriptions, 100+ paying accounts (a screening threshold, not a requirement), visible churn or '
+      + 'renewal risk, and CRM plus product or support data. Tenacrity is the nearest prospect. There is no '
+      + 'knowledge base overlay for SaaS yet.',
+  },
   {
     id: 'clinics',
     group: 'B2C',
@@ -3909,7 +3932,7 @@ const ICP_QUESTIONS = [
   ['value', 'If you had known about it earlier, what would you have done—and what would it have saved or earned you?'],
 ];
 
-let audienceVertical = 'clinics';
+let audienceVertical = 'saas';
 
 /*
  * The interviews for the vertical on screen, read from the server. They used
@@ -3935,7 +3958,7 @@ async function loadIcp(vertical) {
 }
 
 function setAudienceVertical(id) {
-  audienceVertical = VERTICALS.some((v) => v.id === id) ? id : 'clinics';
+  audienceVertical = VERTICALS.some((v) => v.id === id) ? id : 'saas';
   loadIcp(audienceVertical);
   renderAudience();
 }
@@ -4045,6 +4068,21 @@ function renderAudience() {
 
   /** The filter the list is built with, and who in the company is called. */
   const WHO_BY_VERTICAL = {
+    // From the ICP tab's five criteria (10 October 2026): who the list is
+    // built from, and who in the company is called.
+    saas: [
+      ['The company', ['10&ndash;50 people', 'B2B SaaS on monthly or annual subscriptions',
+        '100+ paying accounts &mdash; a screening threshold, not a requirement',
+        'Too many accounts to track every customer by hand']],
+      ['Strong signals', ['Visible churn or renewal risk: usage falling, features not adopted, '
+        + 'complaints unresolved, renewals missed', 'A CRM, plus product usage or support data',
+        'No strong system yet that predicts which accounts will leave']],
+      ['Avoid for now', ['Consumer apps &mdash; the ICP is business customers',
+        'A handful of accounts the founder already knows by name',
+        'No usable data beyond the founder&rsquo;s own memory']],
+      ['Who to contact', ['Founder or CEO &mdash; a founder-led sale',
+        'Head of Customer Success, where there is one']],
+    ],
     engineering: [
       ['The company', ['50&ndash;500 people, in India &mdash; Bengaluru first',
         'B2B, project-based engineering', 'Five or more customer projects running at once',
@@ -4171,17 +4209,29 @@ function renderAudience() {
       </div>`;
   };
 
-  el.innerHTML = `
-    <section class="sg-ta">
-      ${[['B2C', 'B2C &mdash; by customer relationship'], ['B2B', 'B2B']].map(([g, title]) => `
-      <p class="sg-seg__group">${title}</p>
+  /*
+   * B2B first and open: since 10 October 2026 the ICP is small B2B SaaS. The
+   * consumer categories are earlier hypotheses, folded rather than removed,
+   * so the clinic interviews filed under them can still be read.
+   */
+  const segButtons = (g) => `
       <div class="sg-seg" role="tablist" aria-label="${g} vertical">
         ${VERTICALS.filter((v) => v.group === g).map((v) => `
           <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
                   data-vert="${v.id}" aria-selected="${v.id === audienceVertical}">
             ${v.n ? `${v.n} ` : ''}${v.name}<span>${icpCounts[v.id] || 0} of 5 interviewed</span>
           </button>`).join('')}
-      </div>`).join('')}
+      </div>`;
+
+  el.innerHTML = `
+    <section class="sg-ta">
+      <p class="sg-seg__group">B2B &mdash; where the effort goes now</p>
+      ${segButtons('B2B')}
+      <details class="sg-seg__earlier"${V.group === 'B2C' ? ' open' : ''}>
+        <summary>Earlier hypotheses &mdash; consumer businesses
+          <span>${VERTICALS.filter((v) => v.group === 'B2C').reduce((n, v) => n + (icpCounts[v.id] || 0), 0)} interviewed</span></summary>
+        ${segButtons('B2C')}
+      </details>
 
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">${SEGMENT}<span>${done.length} of 5 interviewed</span>

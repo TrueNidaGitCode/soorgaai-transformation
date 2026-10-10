@@ -144,10 +144,12 @@ describe('the verticals', () => {
   // eslint-disable-next-line no-new-func
   const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
 
-  it('groups the verticals by customer relationship: five B2C, then B2B', () => {
-    // 7 October 2026. Recurring Services is the clinics vertical renamed: its
-    // id stays 'clinics', so the interviews already filed under it stay too.
+  it('leads with B2B SaaS, and keeps the five B2C categories as earlier hypotheses', () => {
+    // 10 October 2026: the ICP is small B2B SaaS, so the tab opens on it.
+    // Recurring Services is the clinics vertical renamed (7 October): its id
+    // stays 'clinics', so the interviews already filed under it stay too.
     expect(verticals.map((v) => [v.group, v.n || null, v.name])).toEqual([
+      ['B2B', null, 'B2B SaaS'],
       ['B2C', 1, 'Recurring Services'],
       ['B2C', 2, 'Education &amp; Memberships'],
       ['B2C', 3, 'Subscription &amp; Repeat Purchase'],
@@ -155,8 +157,19 @@ describe('the verticals', () => {
       ['B2C', 5, 'Hospitality &amp; Leisure'],
       ['B2B', null, 'Engineering &amp; Project Operations'],
     ]);
-    expect(verticals[0].id).toBe('clinics');
+    expect(verticals[0].id).toBe('saas');
+    expect(verticals.find((v) => v.name === 'Recurring Services').id).toBe('clinics');
     for (const v of verticals.filter((x) => x.group === 'B2C')) expect(v.examples, v.name).toBeTruthy();
+    // Opens on SaaS; the consumer categories are folded, not removed.
+    expect(js).toContain("let audienceVertical = 'saas';");
+    expect(view).toContain('<details class="sg-seg__earlier"');
+    expect(view).toContain('Earlier hypotheses &mdash; consumer businesses');
+  });
+
+  it('sizes the SaaS segment exactly as the ICP tab does', () => {
+    const saas = verticals.find((v) => v.id === 'saas');
+    for (const c of ['10&ndash;50 people', 'recurring subscriptions', '100+ paying accounts']) expect(saas.examples + saas.note).toContain(c);
+    expect(saas.hypothesis).toMatch(/dollars/);
   });
 
   it('names a knowledge base overlay only where one exists, and says so where none does', () => {

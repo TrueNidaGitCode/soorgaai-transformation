@@ -3951,3 +3951,21 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
   .sg-who__attrs--icp tr { display: block; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
   .sg-who__attrs--icp th, .sg-who__attrs--icp td { display: block; width: auto !important; padding: 2px 0; border: 0; }
 }
+
+/* Target Audience: the consumer categories, folded under the B2B segments
+   since 10 October 2026. Kept, not removed, so their interviews stay readable. */
+.sg-seg__earlier { margin: 18px 0 0; }
+.sg-seg__earlier > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.sg-seg__earlier > summary::-webkit-details-marker { display: none; }
+.sg-seg__earlier > summary::before { content: '\25B8'; display: inline-block; margin-right: 6px; transition: transform .15s; }
+.sg-seg__earlier[open] > summary::before { transform: rotate(90deg); }
+.sg-seg__earlier > summary span { margin-left: 8px; font-weight: 500; letter-spacing: 0; text-transform: none; color: rgba(255, 255, 255, 0.32); }
+.sg-seg__earlier > .sg-seg { margin-top: 10px; }

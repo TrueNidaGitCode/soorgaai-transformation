@@ -365,3 +365,18 @@ describe('the problem is argued once, not twice', () => {
     expect(view).toMatch(/look the same in the records<\/b>/);
   });
 });
+
+describe('business value, in dollars', () => {
+  const view = icpView();
+
+  it('measures what Svarg is worth in recurring revenue kept, not in counts', () => {
+    // Since 10 October 2026: customers kept and churn reduced are how the
+    // dollars are counted, not the value itself.
+    expect(view).toContain("['Business value', 'customers pay when the difference is measured in dollars");
+    expect(view).toMatch(/MRR of customers who would have churned/);
+    expect(view).toMatch(/ARR of renewals saved/);
+    expect(view).toContain('Whether it worked can be measured in dollars');
+    expect(view).toContain('Prove the outcome in dollars');
+    expect(view).not.toContain('the difference is measurable: customers kept');
+  });
+});

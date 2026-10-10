@@ -2382,7 +2382,7 @@ function renderIcpView() {
     ['Explain', 'yes', 'Every finding says why it matters in the customer&rsquo;s terms &mdash; written per watcher, in code, alongside the records behind it.'],
     ['Recommend', 'yes', 'Every customer found gets a next step: call them, offer a time to come back, pass it to a senior person.'],
     ['Act', 'part', 'The team marks the step they took, and a follow-up can be drafted from the finding&rsquo;s facts. Svarg never sends anything; a person does.'],
-    ['Measure', 'part', 'A step counts as worked when the watcher stops finding the problem afterwards. Customers retained over months, and the revenue kept, are not measured yet.'],
+    ['Measure', 'part', 'A step counts as worked when the watcher stops finding the problem afterwards. Customers retained over months, and the dollars of revenue kept, are not measured yet.'],
     ['Learn', 'part', 'Once two steps have each been tried three times in a business, the recommendation follows whichever worked more. No customer has enough outcomes yet.'],
   ];
 
@@ -2397,7 +2397,7 @@ function renderIcpView() {
     'A person connects them by hand today, when anyone does',
     'It gets more expensive when found late &mdash; a customer lost, a renewal missed',
     'There is a clear action once the customer is identified',
-    'Whether it worked can be measured, in customers kept',
+    'Whether it worked can be measured in dollars &mdash; recurring revenue kept',
   ];
 
   /*
@@ -2441,7 +2441,7 @@ function renderIcpView() {
     ['Problem', 'businesses lose customers because they are reactive by default: customer behaviour leaves signals across the systems they already run, nobody joins them continuously, and the pattern is noticed after the customer has gone.'],
     ['ICP', 'the first customers are small B2B SaaS companies &mdash; 10&ndash;50 people, 100+ paying accounts on recurring plans &mdash; where losing customers is painful, the warning signs exist in their CRM and product or support data, and the founder is willing to pay to solve it.'],
     ['Product', 'Svarg can watch customer signals across those systems, identify who needs attention and explain why &mdash; and, next, recommend the intervention, help carry it out and measure whether it worked.'],
-    ['Business value', 'customers pay when the difference is measurable: customers kept, churn reduced, renewals saved, a response that comes days earlier.'],
+    ['Business value', 'customers pay when the difference is measured in dollars: recurring revenue kept &mdash; the MRR of customers who would have churned, and the ARR of renewals saved &mdash; set against what Svarg costs them.'],
   ];
 
   /*
@@ -2464,7 +2464,7 @@ function renderIcpView() {
     ['Identify', 'Find one recurring retention problem that companies discover too late.'],
     ['Prove', 'Connect the systems they already use and show Svarg finds the at-risk customer earlier, or more reliably, than they do today.'],
     ['Act', 'Move past detection: recommend the intervention, and then help carry it out.'],
-    ['Measure', 'Prove the outcome in their numbers: customers retained, churn reduced, renewals saved, response rate, time saved.'],
+    ['Measure', 'Prove the outcome in dollars, from their own numbers: MRR kept from customers who would have churned, ARR of renewals saved. Customers retained and churn reduced are how the dollars are counted.'],
     ['Repeat', 'Find the same problem at similar companies, solved the same way.'],
     ['Expand', 'Once Svarg owns one retention problem inside an organisation, take the adjacent ones &mdash; growth among them, later.'],
   ];
@@ -2605,8 +2605,8 @@ function renderIcpView() {
         ${sec('Walk away from', `
           <div class="sg-who__card sg-who__card--no">
             <p>A customer problem that happened once. One whose warning signs were never written down
-              anywhere. One nobody can act on once they know. One whose improvement cannot be shown in a
-              number. And a problem outside retention, however costly &mdash; growth included: upgrades, cross-sell
+              anywhere. One nobody can act on once they know. One whose improvement cannot be shown in
+              dollars. And a problem outside retention, however costly &mdash; growth included: upgrades, cross-sell
               and unbilled work come later, and pitching them now makes Svarg two products to explain.</p>
             <p class="sg-who__note">Each fails one of the seven, and each is a pilot that ends with
               everyone agreeing it was interesting.</p>

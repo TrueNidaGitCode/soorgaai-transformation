@@ -2400,6 +2400,24 @@ function renderIcpView() {
     'Whether it worked can be measured, in customers kept',
   ];
 
+  /*
+   * The first segment, since 10 October 2026: small B2B SaaS. Five criteria,
+   * each an initial hypothesis that founder interviews confirm or move -- the
+   * numbers are screening thresholds to test, not requirements.
+   */
+  const ICP_START = [
+    ['Company size', '10&ndash;50 employees',
+      'Small enough for a founder-led sale, but potentially large enough to have an established customer base.'],
+    ['Business model', 'Recurring subscriptions',
+      'Monthly or annual plans, renewals, and ongoing relationships with business customers.'],
+    ['Customer base', '100+ paying accounts',
+      'An initial screening threshold to test, not a strict requirement. The key is having enough accounts that manually tracking every customer becomes difficult.'],
+    ['Customer retention problem', 'Visible churn or renewal risk',
+      'Customers stop using the product, reduce usage, fail to adopt features, raise unresolved complaints, or don&rsquo;t renew.'],
+    ['Data availability', 'CRM + product or support data',
+      'They have usable data Svarg could connect to, rather than relying entirely on manual observation.'],
+  ];
+
   /** Two qualifiers that are about us rather than them — and are how deals die. */
   const QUALIFIERS = [
     ['Buying access', 'Can we reach whoever approves a pilot?'],
@@ -2421,7 +2439,7 @@ function renderIcpView() {
    */
   const HYPOTHESES = [
     ['Problem', 'businesses lose customers because they are reactive by default: customer behaviour leaves signals across the systems they already run, nobody joins them continuously, and the pattern is noticed after the customer has gone.'],
-    ['ICP', 'the businesses where this costs the most have recurring customer relationships, meaningful value per customer, and enough digital customer activity that a customer drifting away can be seen in data they already hold.'],
+    ['ICP', 'the first customers are small B2B SaaS companies &mdash; 10&ndash;50 people, 100+ paying accounts on recurring plans &mdash; where losing customers is painful, the warning signs exist in their CRM and product or support data, and the founder is willing to pay to solve it.'],
     ['Product', 'Svarg can watch customer signals across those systems, identify who needs attention and explain why &mdash; and, next, recommend the intervention, help carry it out and measure whether it worked.'],
     ['Business value', 'customers pay when the difference is measurable: customers kept, churn reduced, renewals saved, a response that comes days earlier.'],
   ];
@@ -2547,12 +2565,19 @@ function renderIcpView() {
       </div>
 
       <div class="sg-who__panel" data-panel="icp"${on === 'icp' ? '' : ' hidden'}>
-        ${lead('ICP &mdash; <em>the customer relationship, not the company size</em>',
-          `Businesses with <b>recurring customer relationships, meaningful customer value, and enough
-          digital customer activity</b> that a customer starting to drift away can be seen in data
-          they already hold.`,
-          `<p class="sg-who__note">SMB, mid-market and enterprise are labels for segmenting, not the
-            definition. The definition is the relationship and the five things below.</p>`)}
+        ${lead('ICP &mdash; <em>small B2B SaaS, where losing a customer hurts</em>',
+          `Start with <b>small B2B SaaS companies that have enough customers to experience churn, but
+          don&rsquo;t yet have a strong system to predict it.</b> Not every small SaaS company: the
+          ones where <b>losing customers is painful, the warning signs exist in their data, and the
+          founder is willing to pay</b> to solve the problem.`,
+          `<p class="sg-who__note">An initial hypothesis, validated through founder interviews. Each of
+            the five criteria below is something an interview confirms or moves.</p>`)}
+
+        ${sec('The initial ICP &mdash; five criteria to validate', `
+          <table class="sg-who__attrs sg-who__attrs--icp">
+            <thead><tr><th>Criterion</th><th>Starting point</th><th>Why</th></tr></thead>
+            <tbody>${ICP_START.map(([k, v, why]) => `<tr><th>${k}</th><td><b>${v}</b></td><td>${why}</td></tr>`).join('')}</tbody>
+          </table>`)}
 
         ${sec('What has to be true of them', `<ul class="sg-crit">${CRITERIA.map((c) => `<li>${c}</li>`).join('')}</ul>`)}
 
@@ -2565,8 +2590,7 @@ function renderIcpView() {
 
         ${sec('The shape to listen for', `
           ${chain(IDEAL, 'down')}
-          <p class="sg-who__note">Every line of it is observable in a first conversation &mdash; a size
-            band is not.</p>`)}
+          <p class="sg-who__note">Every line of it is observable in a first conversation.</p>`)}
 
         ${sec('Who is in the room &mdash; buyer, economic buyer and user are three people', `
           <div class="sg-who__grid">

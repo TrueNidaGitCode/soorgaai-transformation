@@ -3938,3 +3938,16 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
 .sg-ivs__dots button { width: 9px; height: 9px; padding: 0; border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.22); cursor: pointer; }
 .sg-ivs__dots button.is-on { background: var(--accent-green, #5CC5A7); width: 22px; border-radius: 5px; }
 .sg-ivs__count { min-width: 3.2em; text-align: center; font-size: 0.82rem; color: rgba(255, 255, 255, 0.55); font-variant-numeric: tabular-nums; }
+
+/* The initial ICP: criterion, starting point, why. Three columns, with the
+   starting point (the number to test) in the accent so it reads at a glance. */
+.sg-who__attrs--icp thead th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.38); }
+.sg-who__attrs--icp tbody td:nth-child(2) { width: 14rem; padding-right: 14px; }
+.sg-who__attrs--icp tbody td:nth-child(2) b { color: var(--accent-green, #5CC5A7); font-weight: 600; }
+.sg-who__attrs--icp tbody td:nth-child(3) { color: rgba(255, 255, 255, 0.62); line-height: 1.5; }
+.sg-who__attrs--icp th, .sg-who__attrs--icp td { padding: 10px 0; }
+@media (max-width: 720px) {
+  .sg-who__attrs--icp thead { display: none; }
+  .sg-who__attrs--icp tr { display: block; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+  .sg-who__attrs--icp th, .sg-who__attrs--icp td { display: block; width: auto !important; padding: 2px 0; border: 0; }
+}

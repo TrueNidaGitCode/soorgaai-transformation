@@ -169,11 +169,27 @@ describe('one hypothesis, argued once', () => {
     // Problem -> ICP -> GTM. The ICP only means anything as "where the problem
     // in the first block costs money".
     const problem = view.indexOf('businesses lose customers because they are reactive by default');
-    const icp = view.indexOf('the customer relationship, not the company size');
+    const icp = view.indexOf('small B2B SaaS, where losing a customer hurts');
     const gtm = view.indexOf('win one customer problem, then expand');
     expect(problem).toBeGreaterThan(-1);
     expect(icp).toBeGreaterThan(problem);
     expect(gtm).toBeGreaterThan(icp);
+  });
+
+  it('starts with small B2B SaaS, on five criteria held as hypotheses to validate', () => {
+    // Since 10 October 2026. Thresholds to test in founder interviews, not
+    // requirements -- the page says so, so nobody disqualifies on them alone.
+    for (const c of ['Company size', 'Business model', 'Customer base', 'Customer retention problem', 'Data availability']) {
+      expect(view).toContain(`['${c}',`);
+    }
+    for (const v of ['10&ndash;50 employees', 'Recurring subscriptions', '100+ paying accounts', 'Visible churn or renewal risk', 'CRM + product or support data']) {
+      expect(view).toContain(v);
+    }
+    expect(view).toContain('An initial screening threshold to test, not a strict requirement.');
+    expect(view).toContain('validated through founder interviews');
+    // The old framing argued size was not part of the definition; it is now.
+    expect(view).not.toMatch(/a size\s+band is not/);
+    expect(view).not.toContain('not the\n            definition');
   });
 
   it('carries no leftover vocabulary from the administration hypothesis', () => {

@@ -146,6 +146,11 @@ export const FIXED_PATHS = [
   'frontend/patterns.js',
   'frontend/patterns.css',
   'frontend/reports.js',
+  // Every outbound request, recorded as it leaves, and the owner's page for it.
+  'services/egressLog.js',
+  'controllers/egressController.js',
+  'routes/egressRoutes.js',
+  'frontend/egress.js',
   'services/turnLog.js',
   'services/selfCheck.js',
   'services/conformance.js',

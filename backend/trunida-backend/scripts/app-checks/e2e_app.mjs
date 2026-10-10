@@ -59,12 +59,29 @@ process.env.JWT_SECRET = 'svarg-root-e2e';
 const authSecret = tenantAuthSecret(DEP._id);
 const APP_SECRET = 'e2e-app-secret';
 // A clean scratch database: the owner's rows from an earlier run would be restored at boot and merged against.
-{ const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows', 'svarg_churn_patterns', 'svarg_churn_settings', 'svarg_app_events', 'svarg_app_users']) await pre.collection(c).deleteMany({}); await pre.collection('svarg_connectors').deleteMany({ kind: 'app-events' }); await pre.collection('svarg_datasets').deleteMany({ name: 'App Activity' }); await pre.collection('svarg_agents').deleteMany({ watcherId: 'learned-pattern' }); await pre.close(); }
+{ const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows', 'svarg_churn_patterns', 'svarg_churn_settings', 'svarg_app_events', 'svarg_app_users', 'svarg_egress_log']) await pre.collection(c).deleteMany({}); await pre.collection('svarg_connectors').deleteMany({ kind: 'app-events' }); await pre.collection('svarg_datasets').deleteMany({ name: 'App Activity' }); await pre.collection('svarg_agents').deleteMany({ watcherId: 'learned-pattern' }); await pre.close(); }
 // A stand-in for Meta's Graph API: the number lookup the connect makes.
 const metaHits = [];
 const meta = (await import('http')).createServer((req, res) => { metaHits.push(req.url); res.setHeader('Content-Type', 'application/json'); if (req.url.startsWith("/111222333444555?") && /Bearer EAAB[.]test/.test(req.headers.authorization || '')) res.end(JSON.stringify({ display_phone_number: '+91 98000 00000', verified_name: 'E2E Academy', quality_rating: 'GREEN' })); else { res.statusCode = 400; res.end(JSON.stringify({ error: { message: 'Invalid OAuth access token' } })); } });
 await new Promise(r => meta.listen(0, r));
 const META_URL = 'http://127.0.0.1:' + meta.address().port;
+// A stand-in for Svarg's gateway: model calls answered OpenAI-shaped, signals
+// and the digest accepted. Its own server, so what the application sends to
+// "Svarg" and to "AI" can be told apart from what it sends to Meta.
+const gwHits = [];
+const gw = (await import('http')).createServer((req, res) => {
+  let b = ''; req.on('data', (c) => { b += c; });
+  req.on('end', () => {
+    gwHits.push({ url: req.url, auth: req.headers.authorization || '', body: b });
+    res.setHeader('Content-Type', 'application/json');
+    if (/\/chat\/completions$/.test(req.url)) {
+      return res.end(JSON.stringify({ id: 'x', object: 'chat.completion', created: 1, model: 'stub-model', choices: [{ index: 0, message: { role: 'assistant', content: 'Two learners have gone quiet.' }, finish_reason: 'stop' }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } }));
+    }
+    res.end(JSON.stringify({ ok: true, sent: false }));
+  });
+});
+await new Promise(r => gw.listen(0, r));
+const GW_URL = 'http://127.0.0.1:' + gw.address().port + '/gw';
 const child = spawn(process.execPath, ['server.js'], {
   cwd: dir,
   env: {
@@ -72,7 +89,7 @@ const child = spawn(process.execPath, ['server.js'], {
     MONGO_URI: tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch'),
     JWT_SECRET: APP_SECRET, APP_OWNER_KEY: 'sok_e2e', APP_PUBLIC_ACCESS: 'true',
     SVARG_AUTH_URL: 'https://svarg.example/api/auth/oauth/google?tenant=' + DEP._id, SVARG_AUTH_SECRET: authSecret,
-    CONNECTOR_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'), WHATSAPP_GRAPH_URL: META_URL, APP_PUBLIC_URL: 'http://localhost:' + port, APP_EVENTS_GATHER_MS: '300',
+    CONNECTOR_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'), WHATSAPP_GRAPH_URL: META_URL, APP_PUBLIC_URL: 'http://localhost:' + port, APP_EVENTS_GATHER_MS: '300', PROVIDER_CHAIN: 'selfhosted', SELFHOSTED_BASE_URL: GW_URL + '/v1', SELFHOSTED_API_KEY: 'gw-secret-token', SELFHOSTED_MODEL: 'stub-model', SVARG_SIGNALS_URL: GW_URL + '/v1/signals', SVARG_NOTIFY_URL: GW_URL + '/v1/notify',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -349,7 +366,53 @@ try {
   check('events land once each, with who the user is', rows?.total === 3 && /Asha Rao/.test(flat) && /Hillview School/.test(flat) && /cancelled/.test(flat), JSON.stringify({ total: rows?.total, ids: (rows?.rows || []).map((r) => r.cells[10] + '/' + r.cells[11]) }));
 } catch (err) { check('your app\'s events', false, err.stack); }
 
-child.kill(); meta.close();
+// What left the application: every request above was recorded as it went --
+// to Meta (own systems), to the stand-in gateway's model endpoint (AI) and
+// its signals endpoint (Svarg) -- with credentials masked, chained, the
+// owner's alone, and an edited entry caught.
+try {
+  const tok = (await j('/api/data/owner-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sok_e2e' }) })).body.token;
+  const H = { Authorization: 'Bearer ' + tok };
+  // One question through the model, so there is certainly an AI entry.
+  await j('/api/data/intent', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Which learners have gone quiet?' }) });
+  // Usage signals flush every thirty seconds.
+  let sum = null;
+  for (let i = 0; i < 50; i++) {
+    sum = (await j('/api/egress/summary?days=1', { headers: H })).body;
+    if (sum?.categories?.svarg?.count && sum?.categories?.ai?.count && sum?.categories?.own?.count) break;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  const cats = sum?.categories || {};
+  check('a request to Meta is recorded under your own systems', cats.own?.destinations?.some((d) => d.host === META_URL.replace('http://', '')), JSON.stringify(cats.own?.destinations));
+  check('a model call through the gateway is recorded under AI', cats.ai?.count > 0 && cats.ai.destinations.some((d) => d.purpose === 'Model call'), JSON.stringify(cats.ai?.destinations));
+  check('usage signals are recorded under Svarg', cats.svarg?.destinations?.some((d) => d.purpose === 'Usage signals'), JSON.stringify(cats.svarg?.destinations));
+  check('the chain checks out', sum?.chain?.ok === true && sum.chain.entries >= 3, JSON.stringify(sum?.chain));
+  const ai = (await j('/api/egress?category=ai&days=1', { headers: H })).body?.entries || [];
+  const one = ai.length ? (await j('/api/egress/entry/' + ai[0].seq, { headers: H })).body?.entry : null;
+  check('an AI entry shows the exact prompt, the model, and who sent it', one && /messages/.test(one.body || '') && one.model === 'stub-model' && one.sender && one.sender !== 'the application', JSON.stringify({ sender: one?.sender, model: one?.model, body: (one?.body || '').slice(0, 80) }));
+  const exp = await fetch(base + '/api/egress/export?format=json&days=1', { headers: H });
+  const all = await exp.text();
+  check('no credential is in the log: not the gateway token, not the Meta token', !/gw-secret-token|EAAB\.test/.test(all) && /hidden/.test(all), all.match(/.{40}(gw-secret|EAAB).{20}/)?.[0]);
+  const csv = await (await fetch(base + '/api/egress/export?format=csv&days=1', { headers: H })).text();
+  check('exports as CSV for a spreadsheet', csv.startsWith('seq,at,category,purpose') && csv.split('\n').length > 3);
+  // A colleague, signed in the ordinary way, who is not the owner.
+  const cb2 = await fetch(base + '/api/auth/callback?assertion=' + encodeURIComponent(signAssertion({ deployment: DEP, profile: { sub: '2', email: 'colleague@e2e.in', name: 'Colleague' } })), { redirect: 'manual' });
+  const colleague = new URLSearchParams(String(cb2.headers.get('location') || '').split('#')[1] || '').get('token') || '';
+  const signed = await j('/api/egress/summary', { headers: { Authorization: 'Bearer ' + colleague } });
+  check('only the owner can read it', (await j('/api/egress/summary')).status === 401 && colleague && signed.status === 403, JSON.stringify({ colleague: !!colleague, status: signed.status }));
+  // Tamper with one entry in the database, directly, and the page says so.
+  const conn = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise();
+  const col = conn.collection('svarg_egress_log');
+  const victim = await col.findOne({ category: 'own' });
+  await col.updateOne({ _id: victim._id }, { $set: { url: victim.url + '?edited' } });
+  const broken = (await j('/api/egress/verify', { headers: H })).body;
+  check('an entry edited in the database breaks the chain, and says which', broken?.ok === false && broken.brokenAt === victim.seq, JSON.stringify(broken));
+  await col.updateOne({ _id: victim._id }, { $set: { url: victim.url } });
+  check('and checks out again once it is put back', (await j('/api/egress/verify', { headers: H })).body?.ok === true);
+  await conn.close();
+} catch (err) { check('what left the application', false, err.stack); }
+
+child.kill(); meta.close(); gw.close();
 await new Promise(r => setTimeout(r, 800));
 try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* handles */ }
 const failed = results.filter(r => !r.ok);

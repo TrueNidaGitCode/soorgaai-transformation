@@ -319,6 +319,12 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'frontend/patterns.js':              { template: 'frontend/patterns.js' },
     'frontend/patterns.css':             { template: 'frontend/patterns.css' },
     'frontend/reports.js':               { template: 'frontend/reports.js' },
+    // What leaves this application: server.js imports the recorder first, in
+    // every application, so all four ship with every application.
+    'services/egressLog.js':             { template: 'services/egressLog.js' },
+    'controllers/egressController.js':   { template: 'controllers/egressController.js' },
+    'routes/egressRoutes.js':            { template: 'routes/egressRoutes.js' },
+    'frontend/egress.js':                { template: 'frontend/egress.js' },
     'services/turnLog.js':              { template: 'services/turnLog.js' },
     'services/selfCheck.js':            { template: 'services/selfCheck.js' },
     'services/conformance.js':          { template: 'services/conformance.js' },

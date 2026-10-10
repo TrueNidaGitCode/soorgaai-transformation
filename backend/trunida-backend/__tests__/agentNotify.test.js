@@ -105,6 +105,13 @@ describe('one message, not six', () => {
     expect(lines[2]).toContain('Fee Watch: 1 resolved');
   });
 
+  it('says how many, never who: no customer name goes to Svarg', () => {
+    const lines = composeDigest([
+      { ran: true, name: 'Dropout Watch', new: ['Ravi', 'Meera'], resolved: ['Asha'] },
+    ]);
+    expect(lines.join(' ')).not.toMatch(/Ravi|Meera|Asha/);
+  });
+
   it('says nothing about what is merely still true', () => {
     /*
      * The rule the feature lives or dies by. An agent spends most of its life

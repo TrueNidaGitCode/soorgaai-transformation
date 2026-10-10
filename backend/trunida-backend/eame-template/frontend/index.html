@@ -1328,7 +1328,7 @@
        * item. A panel that arrives later gets consistent behaviour by being
        * listed, not by remembering to copy anything.
        */
-      var PANELS = ['ch-findings', 'ch-finding', 'ch-agents', 'ch-data', 'ch-access', 'ch-reports'];
+      var PANELS = ['ch-findings', 'ch-finding', 'ch-agents', 'ch-data', 'ch-access', 'ch-reports', 'ch-egress'];
 
       function showPanel(which) {
         if (page) page.hidden = true;     // the front door
@@ -1349,7 +1349,7 @@
       var PANEL_OF = {
         home: 'ch-findings', finding: 'ch-finding',
         agents: 'ch-agents', data: 'ch-data', people: 'ch-access',
-        reports: 'ch-reports',
+        reports: 'ch-reports', egress: 'ch-egress',
       };
 
       // Exposed so the panel scripts hand control back rather than reaching
@@ -1668,6 +1668,9 @@
        application that predates them is unaffected. -->
   <script src="findings.js" defer></script>
   <script src="reports.js" defer></script>
+  <!-- What leaves this application: the owner's audit of every outbound
+       request (services/egressLog.js). Shows itself to the owner only. -->
+  <script src="egress.js" defer></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

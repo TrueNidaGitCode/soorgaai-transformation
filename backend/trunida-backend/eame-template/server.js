@@ -17,6 +17,9 @@
  * `defectMatchingRoutes.js` -> /api/defect-matching.
  */
 
+// First, before anything that could make a request: every request this
+// application sends out is recorded from here on (services/egressLog.js).
+import './services/egressLog.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';

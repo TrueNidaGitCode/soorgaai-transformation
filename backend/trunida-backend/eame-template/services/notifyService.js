@@ -59,8 +59,19 @@ export function composeDigest(results) {
     if (r.simulated) continue;
     const fresh = (r.new || []).length;
     const gone = (r.resolved || []).length;
-    if (fresh) lines.push(`${r.name}: ${fresh} new — ${(r.new || []).slice(0, 6).join(', ')}`);
-    if (gone) lines.push(`${r.name}: ${gone} resolved — ${(r.resolved || []).slice(0, 6).join(', ')}`);
+    /*
+     * Counts, never names.
+     *
+     * The digest is sent through Svarg, which is what resolves the owner's
+     * address. It used to carry up to six names per agent -- the customers it
+     * had found -- so customer names reached Svarg every morning. A customer
+     * auditing what left their application (services/egressLog.js) found
+     * exactly that. Who it is stays in the application; the email says how
+     * many, and the application's address under it (added by Svarg's
+     * tenantNotifyService) takes the owner to them.
+     */
+    if (fresh) lines.push(`${r.name}: ${fresh} new`);
+    if (gone) lines.push(`${r.name}: ${gone} resolved`);
   }
   return lines;
 }

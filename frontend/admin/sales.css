@@ -3875,3 +3875,66 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
 
 /* The vertical chain on the ICP tab stays inside its column. */
 .sg-who .sg-chain--down li { box-sizing: border-box; max-width: 100%; }
+
+/* ── ICP interview: Framework | Slides ──────────────────────────────────────
+   The two parts of the interview tab. The slides themselves are styled by
+   IV_SLIDE_CSS in sales.js, which the PDF window uses too; only the
+   controls around them live here. */
+.sg-ivtabs {
+  display: inline-flex;
+  margin: 4px 0 22px;
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sg-ivtabs__tab {
+  padding: 0.45rem 1.1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #CCCCCC);
+  font-family: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.sg-ivtabs__tab + .sg-ivtabs__tab { border-left: 1px solid rgba(92, 197, 167, 0.3); }
+.sg-ivtabs__tab:hover:not(.is-on) { background: rgba(255, 255, 255, 0.04); }
+.sg-ivtabs__tab.is-on { background: rgba(92, 197, 167, 0.16); color: var(--accent-green, #5CC5A7); font-weight: 600; }
+
+.sg-ivs { max-width: 1040px; padding-bottom: 48px; }
+.sg-ivs__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 14px; }
+.sg-ivs__note { margin: 0; font-size: 0.86rem; color: rgba(255, 255, 255, 0.55); }
+.sg-ivs__tools { display: flex; gap: 8px; }
+.sg-ivs__btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(92, 197, 167, 0.4);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--accent-green, #5CC5A7);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sg-ivs__btn:hover { background: rgba(92, 197, 167, 0.08); }
+.sg-ivs__btn--solid { background: var(--accent-green, #5CC5A7); color: #061217; border-color: transparent; }
+.sg-ivs__btn--solid:hover { background: #74d3b8; }
+.sg-ivs__stage { border-radius: 10px; overflow: hidden; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45); background: #f4f2ec; }
+.sg-ivs__stage .sg-ivs__frame[hidden] { display: none; }
+/* Presenting: the slide as large as the screen allows, letterboxed. */
+.sg-ivs__stage:fullscreen { display: flex; align-items: center; justify-content: center; background: #111; border-radius: 0; }
+.sg-ivs__stage:fullscreen .sg-ivs__frame { width: min(100vw, 177.78vh); }
+.sg-ivs__nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 16px; }
+.sg-ivs__arrow {
+  width: 38px; height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.sg-ivs__arrow:hover { border-color: rgba(92, 197, 167, 0.6); }
+.sg-ivs__dots { display: inline-flex; gap: 8px; }
+.sg-ivs__dots button { width: 9px; height: 9px; padding: 0; border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.22); cursor: pointer; }
+.sg-ivs__dots button.is-on { background: var(--accent-green, #5CC5A7); width: 22px; border-radius: 5px; }
+.sg-ivs__count { min-width: 3.2em; text-align: center; font-size: 0.82rem; color: rgba(255, 255, 255, 0.55); font-variant-numeric: tabular-nums; }

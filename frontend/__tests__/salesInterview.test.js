@@ -190,7 +190,9 @@ describe('fifteen minutes, and the clock is the content', () => {
     // left is the page as a prospect would hear it.
     const el = { innerHTML: '' };
     // eslint-disable-next-line no-new-func
-    new Function('document', `${QUESTIONS_SRC}\n${view}; renderInterview();`)({ getElementById: () => el });
+    // The framework renders into the panel interviewShell hands it; the
+    // slides are the customer's and are tested on their own below.
+    new Function('document', `${QUESTIONS_SRC}\nconst interviewShell = () => document.getElementById('x');\nconst renderInterviewSlides = () => {};\n${view}; renderInterview();`)({ getElementById: () => el });
     const spoken = el.innerHTML.replace(/<p class="sg-iv__note">[\s\S]*?<\/p>/g, '');
     expect(spoken.length).toBeGreaterThan(1500);
     for (const word of [/patient/i, /clinic/i, /wellness/i, /treatment/i, /academy/i,
@@ -233,5 +235,48 @@ describe('what the page admits while somebody is reading it aloud', () => {
       'Fragmentation', 'Manual effort', 'Actionability', 'Cost of lateness', 'Measurability']) {
       expect(view, `interview: ${dimension}`).toContain(`['${dimension}',`);
     }
+  });
+});
+
+describe('framework and slides', () => {
+  it('keeps the framework as the first part, and adds the slides beside it', () => {
+    const shell = fn('interviewShell');
+    expect(shell).toContain('data-part="framework"');
+    expect(shell).toContain('data-part="slides"');
+    expect(shell.indexOf('data-part="framework"')).toBeLessThan(shell.indexOf('data-part="slides"'));
+    expect(js).toMatch(/^let interviewPart = 'framework';/m);
+    // The framework still renders whole, into its own panel.
+    expect(fn('renderInterview')).toContain('const el = interviewShell(root);');
+  });
+
+  it('has the four slides, in the order of the fifteen minutes', () => {
+    const slides = fn('interviewSlidesHtml');
+    const order = ['A 15-minute conversation', 'Four questions about one recurring problem',
+      'Know which customers are at risk of leaving', 'Recommended model for SvargAI'];
+    const at = order.map((t) => slides.indexOf(t));
+    expect(at.every((i) => i > -1)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+    expect(js).toMatch(/^const IV_SLIDE_COUNT = 4;/m);
+  });
+
+  it('shows the customer the questions the interviewer reads', () => {
+    // Read from ICP_QUESTIONS, not retyped: the slide and the script cannot drift.
+    expect(fn('interviewSlidesHtml')).toContain('ICP_QUESTIONS.map(');
+  });
+
+  it('downloads a PDF from a window that holds the slides and nothing else', () => {
+    const dl = fn('downloadInterviewSlides');
+    expect(dl).toContain("window.open('', '_blank')");
+    expect(dl).toContain('@page { size: 1280px 720px; margin: 0; }');
+    expect(dl).toContain('interviewSlidesHtml()');
+    expect(dl).not.toMatch(/sg-iv__|sg-interview/);
+    expect(fn('renderInterviewSlides')).toContain('downloadInterviewSlides');
+  });
+
+  it('styles the controls, and the slides own their own names', () => {
+    expect(css).toMatch(/^\.sg-ivtabs \{/m);
+    expect(css).toMatch(/^\.sg-ivs__stage \{/m);
+    const theirs = new Set([...blocks(fn('renderIcpView')), ...blocks(fn('renderPlaybook')), ...blocks(fn('renderPitches'))]);
+    expect([...blocks(fn('interviewSlidesHtml'))].filter((b) => theirs.has(b))).toEqual([]);
   });
 });

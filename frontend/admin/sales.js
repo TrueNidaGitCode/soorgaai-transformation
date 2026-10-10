@@ -3188,8 +3188,13 @@ function renderPlaybook() {
  * out loud — the same discipline the ICP tab holds itself to.
  */
 function renderInterview() {
-  const el = document.getElementById('sg-interview');
-  if (!el) return;
+  const root = document.getElementById('sg-interview');
+  if (!root) return;
+  // Two parts: this framework, read by the interviewer, and the four slides
+  // shown to the customer (renderInterviewSlides). The framework renders into
+  // its own panel so the slides keep their place in the slider between visits.
+  const el = interviewShell(root);
+  renderInterviewSlides();
 
   /** A line read out word for word. */
   const say = (t) => `<p class="sg-iv__say">&ldquo;${t}&rdquo;</p>`;
@@ -3443,6 +3448,262 @@ function renderInterview() {
         </ul>
       </div>
     </section>`;
+}
+
+/* ── ICP interview: framework and slides ─────────────────────────────────────
+ *
+ * The tab holds two things used in the same meeting by different people. The
+ * framework is the interviewer's: the clock, the questions and what each one
+ * fills. The slides are the customer's: four pages to put on the screen or
+ * leave behind, in the order the fifteen minutes run.
+ *
+ * The slides ask the same four questions as the framework, read from
+ * ICP_QUESTIONS, so the customer is never shown wording the interviewer is not
+ * reading and the Target Audience tab is not filing under.
+ */
+let interviewPart = 'framework';
+let interviewSlide = 0;
+
+/** The sub-tab bar and the two panels, made once; returns the framework panel. */
+function interviewShell(root) {
+  if (!root.querySelector('.sg-ivtabs')) {
+    root.innerHTML = `
+      <div class="sg-ivtabs" role="tablist" aria-label="ICP interview">
+        <button type="button" class="sg-ivtabs__tab" data-part="framework" role="tab">Framework</button>
+        <button type="button" class="sg-ivtabs__tab" data-part="slides" role="tab">Slides</button>
+      </div>
+      <div id="sg-iv-framework"></div>
+      <div id="sg-iv-slides" hidden></div>`;
+    root.querySelector('.sg-ivtabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-part]');
+      if (!b) return;
+      interviewPart = b.dataset.part;
+      showInterviewPart(root);
+    });
+    // Arrow keys move the slider while it is on screen, unless someone is typing.
+    document.addEventListener('keydown', (e) => {
+      if (root.hidden || interviewPart !== 'slides') return;
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) return;
+      if (e.key === 'ArrowRight') moveInterviewSlide(1);
+      else if (e.key === 'ArrowLeft') moveInterviewSlide(-1);
+    });
+  }
+  showInterviewPart(root);
+  return root.querySelector('#sg-iv-framework');
+}
+
+function showInterviewPart(root) {
+  for (const b of root.querySelectorAll('.sg-ivtabs__tab')) {
+    const on = b.dataset.part === interviewPart;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-selected', String(on));
+  }
+  root.querySelector('#sg-iv-framework').hidden = interviewPart !== 'framework';
+  root.querySelector('#sg-iv-slides').hidden = interviewPart !== 'slides';
+}
+
+/** The fonts the slides are set in, for this page and for the PDF's own window. */
+const IV_SLIDE_FONTS = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;500&display=swap';
+
+/*
+ * The slides' own stylesheet, used twice: on this page, and in the window the
+ * PDF is printed from. Sizes are in --u, one 1280th of the slide's width, so
+ * a slide is the same page at any size: a card on this screen, a full screen
+ * when presenting, a 1280 x 720 page in the PDF.
+ */
+const IV_SLIDE_CSS = `
+.sg-ivs__frame { container-type: inline-size; aspect-ratio: 16 / 9; width: 100%; position: relative; }
+.sg-ivs__slide {
+  --u: calc(100cqw / 1280);
+  --navy: #1f2430; --cream: #f4f2ec; --card: #fffdf9; --line: #e6e1d7;
+  --rust: #b04a1d; --amber: #e8925e; --ink: #1f2430; --muted: #4f5563; --soft: #6b7080;
+  position: absolute; inset: 0; overflow: hidden; box-sizing: border-box;
+  padding: calc(82 * var(--u)) calc(85 * var(--u)) calc(44 * var(--u));
+  display: flex; flex-direction: column;
+  background: var(--cream); color: var(--ink);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.sg-ivs__slide * { box-sizing: border-box; margin: 0; }
+.sg-ivs__slide--dark { background: var(--navy); color: #f3efe7; }
+.sg-ivs__kicker { font-size: calc(14 * var(--u)); font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rust); }
+.sg-ivs__slide--dark .sg-ivs__kicker { color: var(--amber); }
+.sg-ivs__serif { font-family: 'IBM Plex Serif', Georgia, serif; font-weight: 400; }
+.sg-ivs__big { margin-top: calc(26 * var(--u)); font-size: calc(50 * var(--u)); line-height: 1.13; max-width: calc(960 * var(--u)); letter-spacing: -0.005em; }
+.sg-ivs__h { margin-top: calc(18 * var(--u)); font-size: calc(44 * var(--u)); line-height: 1.15; max-width: calc(960 * var(--u)); }
+.sg-ivs__foot { position: absolute; left: calc(85 * var(--u)); bottom: calc(44 * var(--u)); font-size: calc(16 * var(--u)); color: var(--soft); }
+.sg-ivs__slide--dark .sg-ivs__foot { color: #8b909c; }
+
+.sg-ivs__steps { margin-top: auto; padding-top: calc(28 * var(--u)) !important; margin-bottom: calc(66 * var(--u)); display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(22 * var(--u)); padding: 0; list-style: none; }
+.sg-ivs__steps li { border-top: calc(1.5 * var(--u)) solid #5a5f6b; padding-top: calc(22 * var(--u)); }
+.sg-ivs__steps li:first-child { border-top-color: var(--amber); }
+.sg-ivs__steps b { display: block; font-size: calc(11.5 * var(--u)); font-weight: 600; letter-spacing: 0.04em; color: #9a9fab; }
+.sg-ivs__steps li:first-child b { color: var(--amber); }
+.sg-ivs__steps span { display: block; margin-top: calc(8 * var(--u)); font-size: calc(15 * var(--u)); font-weight: 500; color: #f3efe7; }
+
+.sg-ivs__grid { margin-top: calc(34 * var(--u)); display: grid; grid-template-columns: 1fr 1fr; gap: calc(22 * var(--u)); }
+.sg-ivs__card { background: var(--card); border: calc(1 * var(--u)) solid var(--line); border-radius: calc(12 * var(--u)); padding: calc(28 * var(--u)) calc(28 * var(--u)) calc(30 * var(--u)); min-height: calc(172 * var(--u)); }
+.sg-ivs__card b { display: block; font-size: calc(15 * var(--u)); font-weight: 600; color: var(--rust); }
+.sg-ivs__card p { margin-top: calc(14 * var(--u)); font-family: 'IBM Plex Serif', Georgia, serif; font-size: calc(22.5 * var(--u)); line-height: 1.28; color: var(--ink); }
+
+.sg-ivs__sub { margin-top: calc(18 * var(--u)); font-size: calc(20.5 * var(--u)); line-height: 1.5; color: var(--muted); max-width: calc(880 * var(--u)); }
+.sg-ivs__chips { margin-top: calc(20 * var(--u)); display: flex; align-items: center; flex-wrap: wrap; gap: calc(11 * var(--u)); font-size: calc(15 * var(--u)); }
+.sg-ivs__chips em { font-style: normal; color: var(--soft); margin-right: calc(2 * var(--u)); }
+.sg-ivs__chips span { background: #fff; border: calc(1 * var(--u)) solid var(--line); border-radius: 999px; padding: calc(7 * var(--u)) calc(15 * var(--u)); color: var(--ink); font-weight: 500; }
+.sg-ivs__ask { margin-top: auto; margin-bottom: calc(66 * var(--u)); background: var(--navy); border-radius: calc(10 * var(--u)); padding: calc(30 * var(--u)) calc(32 * var(--u)); }
+.sg-ivs__ask b { display: block; font-size: calc(14 * var(--u)); font-weight: 600; letter-spacing: 0.04em; color: var(--amber); }
+.sg-ivs__ask p { margin-top: calc(12 * var(--u)); font-family: 'IBM Plex Serif', Georgia, serif; font-size: calc(26.5 * var(--u)); line-height: 1.3; color: #f3efe7; }
+
+.sg-ivs__pair { margin-top: calc(34 * var(--u)); display: grid; grid-template-columns: 1fr 1fr; gap: calc(22 * var(--u)); }
+.sg-ivs__offer { border-radius: calc(12 * var(--u)); padding: calc(42 * var(--u)) calc(32 * var(--u)) calc(34 * var(--u)); min-height: calc(314 * var(--u)); background: var(--card); border: calc(1 * var(--u)) solid var(--line); }
+.sg-ivs__offer--dark { background: var(--navy); border-color: var(--navy); color: #f3efe7; }
+.sg-ivs__offer .sg-ivs__kicker { font-size: calc(14.5 * var(--u)); letter-spacing: 0.16em; }
+.sg-ivs__offer--dark .sg-ivs__kicker { color: var(--amber); }
+.sg-ivs__price { margin-top: calc(14 * var(--u)); font-family: 'IBM Plex Serif', Georgia, serif; font-size: calc(76 * var(--u)); line-height: 1.05; }
+.sg-ivs__offer strong { display: block; margin-top: calc(12 * var(--u)); font-size: calc(17 * var(--u)); font-weight: 600; }
+.sg-ivs__offer h4 { margin-top: calc(16 * var(--u)); font-family: 'IBM Plex Serif', Georgia, serif; font-weight: 400; font-size: calc(36 * var(--u)); line-height: 1.15; white-space: nowrap; }
+.sg-ivs__offer .sg-ivs__body { margin-top: calc(14 * var(--u)); font-size: calc(17 * var(--u)); line-height: 1.6; color: var(--muted); }
+.sg-ivs__offer--dark .sg-ivs__body { color: #c7cad2; }
+`;
+
+/** The four slides, as the PDF has them, at their native 1280 x 720. */
+function interviewSlidesHtml() {
+  const qs = ICP_QUESTIONS.map(([, q]) => q.replace(/\s*—\s*/g, ' — '));
+  const LABELS = ['01 · The problem', '02 · The last time', '03 · How it’s found', '04 · Knowing earlier'];
+  const slide = (cls, inner, foot = 'Svarg · svargai.com') => `
+    <div class="sg-ivs__frame"><section class="sg-ivs__slide${cls}">${inner}<p class="sg-ivs__foot">${foot}</p></section></div>`;
+  return [
+    slide(' sg-ivs__slide--dark', `
+      <p class="sg-ivs__kicker">A 15-minute conversation</p>
+      <h2 class="sg-ivs__serif sg-ivs__big">We’re working on helping businesses notice customer problems and opportunities earlier, using signals they already have. Before showing anything, we’d like to understand how it works for you today.</h2>
+      <ol class="sg-ivs__steps">
+        <li><b>01 · 2 MIN</b><span>Context</span></li>
+        <li><b>02 · 11 MIN</b><span>Your experience</span></li>
+        <li><b>03 · 2 MIN</b><span>What we’re exploring</span></li>
+      </ol>`, 'Svarg'),
+    slide('', `
+      <p class="sg-ivs__kicker">Your experience</p>
+      <h2 class="sg-ivs__serif sg-ivs__h">Four questions about one recurring problem</h2>
+      <div class="sg-ivs__grid">
+        ${qs.map((q, i) => `<div class="sg-ivs__card"><b>${LABELS[i]}</b><p>${esc(q)}</p></div>`).join('')}
+      </div>`, 'Svarg'),
+    slide('', `
+      <p class="sg-ivs__kicker">Customer retention</p>
+      <h2 class="sg-ivs__serif sg-ivs__h">Know which customers are at risk of leaving — before they do.</h2>
+      <p class="sg-ivs__sub">Svarg helps you identify customers who are losing interest, understand why, and take action before you lose them.</p>
+      <div class="sg-ivs__chips"><em>Signals from</em>${['CRM', 'Bookings', 'Usage', 'Calls', 'Payments', 'More'].map((c) => `<span>${c}</span>`).join('')}</div>
+      <div class="sg-ivs__ask"><b>ONE QUESTION</b><p>Would it be useful if we looked at this specific problem using your actual workflow?</p></div>`),
+    slide('', `
+      <p class="sg-ivs__kicker">Working together</p>
+      <h2 class="sg-ivs__serif sg-ivs__h">Recommended model for SvargAI</h2>
+      <div class="sg-ivs__pair">
+        <div class="sg-ivs__offer sg-ivs__offer--dark">
+          <p class="sg-ivs__kicker">Founding design partner</p>
+          <p class="sg-ivs__price">₹0</p>
+          <strong>First 2–3 companies · 4 weeks</strong>
+          <p class="sg-ivs__body">Collaborate on a real retention problem, provide feedback, and help shape the product. No subscription or pilot fee during the agreed period.</p>
+        </div>
+        <div class="sg-ivs__offer">
+          <p class="sg-ivs__kicker">After the design-partner period</p>
+          <h4>Paid monthly subscription</h4>
+          <p class="sg-ivs__body">Agree on the commercial price in advance. If the product delivers value and the partner wishes to continue, billing begins under the agreed terms.</p>
+        </div>
+      </div>`),
+  ];
+}
+
+const IV_SLIDE_COUNT = 4;
+
+function renderInterviewSlides() {
+  const box = document.getElementById('sg-iv-slides');
+  if (!box) return;
+  if (!document.getElementById('sg-ivs-css')) {
+    const font = document.createElement('link');
+    font.rel = 'stylesheet';
+    font.href = IV_SLIDE_FONTS;
+    const style = document.createElement('style');
+    style.id = 'sg-ivs-css';
+    style.textContent = IV_SLIDE_CSS;
+    document.head.append(font, style);
+  }
+  box.innerHTML = `
+    <div class="sg-ivs">
+      <div class="sg-ivs__bar">
+        <p class="sg-ivs__note">What the customer sees, in the order of the fifteen minutes. Use the arrows, or the arrow keys.</p>
+        <div class="sg-ivs__tools">
+          <button type="button" class="sg-ivs__btn" id="sg-ivs-present">Present</button>
+          <button type="button" class="sg-ivs__btn sg-ivs__btn--solid" id="sg-ivs-download">Download PDF</button>
+        </div>
+      </div>
+      <div class="sg-ivs__stage" id="sg-ivs-stage">${interviewSlidesHtml().join('')}</div>
+      <div class="sg-ivs__nav">
+        <button type="button" class="sg-ivs__arrow" id="sg-ivs-prev" aria-label="Previous slide">&larr;</button>
+        <span class="sg-ivs__dots" id="sg-ivs-dots">${Array.from({ length: IV_SLIDE_COUNT }, (_, i) => `<button type="button" data-slide="${i}" aria-label="Slide ${i + 1}"></button>`).join('')}</span>
+        <span class="sg-ivs__count" id="sg-ivs-count"></span>
+        <button type="button" class="sg-ivs__arrow" id="sg-ivs-next" aria-label="Next slide">&rarr;</button>
+      </div>
+    </div>`;
+  box.querySelector('#sg-ivs-prev').addEventListener('click', () => moveInterviewSlide(-1));
+  box.querySelector('#sg-ivs-next').addEventListener('click', () => moveInterviewSlide(1));
+  box.querySelector('#sg-ivs-dots').addEventListener('click', (e) => {
+    const d = e.target.closest('[data-slide]');
+    if (d) { interviewSlide = Number(d.dataset.slide); showInterviewSlide(); }
+  });
+  box.querySelector('#sg-ivs-present').addEventListener('click', () => {
+    const stage = box.querySelector('#sg-ivs-stage');
+    if (stage.requestFullscreen) stage.requestFullscreen().catch(() => {});
+  });
+  box.querySelector('#sg-ivs-download').addEventListener('click', downloadInterviewSlides);
+  showInterviewSlide();
+}
+
+function moveInterviewSlide(step) {
+  interviewSlide = (interviewSlide + step + IV_SLIDE_COUNT) % IV_SLIDE_COUNT;
+  showInterviewSlide();
+}
+
+function showInterviewSlide() {
+  const frames = document.querySelectorAll('#sg-ivs-stage .sg-ivs__frame');
+  frames.forEach((f, i) => { f.hidden = i !== interviewSlide; });
+  document.querySelectorAll('#sg-ivs-dots [data-slide]').forEach((d, i) => d.classList.toggle('is-on', i === interviewSlide));
+  const count = document.getElementById('sg-ivs-count');
+  if (count) count.textContent = `${interviewSlide + 1} / ${IV_SLIDE_COUNT}`;
+}
+
+/*
+ * The PDF: the four slides in a window of their own, printed by the browser's
+ * own engine, one 1280 x 720 page each. Its own window so that nothing of the
+ * admin page -- the navigation, the other tabs, the interviewer's notes -- can
+ * end up in a file that is handed to a customer, and so the page size applies
+ * to this document alone.
+ */
+function downloadInterviewSlides() {
+  const w = window.open('', '_blank');
+  if (!w) {
+    alert('Allow pop-ups for this page to download the slides as a PDF.');
+    return;
+  }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Svarg customer conversation ${new Date().toISOString().slice(0, 10)}</title>
+    <link rel="stylesheet" href="${IV_SLIDE_FONTS}">
+    <style>${IV_SLIDE_CSS}
+      @page { size: 1280px 720px; margin: 0; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .sg-ivs__frame { width: 1280px; height: 720px; aspect-ratio: auto; break-after: page; break-inside: avoid; }
+      .sg-ivs__frame:last-child { break-after: auto; }
+    </style></head><body>${interviewSlidesHtml().join('')}</body></html>`);
+  w.document.close();
+  w.addEventListener('afterprint', () => w.close(), { once: true });
+  // The slides are set in their own fonts; printing before the stylesheet and
+  // the fonts arrive would set the PDF in the fallback. Five seconds at most.
+  const started = Date.now();
+  const go = () => { w.focus(); w.print(); };
+  const wait = () => {
+    if (w.closed) return;
+    if (w.document.readyState !== 'complete' && Date.now() - started < 5000) { setTimeout(wait, 100); return; }
+    (w.document.fonts?.ready || Promise.resolve()).then(() => setTimeout(go, 150), go);
+  };
+  wait();
 }
 
 /* ── Target audience ────────────────────────────────────────────────────────

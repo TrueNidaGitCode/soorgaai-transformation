@@ -27,14 +27,39 @@ import { frame, appIdentity } from './assistant.js';
 
 export * from './llmCore.js';
 
-/** The model call with the application's conduct applied. */
-export async function generate(opts = {}) {
-  return coreGenerate({ ...opts, systemPrompt: frame(opts.systemPrompt, appIdentity()) });
+/**
+ * Every model call, with the customers' names covered on the way out and put
+ * back in the answer (services/nameGuard.js). Here rather than at each call
+ * site so code generated later is covered too.
+ *
+ * Loaded on first use, not imported: the guard reads the datasets through
+ * connectorService, which loads the connectors, one of which imports this
+ * file -- a cycle that would stall the server's start.
+ */
+async function covered(opts) {
+  let guard;
+  try {
+    guard = await (await import('./nameGuard.js')).currentGuard();
+  } catch (err) {
+    // Refused rather than sent uncovered: the promise is that no customer
+    // name reaches the model, and a call that cannot keep it does not go.
+    console.warn('[names] the names could not be covered, so nothing was sent —', err.message);
+    throw new Error('This could not be sent to the AI model without exposing customer names, so it was not sent.');
+  }
+  const c = guard.cover([opts.systemPrompt || '', opts.userMessage || '']);
+  const res = await coreGenerate({ ...opts, systemPrompt: c.texts[0], userMessage: c.texts[1] });
+  if (res && typeof res.text === 'string') return { ...res, text: c.restore(res.text), covered: c.count };
+  return res;
 }
 
-/** The model call as it comes from llmCore: no conduct, no framing. */
+/** The model call with the application's conduct applied. */
+export async function generate(opts = {}) {
+  return covered({ ...opts, systemPrompt: frame(opts.systemPrompt, appIdentity()) });
+}
+
+/** The model call without the frame -- names covered all the same. */
 export async function generateRaw(opts = {}) {
-  return coreGenerate(opts);
+  return covered(opts);
 }
 
 export default { generate, generateRaw };

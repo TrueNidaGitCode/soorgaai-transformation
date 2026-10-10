@@ -39,7 +39,7 @@
 
       <p class="pv-eyebrow">Legal</p>
       <h1 class="pv-title">Privacy Policy</h1>
-      <p class="pv-updated">Last updated: 13 September 2026</p>
+      <p class="pv-updated">Last updated: 10 October 2026</p>
 
       <p class="pv-intro">
         This page explains what information Svarg collects, why, and how it's protected — including
@@ -167,7 +167,9 @@
         <ul>
           <li><strong>Files and exports</strong> (CSV, Excel, a WhatsApp chat export) are read in your browser and sent to your application's own server, never to Svarg.</li>
           <li><strong>Connected sources</strong> (Jira, Confluence, GitHub) keep their credentials encrypted in your application's database, with a key that exists only in your application's environment. Svarg holds neither the credentials nor the key.</li>
-          <li><strong>Conversations</strong> inside your application — every question and answer — are kept in your application's database and are not sent to Svarg.</li>
+          <li><strong>Conversations</strong> inside your application — every question and answer — are kept in your application's database and are not stored by Svarg.</li>
+          <li><strong>AI model calls</strong> pass through Svarg's gateway to the model provider, because your application holds no AI key of its own. Before a prompt leaves your application, every customer name, email address and phone number your records hold is replaced with a stand-in ("Person A"), and the real names are put back in the answer inside your application. The gateway keeps the number of tokens used and the cost, not the prompt. Two things are not covered: a name that appears in none of your records, and a call recording sent to be transcribed, which is sound rather than text.</li>
+          <li><strong>Everything your application sends out</strong> is recorded as it leaves, in your application's own database: when, where, which part of the application sent it, and exactly what it carried, with credentials masked. The owner sees it under <em>Privacy</em>, split into what was shared with Svarg, with AI, and with your own systems, and can export it. Each entry is sealed with the fingerprint of the one before it, so an edited entry shows.</li>
           <li><strong>The Data page</strong> is unlocked by an owner key shown to you once at go-live; Svarg keeps only a hash of it. The public chat session cannot reach it.</li>
           <li><strong>Signing in</strong> to your application is with Google, or with a code sent by email, through Svarg — Google will only answer an address registered in advance, and your application has no mail transport of its own. Svarg passes the account's email address (and, from Google, the name and picture) to your application, signed, and keeps none of it; a code is kept only as a hash until it is used or expires. Your application holds its own record of its users, in its own database. Svarg does not know who uses your application.</li>
         </ul>

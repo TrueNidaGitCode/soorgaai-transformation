@@ -83,6 +83,10 @@ describe('the model call every application makes', () => {
     fs.writeFileSync(path.join(dir, 'services/llmCore.js'),
       'export const seen = [];\n' +
       'export async function generate(opts) { seen.push(opts); return { text: "ok" }; }\n');
+    // The name guard reads the application's datasets; with none, it covers
+    // nothing, which is what this test needs (nameGuard.test.js covers names).
+    fs.writeFileSync(path.join(dir, 'services/nameGuard.js'),
+      'export async function currentGuard() { return { cover: (t) => ({ texts: t, count: 0, restore: (s) => s }) }; }\n');
     return import(pathToFileURL(path.join(dir, 'services/llmService.js')).href);
   };
 

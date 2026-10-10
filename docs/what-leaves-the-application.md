@@ -64,13 +64,40 @@ customer names per agent through Svarg (the agent's findings, by name) so the
 email could say who to call. It now says "Gone Quiet: 3 new", and Svarg's
 email adds the application's address, where the names are.
 
-## Known: customer names reach AI
+## Customer names stay out of AI prompts
 
-The log shows that `customerAnalysis.js` sends the model a customer's name
-with the facts of their findings ("Customer: Meera Iyer … no visit in 14
-days"). That is visible on the **Shared with AI** tab. Until that changes, the
-accurate statement is: the model sees the facts of a finding about a named
-customer, not the customer's records.
+The first version of this log showed `customerAnalysis.js` sending the model a
+customer's name with the facts of their findings: "Customer: Meera Iyer … no
+visit in 14 days". The website said records never went into an AI prompt, and
+the log proved otherwise. So every model call is now covered on its way out
+(`services/nameGuard.js`, applied in `services/llmService.js`).
+
+**How it works**
+- Before a prompt leaves, every name, email address and phone number the application's own records hold is replaced with a stand-in, consistent within the call: "Person A", "Account A", `email-a@hidden.invalid`, `phone-A`.
+- When the answer comes back, the stand-ins are replaced with the real names before anybody reads it, or before a plan the model wrote is used to filter rows.
+- It's applied in `generate` and `generateRaw`, the one place every model call passes, so code generated later is covered too.
+- The log records the prompt after it is covered. The **Shared with AI** tab shows "Customer: Person A".
+
+**Where the names come from**
+- The customer's name columns (the same rule `peopleService` uses).
+- The other people a record names: coach, guardian, owner, assignee.
+- Customer account columns (customer, account, company, school…).
+- Any email address or phone number anywhere in the prompt.
+- Both real and sample rows. Rebuilt when the data changes.
+
+**Matching**
+- **Full names:** matched in any case.
+- **First or last name alone:** also covered. A first name two customers share gets a stand-in of its own rather than a guess.
+- **One-word names and name parts:** matched as written, and skipped when they are also everyday words. So a customer called "May" is not covered, and the word "may" is never rewritten.
+
+**What it does not cover, said plainly**
+- A name that appears in no dataset, for example someone mentioned in a WhatsApp message who is not a customer.
+- A call recording sent to be transcribed. It is sound, not text, and goes as it is.
+- The facts themselves still go: dates, counts, statuses, the name of a batch. That is what the model needs to be useful.
+
+**Proven by**
+- `__tests__/nameGuard.test.js`.
+- The end-to-end check, which reads every AI body in the log and everything that arrived at the stand-in gateway, and finds no name from the application's data.
 
 ## Where it lives
 

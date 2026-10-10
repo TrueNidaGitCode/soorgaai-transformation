@@ -20,7 +20,7 @@ signals come before a customer leaves*. This plan closes that gap.
 |---|---|
 | What counts as churned | **Per business, proposed by Cob**, confirmed or changed by the owner on the Data page |
 | Does a learned pattern alert on its own | **No — the owner approves it first**, one click per pattern |
-| How it learns | **Explainable statistics in code**, per business. No trained ML model, and customer records never go into an AI prompt |
+| How it learns | **Explainable statistics in code**, per business. No trained ML model, and customer names never go into an AI prompt (see what-leaves-the-application.md) |
 
 ## How it works, in five steps
 

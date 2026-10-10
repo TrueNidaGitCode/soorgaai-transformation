@@ -392,6 +392,14 @@ try {
   check('an AI entry shows the exact prompt, the model, and who sent it', one && /messages/.test(one.body || '') && one.model === 'stub-model' && one.sender && one.sender !== 'the application', JSON.stringify({ sender: one?.sender, model: one?.model, body: (one?.body || '').slice(0, 80) }));
   const exp = await fetch(base + '/api/egress/export?format=json&days=1', { headers: H });
   const all = await exp.text();
+  // The names the records hold never reach the model: every AI body, as the
+  // log recorded it on the way out, carries stand-ins instead.
+  const aiBodies = (JSON.parse(all).entries || []).filter((e) => e.category === 'ai').map((e) => e.body || '').join('\n');
+  const leaked = (aiBodies.match(/Meera Iyer|Left Player \d+|Stays Player \d+|Sample One|Sample Two|Coach Ravi/g) || []);
+  check('no customer name reaches the AI: the prompts carry stand-ins', aiBodies && !leaked.length && /Person [A-Z]/.test(aiBodies), JSON.stringify({ leaked: [...new Set(leaked)].slice(0, 5), sample: (aiBodies.match(/.{0,40}Person [A-Z].{0,40}/) || [''])[0] }));
+  // And the gateway itself -- what actually arrived at "AI" -- saw none either.
+  const atGateway = gwHits.filter((h) => /chat\/completions/.test(h.url)).map((h) => h.body).join('\n');
+  check('what arrived at the gateway carries no customer name either', atGateway && !/Meera Iyer|Left Player \d+|Stays Player \d+|Sample One/.test(atGateway));
   check('no credential is in the log: not the gateway token, not the Meta token', !/gw-secret-token|EAAB\.test/.test(all) && /hidden/.test(all), all.match(/.{40}(gw-secret|EAAB).{20}/)?.[0]);
   const csv = await (await fetch(base + '/api/egress/export?format=csv&days=1', { headers: H })).text();
   check('exports as CSV for a spreadsheet', csv.startsWith('seq,at,category,purpose') && csv.split('\n').length > 3);

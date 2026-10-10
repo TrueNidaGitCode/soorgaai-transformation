@@ -322,6 +322,8 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     // What leaves this application: server.js imports the recorder first, in
     // every application, so all four ship with every application.
     'services/egressLog.js':             { template: 'services/egressLog.js' },
+    // Customer names covered before any prompt leaves (llmService loads it).
+    'services/nameGuard.js':             { template: 'services/nameGuard.js' },
     'controllers/egressController.js':   { template: 'controllers/egressController.js' },
     'routes/egressRoutes.js':            { template: 'routes/egressRoutes.js' },
     'frontend/egress.js':                { template: 'frontend/egress.js' },

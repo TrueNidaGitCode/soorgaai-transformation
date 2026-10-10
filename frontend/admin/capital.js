@@ -190,7 +190,7 @@ function tools() {
         <div class="ck-ask is-lit"><span>Svarg is designed to answer</span>
           <b>&ldquo;Who is starting to leave &mdash; and why &mdash; while there is still time?&rdquo;</b></div>
         <p class="ck-body">Existing systems stay the system of record. <b>Svarg builds the team its own
-          app across them</b> &mdash; dedicated to them, and their customer records never go into an AI
+          app across them</b> &mdash; dedicated to them, and their customers&rsquo; names never go into an AI
           prompt.</p>
       </div>
     </div>`);
@@ -218,7 +218,7 @@ function competition() {
   const edges = [
     ['Your own app, not a shared platform', 'Built and deployed for each team, around how it already works.'],
     ['From the systems already in use', 'Bookings, CRM, calls, WhatsApp and payments, joined where they are.'],
-    ['Evidence on every alert', 'Each risk links to the records it came from; records never enter an AI prompt.'],
+    ['Evidence on every alert', 'Each risk links to the records it came from; customer names never enter an AI prompt.'],
   ];
   return slide('05', 'Competition', `
     <h2 class="ck-h2">A crowded idea. A different way in.</h2>

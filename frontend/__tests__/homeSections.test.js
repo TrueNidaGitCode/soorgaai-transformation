@@ -37,6 +37,19 @@ describe('security cards say only what is true', () => {
     expect(body).toContain('only your team signs in');
   });
 
+  it('says names stay out of AI prompts, not that no record ever reaches the model', () => {
+    /*
+     * "Your records never go into an AI prompt" was false: the finding analysis
+     * sent the model a customer's name with their findings, and the audit log
+     * (eame-template/services/egressLog.js) showed it. Names, emails and phone
+     * numbers are now replaced before a prompt leaves (nameGuard.js); the facts
+     * of a finding still go, so that is all the card may promise.
+     */
+    expect(security).toContain('Customer names stay out of AI prompts');
+    expect(security).toContain('a log you can audit');
+    expect(body).not.toMatch(/records never go into an AI prompt|only sees summaries/i);
+  });
+
   it('promises its own database, not its own server', () => {
     // Tenants share one database cluster; each has its own database on it.
     expect(security).toContain('its own database');

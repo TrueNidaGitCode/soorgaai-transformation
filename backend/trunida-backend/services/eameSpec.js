@@ -148,6 +148,8 @@ export const FIXED_PATHS = [
   'frontend/reports.js',
   // Every outbound request, recorded as it leaves, and the owner's page for it.
   'services/egressLog.js',
+  // Names, emails and phone numbers replaced before a prompt leaves.
+  'services/nameGuard.js',
   'controllers/egressController.js',
   'routes/egressRoutes.js',
   'frontend/egress.js',

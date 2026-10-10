@@ -3767,7 +3767,7 @@ function downloadInterviewSlides() {
  * where none exists yet. The four new categories' hypotheses are drafts:
  * nobody in them has been interviewed.
  */
-const VERTICALS = [
+const SEGMENTS = [
   /*
    * B2B SaaS, first, since 10 October 2026: the ICP tab's first segment, so the
    * tab opens on it. The five B2C categories below are earlier hypotheses, kept
@@ -3901,6 +3901,33 @@ const VERTICALS = [
 ];
 
 /*
+ * Target Audience, since 11 October 2026: one segment per business type, not
+ * per industry. B2B is B2B SaaS. B2C is every consumer business with recurring
+ * customers, in one -- it keeps the id 'clinics' because the three interviews
+ * held so far (Vesoma, The Wellness Co., iSPAN) were filed under it, and none
+ * was filed under the four other consumer categories or Engineering. Those
+ * stay in SEGMENTS, for the Pitches tab.
+ */
+const segmentById = (id) => SEGMENTS.find((x) => x.id === id);
+const VERTICALS = [
+  segmentById('saas'),
+  {
+    ...segmentById('clinics'),
+    name: 'B2C',
+    n: undefined,
+    examples: 'Consumer businesses with recurring customers: clinics, wellness, gyms, salons, academies, '
+      + 'subscriptions, repeat services, clubs',
+    hypothesis: 'Consumer businesses lose clients part-way through a course, a term, a package or a '
+      + 'membership, because the signs that someone is drifting &mdash; missed appointments, longer gaps '
+      + 'between visits, skipped orders, unanswered messages &mdash; sit across the booking system, the phone '
+      + 'and WhatsApp, and nobody joins them. The cost is revenue: a client who stops, a package or '
+      + 'membership not renewed.',
+    note: 'One B2C segment since 11 October 2026, in place of five categories; the interviews filed under '
+      + 'Recurring Services are here. ' + segmentById('clinics').note,
+  },
+];
+
+/*
  * The first segment, since 10 October 2026: small B2B SaaS. Shared by the ICP
  * tab and the Target Audience tab's pre-interview check, so the two cannot drift. Five criteria,
  * each an initial hypothesis that founder interviews confirm or move -- the
@@ -3919,6 +3946,25 @@ const ICP_START = [
     'They have usable data Svarg could connect to, rather than relying entirely on manual observation.'],
 ];
 
+/*
+ * The B2C check, under the same five criteria as B2B so the two can be read
+ * side by side. A DRAFT (11 October 2026), drawn from the three B2C interviews
+ * and the Recurring Services hypothesis; no number is set where no interview
+ * has given one.
+ */
+const ICP_START_B2C = [
+  ['Company size', 'Owner-led, one or a few locations',
+    'Small enough that the owner decides; big enough that the owner no longer sees every customer.'],
+  ['Business model', 'Packages, courses or memberships',
+    'Customers pay for a run of visits or a term, so a gap in visits means something and a package not renewed is the loss.'],
+  ['Customer base', 'More active customers than staff can watch by hand',
+    'No number yet: set the threshold once more businesses have been interviewed.'],
+  ['Customer retention problem', 'Customers drifting away unnoticed',
+    'Missed appointments, longer gaps between visits, packages or memberships not renewed, messages left unanswered.'],
+  ['Data availability', 'Booking or clinic system + phone or WhatsApp',
+    'Appointments and attendance in a booking or practice system, conversations on the phone and WhatsApp, often a spreadsheet beside them.'],
+];
+
 /**
  * The four questions, asked word for word in every interview.
  *
@@ -3935,8 +3981,8 @@ const ICP_QUESTIONS = [
 ];
 
 let audienceVertical = 'saas';
-/** True while the pre-interview ICP check is on screen rather than a segment. */
-let audienceCheck = false;
+/** True while the pre-interview ICP check is on screen: the first tab, and where the tab opens. */
+let audienceCheck = true;
 
 /*
  * The interviews for the vertical on screen, read from the server. They used
@@ -4214,24 +4260,15 @@ function renderAudience() {
   };
 
   /*
-   * Two tabs: B2B, where the effort goes now (the ICP is small B2B SaaS since
-   * 10 October 2026), and the B2C categories as earlier hypotheses -- a tab of
-   * their own, so the clinic interviews filed under them stay one click away.
+   * Three tabs (11 October 2026): the ICP check first, then B2B and B2C -- one
+   * segment each, so no row of industries to choose between.
    */
   const AUDIENCE_TABS = [
-    ['B2B', 'B2B', 'where the effort goes now'],
-    ['B2C', 'Earlier hypotheses &mdash; B2C', 'consumer businesses'],
-    // Not a group: the five ICP criteria, read through before a call.
+    // Not a group: the ICP criteria for both business types, read before a call.
     ['CHECK', 'ICP check', 'before the interview'],
+    ['B2B', 'B2B', 'B2B SaaS'],
+    ['B2C', 'B2C', 'consumer businesses'],
   ];
-  const segButtons = (g) => `
-      <div class="sg-seg" role="tablist" aria-label="${g} vertical">
-        ${VERTICALS.filter((v) => v.group === g).map((v) => `
-          <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
-                  data-vert="${v.id}" aria-selected="${v.id === audienceVertical}">
-            ${v.n ? `${v.n} ` : ''}${v.name}<span>${icpCounts[v.id] || 0} of 5 interviewed</span>
-          </button>`).join('')}
-      </div>`;
 
   const activeTab = audienceCheck ? 'CHECK' : V.group;
   const tabsHtml = `
@@ -4254,15 +4291,23 @@ function renderAudience() {
       ${tabsHtml}
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">ICP check<span>before the interview</span></p>
-        <p class="sg-ta__hyp">Read these through for the company before the call. Each is a hypothesis
-          the interview tests, not a gate: a company that misses one is still worth the conversation if
-          the problem is real. Anything you cannot answer from their website or LinkedIn is the first thing
-          to listen for.</p>
+        <p class="sg-ta__hyp">Read the one for the company&rsquo;s business type before the call. Each row is
+          a hypothesis the interview tests, not a gate: a company that misses one is still worth the
+          conversation if the problem is real. Anything you cannot answer from their website or LinkedIn is
+          the first thing to listen for.</p>
       </div>
+      ${[
+        ['B2B', 'small B2B SaaS', ICP_START, ''],
+        ['B2C', 'consumer businesses with recurring customers', ICP_START_B2C,
+          'A draft, from the three B2C interviews (Vesoma, The Wellness Co., iSPAN) and the earlier '
+          + 'Recurring Services hypothesis. Not yet agreed: change it before relying on it.'],
+      ].map(([type, what, rows, draft]) => `
+      <h3 class="sg-ta__checkh">${type}<span>${what}</span></h3>
+      ${draft ? `<p class="sg-ta__note">${draft}</p>` : ''}
       <table class="sg-ta__check">
         <thead><tr><th>Criterion</th><th>Starting point</th><th>Why</th></tr></thead>
-        <tbody>${ICP_START.map(([k, v, why]) => `<tr><th>${k}</th><td><b>${v}</b></td><td>${why}</td></tr>`).join('')}</tbody>
-      </table>
+        <tbody>${rows.map(([k, v, why]) => `<tr><th>${k}</th><td><b>${v}</b></td><td>${why}</td></tr>`).join('')}</tbody>
+      </table>`).join('')}
     </section>`;
     // Wired here too: the tabs are new elements, and without it B2B and B2C
     // could not be reached again from the check.
@@ -4273,9 +4318,7 @@ function renderAudience() {
   el.innerHTML = `
     <section class="sg-ta">
       ${tabsHtml}
-      ${/* B2B is one segment to the reader -- B2B SaaS -- so no row of choices
-           (11 October 2026). B2C keeps its five categories to choose between. */
-        V.group === 'B2B' ? '' : segButtons(V.group)}
+
 
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">${SEGMENT}<span>${done.length} of 5 interviewed</span>
@@ -4543,7 +4586,7 @@ const PITCH_NOTE = {
   engineering: 'Discovery &mdash; nobody interviewed yet',
 };
 const PITCH_SEGMENTS = [
-  ...VERTICALS.map((v) => ({
+  ...SEGMENTS.map((v) => ({
     id: v.id, group: v.group, name: `${v.n ? `${v.n} ` : ''}${v.name}`, note: PITCH_NOTE[v.id] || 'No pitch yet',
   })),
   { id: 'other', name: 'Other industries', note: 'Patterns kept from earlier conversations' },

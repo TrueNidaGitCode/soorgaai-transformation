@@ -3984,3 +3984,8 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
   .sg-ta__check tr { display: block; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
   .sg-ta__check th, .sg-ta__check td { display: block; width: auto !important; padding: 3px 0; border: 0; }
 }
+
+/* The ICP check's two business types, each over its own table. */
+.sg-ta__checkh { margin: 30px 0 4px; font-size: 1.05rem; font-weight: 700; color: rgba(255, 255, 255, 0.9); }
+.sg-ta__checkh span { margin-left: 10px; font-size: 0.78rem; font-weight: 500; color: rgba(255, 255, 255, 0.45); }
+.sg-ta__checkh + .sg-ta__note { margin: 4px 0 0; max-width: 90ch; }

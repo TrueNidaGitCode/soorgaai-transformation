@@ -50,9 +50,9 @@ describe('the pitches tab is split by industry', () => {
   it('opens on the industry being worked', () => {
     expect(js).toMatch(/let pitchSegment = 'clinics';/);
     // The Target Audience categories since 7 October 2026, read from
-    // VERTICALS rather than kept twice, then the earlier patterns.
+    // SEGMENTS (every segment, for Pitches) rather than kept twice, then the earlier patterns.
     const segs = js.slice(js.indexOf('const PITCH_SEGMENTS'), js.indexOf('const PITCH_SEGMENT_OF'));
-    expect(segs).toContain('...VERTICALS.map((v) => ({');
+    expect(segs).toContain('...SEGMENTS.map((v) => ({');
     expect(segs).toContain('Other industries');
     expect(segs).toContain("'No pitch yet'");
   });

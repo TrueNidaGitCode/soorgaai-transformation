@@ -73,7 +73,7 @@ const view = fn('renderAudience');
  * what is asserted is what the operator would see.
  */
 function draw({ vertical = 'clinics', interviews = [], wedge = null, counts = {} } = {}) {
-  const from = js.indexOf('const VERTICALS = [');
+  const from = js.indexOf('const SEGMENTS = [');
   const wire = fn('wireAudience');
   const to = js.indexOf(wire) + wire.length;
   const calls = [];
@@ -83,6 +83,7 @@ function draw({ vertical = 'clinics', interviews = [], wedge = null, counts = {}
     const ACUTE_CONDITIONS = ${literal(js, 'ACUTE_CONDITIONS')};
     ${fn('esc')}
     ${js.slice(from, to)}
+    audienceCheck = false;
     audienceVertical = ${JSON.stringify(vertical)};
     icp = { vertical: ${JSON.stringify(vertical)}, interviews: INTERVIEWS, wedge: WEDGE, loading: false, error: '' };
     icpCounts = COUNTS;
@@ -142,31 +143,32 @@ describe('the tab is reachable', () => {
 
 describe('the verticals', () => {
   // eslint-disable-next-line no-new-func
-  const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
+  const SEG_SRC = `const SEGMENTS = ${literal(js, 'SEGMENTS')}; const segmentById = (id) => SEGMENTS.find((x) => x.id === id);`;
+  const segments = new Function(`${SEG_SRC} return SEGMENTS;`)();
+  const verticals = new Function(`${SEG_SRC} return ${literal(js, 'VERTICALS')};`)();
 
-  it('leads with B2B SaaS, and keeps the five B2C categories as earlier hypotheses', () => {
-    // 10 October 2026: the ICP is small B2B SaaS, so the tab opens on it.
-    // Recurring Services is the clinics vertical renamed (7 October): its id
-    // stays 'clinics', so the interviews already filed under it stay too.
-    expect(verticals.map((v) => [v.group, v.n || null, v.name])).toEqual([
-      ['B2B', null, 'B2B SaaS'],
-      ['B2C', 1, 'Recurring Services'],
-      ['B2C', 2, 'Education &amp; Memberships'],
-      ['B2C', 3, 'Subscription &amp; Repeat Purchase'],
-      ['B2C', 4, 'High-Value Repeat Services'],
-      ['B2C', 5, 'Hospitality &amp; Leisure'],
-      ['B2B', null, 'Engineering &amp; Project Operations'],
+  it('is one segment per business type: B2B SaaS and B2C', () => {
+    // 11 October 2026: not separated by industry. B2C keeps the id 'clinics',
+    // where the three interviews were filed, so they stay with it.
+    expect(verticals.map((v) => [v.id, v.group, v.name])).toEqual([
+      ['saas', 'B2B', 'B2B SaaS'],
+      ['clinics', 'B2C', 'B2C'],
     ]);
-    expect(verticals[0].id).toBe('saas');
-    expect(verticals.find((v) => v.name === 'Recurring Services').id).toBe('clinics');
-    for (const v of verticals.filter((x) => x.group === 'B2C')) expect(v.examples, v.name).toBeTruthy();
-    // Opens on SaaS. The consumer categories are a tab of their own (11
-    // October 2026), not removed, and a tab opens on its first segment.
-    expect(js).toContain("let audienceVertical = 'saas';");
-    expect(view).toContain("['B2B', 'B2B', 'where the effort goes now'],");
-    expect(view).toContain("['B2C', 'Earlier hypotheses &mdash; B2C', 'consumer businesses'],");
-    expect(view).toContain("V.group === 'B2B' ? '' : segButtons(V.group)");
-    expect(view).not.toContain('sg-seg__earlier');
+    expect(verticals[1].examples).toMatch(/clinics, wellness, gyms, salons, academies/);
+  });
+
+  it('keeps every segment for the Pitches tab, which has content for them', () => {
+    expect(segments.map((v) => v.id)).toEqual(['saas', 'clinics', 'education', 'subscription', 'highvalue', 'hospitality', 'engineering']);
+    expect(js).toContain('...SEGMENTS.map((v) => ({');
+  });
+
+  it('opens on the ICP check, first of three tabs, with no row of segments to choose', () => {
+    expect(js).toContain('let audienceCheck = true;');
+    const tabs = view.slice(view.indexOf('const AUDIENCE_TABS = ['), view.indexOf('];', view.indexOf('const AUDIENCE_TABS = [')));
+    expect(tabs.indexOf("['CHECK',")).toBeLessThan(tabs.indexOf("['B2B',"));
+    expect(tabs.indexOf("['B2B',")).toBeLessThan(tabs.indexOf("['B2C',"));
+    expect(view).not.toContain('segButtons');
+    expect(view).not.toContain('sg-seg__b');
     const wire = fn('wireAudience');
     expect(wire).toContain("e.target.closest('[data-group]')");
     expect(wire).toContain('VERTICALS.find((v) => v.group === t.dataset.group)');
@@ -189,7 +191,7 @@ describe('the verticals', () => {
   });
 
   it('marks every new category untested, because nobody in it has been interviewed', () => {
-    for (const v of verticals.filter((x) => !['clinics'].includes(x.id))) {
+    for (const v of segments.filter((x) => !['clinics'].includes(x.id))) {
       expect(v.hypothesis, v.name).toMatch(/^Untested\./);
     }
   });
@@ -304,7 +306,6 @@ describe('the wedge reads as a draft until it is real', () => {
 describe('the ICP check, before an interview', () => {
   it('is a tab of its own, beside B2B and B2C', () => {
     expect(view).toContain("['CHECK', 'ICP check', 'before the interview'],");
-    expect(js).toContain('let audienceCheck = false;');
     const wire = fn('wireAudience');
     expect(wire).toContain("if (t.dataset.group === 'CHECK') { audienceCheck = true; renderAudience(); return; }");
   });
@@ -312,7 +313,7 @@ describe('the ICP check, before an interview', () => {
   it('shows the same five rows as the ICP tab, read from one list', () => {
     // One list (ICP_START), two places it is read: the ICP tab and this check.
     expect(js.match(/^const ICP_START = \[/m)).toBeTruthy();
-    expect(view).toContain('ICP_START.map(');
+    expect(view).toContain("['B2B', 'small B2B SaaS', ICP_START, '']");
     const at = js.indexOf('const ICP_START = [');
     const rows = js.slice(at, js.indexOf('];', at));
     for (const c of ['Company size', 'Business model', 'Customer base', 'Customer retention problem', 'Data availability']) {
@@ -330,5 +331,25 @@ describe('the ICP check, before an interview', () => {
   it('records nothing: answers go under the four questions after the call', () => {
     const check = view.slice(view.indexOf('if (audienceCheck) {'), view.indexOf('return;', view.indexOf('if (audienceCheck) {')));
     expect(check).not.toMatch(/<input|<textarea|<select|api\(/);
+  });
+});
+
+describe('the ICP check, for both business types', () => {
+  it('has a table for B2B and one for B2C, under the same five criteria', () => {
+    expect(view).toContain("['B2B', 'small B2B SaaS', ICP_START, '']");
+    expect(view).toContain("['B2C', 'consumer businesses with recurring customers', ICP_START_B2C,");
+    const at = js.indexOf('const ICP_START_B2C = [');
+    const rows = js.slice(at, js.indexOf('];', at));
+    for (const c of ['Company size', 'Business model', 'Customer base', 'Customer retention problem', 'Data availability']) {
+      expect(rows).toContain(`['${c}',`);
+    }
+  });
+
+  it('says the B2C table is a draft, and sets no number no interview has given', () => {
+    expect(view).toContain('Not yet agreed: change it before relying on it.');
+    const at = js.indexOf('const ICP_START_B2C = [');
+    const rows = js.slice(at, js.indexOf('];', at));
+    expect(rows).toContain('No number yet');
+    expect(rows).not.toMatch(/\d+\+? (paying|active) (accounts|customers)/);
   });
 });

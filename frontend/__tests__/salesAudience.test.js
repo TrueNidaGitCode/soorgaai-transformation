@@ -160,10 +160,16 @@ describe('the verticals', () => {
     expect(verticals[0].id).toBe('saas');
     expect(verticals.find((v) => v.name === 'Recurring Services').id).toBe('clinics');
     for (const v of verticals.filter((x) => x.group === 'B2C')) expect(v.examples, v.name).toBeTruthy();
-    // Opens on SaaS; the consumer categories are folded, not removed.
+    // Opens on SaaS. The consumer categories are a tab of their own (11
+    // October 2026), not removed, and a tab opens on its first segment.
     expect(js).toContain("let audienceVertical = 'saas';");
-    expect(view).toContain('<details class="sg-seg__earlier"');
-    expect(view).toContain('Earlier hypotheses &mdash; consumer businesses');
+    expect(view).toContain("['B2B', 'B2B', 'where the effort goes now'],");
+    expect(view).toContain("['B2C', 'Earlier hypotheses &mdash; B2C', 'consumer businesses'],");
+    expect(view).toContain('${segButtons(V.group)}');
+    expect(view).not.toContain('sg-seg__earlier');
+    const wire = fn('wireAudience');
+    expect(wire).toContain("e.target.closest('[data-group]')");
+    expect(wire).toContain('VERTICALS.find((v) => v.group === t.dataset.group)');
   });
 
   it('sizes the SaaS segment exactly as the ICP tab does', () => {

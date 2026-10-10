@@ -4210,10 +4210,14 @@ function renderAudience() {
   };
 
   /*
-   * B2B first and open: since 10 October 2026 the ICP is small B2B SaaS. The
-   * consumer categories are earlier hypotheses, folded rather than removed,
-   * so the clinic interviews filed under them can still be read.
+   * Two tabs: B2B, where the effort goes now (the ICP is small B2B SaaS since
+   * 10 October 2026), and the B2C categories as earlier hypotheses -- a tab of
+   * their own, so the clinic interviews filed under them stay one click away.
    */
+  const AUDIENCE_TABS = [
+    ['B2B', 'B2B', 'where the effort goes now'],
+    ['B2C', 'Earlier hypotheses &mdash; B2C', 'consumer businesses'],
+  ];
   const segButtons = (g) => `
       <div class="sg-seg" role="tablist" aria-label="${g} vertical">
         ${VERTICALS.filter((v) => v.group === g).map((v) => `
@@ -4225,13 +4229,14 @@ function renderAudience() {
 
   el.innerHTML = `
     <section class="sg-ta">
-      <p class="sg-seg__group">B2B &mdash; where the effort goes now</p>
-      ${segButtons('B2B')}
-      <details class="sg-seg__earlier"${V.group === 'B2C' ? ' open' : ''}>
-        <summary>Earlier hypotheses &mdash; consumer businesses
-          <span>${VERTICALS.filter((v) => v.group === 'B2C').reduce((n, v) => n + (icpCounts[v.id] || 0), 0)} interviewed</span></summary>
-        ${segButtons('B2C')}
-      </details>
+      <div class="sg-ta__tabs" role="tablist" aria-label="Audience">
+        ${AUDIENCE_TABS.map(([g, name, what]) => `
+          <button type="button" role="tab" class="sg-ta__tab${V.group === g ? ' is-on' : ''}"
+                  data-group="${g}" aria-selected="${V.group === g}">
+            ${name}<span>${what} &middot; ${VERTICALS.filter((v) => v.group === g).reduce((n, v) => n + (icpCounts[v.id] || 0), 0)} interviewed</span>
+          </button>`).join('')}
+      </div>
+      ${segButtons(V.group)}
 
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">${SEGMENT}<span>${done.length} of 5 interviewed</span>
@@ -4341,7 +4346,13 @@ function wireAudience(root) {
   if (!root) return;
   root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-vert]');
-    if (b) setAudienceVertical(b.dataset.vert);
+    if (b) { setAudienceVertical(b.dataset.vert); return; }
+    // A tab opens on its first segment.
+    const t = e.target.closest('[data-group]');
+    if (t && root.contains(t)) {
+      const first = VERTICALS.find((v) => v.group === t.dataset.group);
+      if (first) setAudienceVertical(first.id);
+    }
   });
 }
 

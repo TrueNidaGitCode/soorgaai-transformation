@@ -2400,23 +2400,6 @@ function renderIcpView() {
     'Whether it worked can be measured in dollars &mdash; recurring revenue kept',
   ];
 
-  /*
-   * The first segment, since 10 October 2026: small B2B SaaS. Five criteria,
-   * each an initial hypothesis that founder interviews confirm or move -- the
-   * numbers are screening thresholds to test, not requirements.
-   */
-  const ICP_START = [
-    ['Company size', '10&ndash;50 employees',
-      'Small enough for a founder-led sale, but potentially large enough to have an established customer base.'],
-    ['Business model', 'Recurring subscriptions',
-      'Monthly or annual plans, renewals, and ongoing relationships with business customers.'],
-    ['Customer base', '100+ paying accounts',
-      'An initial screening threshold to test, not a strict requirement. The key is having enough accounts that manually tracking every customer becomes difficult.'],
-    ['Customer retention problem', 'Visible churn or renewal risk',
-      'Customers stop using the product, reduce usage, fail to adopt features, raise unresolved complaints, or don&rsquo;t renew.'],
-    ['Data availability', 'CRM + product or support data',
-      'They have usable data Svarg could connect to, rather than relying entirely on manual observation.'],
-  ];
 
   /** Two qualifiers that are about us rather than them — and are how deals die. */
   const QUALIFIERS = [
@@ -3917,6 +3900,25 @@ const VERTICALS = [
   },
 ];
 
+/*
+ * The first segment, since 10 October 2026: small B2B SaaS. Shared by the ICP
+ * tab and the Target Audience tab's pre-interview check, so the two cannot drift. Five criteria,
+ * each an initial hypothesis that founder interviews confirm or move -- the
+ * numbers are screening thresholds to test, not requirements.
+ */
+const ICP_START = [
+  ['Company size', '10&ndash;50 employees',
+    'Small enough for a founder-led sale, but potentially large enough to have an established customer base.'],
+  ['Business model', 'Recurring subscriptions',
+    'Monthly or annual plans, renewals, and ongoing relationships with business customers.'],
+  ['Customer base', '100+ paying accounts',
+    'An initial screening threshold to test, not a strict requirement. The key is having enough accounts that manually tracking every customer becomes difficult.'],
+  ['Customer retention problem', 'Visible churn or renewal risk',
+    'Customers stop using the product, reduce usage, fail to adopt features, raise unresolved complaints, or don&rsquo;t renew.'],
+  ['Data availability', 'CRM + product or support data',
+    'They have usable data Svarg could connect to, rather than relying entirely on manual observation.'],
+];
+
 /**
  * The four questions, asked word for word in every interview.
  *
@@ -3933,6 +3935,8 @@ const ICP_QUESTIONS = [
 ];
 
 let audienceVertical = 'saas';
+/** True while the pre-interview ICP check is on screen rather than a segment. */
+let audienceCheck = false;
 
 /*
  * The interviews for the vertical on screen, read from the server. They used
@@ -4217,6 +4221,8 @@ function renderAudience() {
   const AUDIENCE_TABS = [
     ['B2B', 'B2B', 'where the effort goes now'],
     ['B2C', 'Earlier hypotheses &mdash; B2C', 'consumer businesses'],
+    // Not a group: the five ICP criteria, read through before a call.
+    ['CHECK', 'ICP check', 'before the interview'],
   ];
   const segButtons = (g) => `
       <div class="sg-seg" role="tablist" aria-label="${g} vertical">
@@ -4227,15 +4233,46 @@ function renderAudience() {
           </button>`).join('')}
       </div>`;
 
-  el.innerHTML = `
-    <section class="sg-ta">
+  const activeTab = audienceCheck ? 'CHECK' : V.group;
+  const tabsHtml = `
       <div class="sg-ta__tabs" role="tablist" aria-label="Audience">
         ${AUDIENCE_TABS.map(([g, name, what]) => `
-          <button type="button" role="tab" class="sg-ta__tab${V.group === g ? ' is-on' : ''}"
-                  data-group="${g}" aria-selected="${V.group === g}">
-            ${name}<span>${what} &middot; ${VERTICALS.filter((v) => v.group === g).reduce((n, v) => n + (icpCounts[v.id] || 0), 0)} interviewed</span>
+          <button type="button" role="tab" class="sg-ta__tab${activeTab === g ? ' is-on' : ''}"
+                  data-group="${g}" aria-selected="${activeTab === g}">
+            ${name}<span>${what}${g === 'CHECK' ? '' : ` &middot; ${VERTICALS.filter((v) => v.group === g).reduce((n, v) => n + (icpCounts[v.id] || 0), 0)} interviewed`}</span>
           </button>`).join('')}
+      </div>`;
+
+  /*
+   * The ICP check: the five criteria, to read through for a company before the
+   * call. The same rows as the ICP tab (ICP_START), and nothing recorded here --
+   * answers are filed under the four questions once the interview has happened.
+   */
+  if (audienceCheck) {
+    el.innerHTML = `
+    <section class="sg-ta">
+      ${tabsHtml}
+      <div class="sg-ta__lead">
+        <p class="sg-ta__seg">ICP check<span>before the interview</span></p>
+        <p class="sg-ta__hyp">Read these through for the company before the call. Each is a hypothesis
+          the interview tests, not a gate: a company that misses one is still worth the conversation if
+          the problem is real. Anything you cannot answer from their website or LinkedIn is the first thing
+          to listen for.</p>
       </div>
+      <table class="sg-ta__check">
+        <thead><tr><th>Criterion</th><th>Starting point</th><th>Why</th></tr></thead>
+        <tbody>${ICP_START.map(([k, v, why]) => `<tr><th>${k}</th><td><b>${v}</b></td><td>${why}</td></tr>`).join('')}</tbody>
+      </table>
+    </section>`;
+    // Wired here too: the tabs are new elements, and without it B2B and B2C
+    // could not be reached again from the check.
+    wireAudience(el.querySelector('.sg-ta'));
+    return;
+  }
+
+  el.innerHTML = `
+    <section class="sg-ta">
+      ${tabsHtml}
       ${segButtons(V.group)}
 
       <div class="sg-ta__lead">
@@ -4346,10 +4383,12 @@ function wireAudience(root) {
   if (!root) return;
   root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-vert]');
-    if (b) { setAudienceVertical(b.dataset.vert); return; }
+    if (b) { audienceCheck = false; setAudienceVertical(b.dataset.vert); return; }
     // A tab opens on its first segment.
     const t = e.target.closest('[data-group]');
     if (t && root.contains(t)) {
+      if (t.dataset.group === 'CHECK') { audienceCheck = true; renderAudience(); return; }
+      audienceCheck = false;
       const first = VERTICALS.find((v) => v.group === t.dataset.group);
       if (first) setAudienceVertical(first.id);
     }

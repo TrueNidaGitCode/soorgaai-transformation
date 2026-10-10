@@ -300,3 +300,35 @@ describe('the wedge reads as a draft until it is real', () => {
     expect(out).toContain('Svarg helps clinics find…');
   });
 });
+
+describe('the ICP check, before an interview', () => {
+  it('is a tab of its own, beside B2B and B2C', () => {
+    expect(view).toContain("['CHECK', 'ICP check', 'before the interview'],");
+    expect(js).toContain('let audienceCheck = false;');
+    const wire = fn('wireAudience');
+    expect(wire).toContain("if (t.dataset.group === 'CHECK') { audienceCheck = true; renderAudience(); return; }");
+  });
+
+  it('shows the same five rows as the ICP tab, read from one list', () => {
+    // One list (ICP_START), two places it is read: the ICP tab and this check.
+    expect(js.match(/^const ICP_START = \[/m)).toBeTruthy();
+    expect(view).toContain('ICP_START.map(');
+    const at = js.indexOf('const ICP_START = [');
+    const rows = js.slice(at, js.indexOf('];', at));
+    for (const c of ['Company size', 'Business model', 'Customer base', 'Customer retention problem', 'Data availability']) {
+      expect(rows).toContain(`['${c}',`);
+    }
+  });
+
+  it('wires its tabs, so B2B and B2C can be reached again from it', () => {
+    // Found by clicking through: the check returned before the wiring, and its
+    // tabs were dead.
+    const check = view.slice(view.indexOf('if (audienceCheck) {'), view.indexOf('return;', view.indexOf('if (audienceCheck) {')));
+    expect(check).toContain("wireAudience(el.querySelector('.sg-ta'));");
+  });
+
+  it('records nothing: answers go under the four questions after the call', () => {
+    const check = view.slice(view.indexOf('if (audienceCheck) {'), view.indexOf('return;', view.indexOf('if (audienceCheck) {')));
+    expect(check).not.toMatch(/<input|<textarea|<select|api\(/);
+  });
+});

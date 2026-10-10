@@ -3955,7 +3955,7 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
 /* Target Audience: two tabs since 11 October 2026 -- B2B, where the effort
    goes now, and the B2C categories as earlier hypotheses, a tab of their own
    so the clinic interviews stay one click away. Styled as the ICP sub-tabs. */
-.sg-ta__tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; max-width: 760px; }
+.sg-ta__tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; max-width: 1080px; }
 .sg-ta__tab {
   display: grid; gap: 2px; padding: 12px 16px; text-align: left; cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.02);
@@ -3967,3 +3967,20 @@ section.sg-who { font-family: inherit; font-size: 1rem; }
 .sg-ta__tab:focus-visible { outline: 2px solid #5CC5A7; outline-offset: 2px; }
 .sg-ta__tab.is-on { border-color: rgba(92, 197, 167, 0.45); background: rgba(92, 197, 167, 0.07); color: rgba(255, 255, 255, 0.9); }
 .sg-ta__tab.is-on span { color: #5CC5A7; }
+
+/* The ICP check on Target Audience: the five criteria, read before a call.
+   Same three columns as the ICP tab's table, so the two read as one list. */
+.sg-ta__check { width: 100%; max-width: 1080px; border-collapse: collapse; margin: 18px 0 0; }
+.sg-ta__check th, .sg-ta__check td { padding: 14px 16px 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); vertical-align: top; text-align: left; }
+.sg-ta__check thead th { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.38); }
+.sg-ta__check tbody th { width: 13rem; font-size: 0.86rem; font-weight: 600; color: rgba(255, 255, 255, 0.82); }
+.sg-ta__check tbody td:nth-child(2) { width: 15rem; }
+.sg-ta__check tbody td:nth-child(2) b { color: var(--accent-green, #5CC5A7); font-weight: 600; font-size: 0.92rem; }
+.sg-ta__check tbody td:nth-child(3) { font-size: 0.9rem; line-height: 1.55; color: rgba(255, 255, 255, 0.66); }
+.sg-ta__check tr:last-child th, .sg-ta__check tr:last-child td { border-bottom: 0; }
+@media (max-width: 760px) {
+  .sg-ta__tabs { grid-template-columns: 1fr; }
+  .sg-ta__check thead { display: none; }
+  .sg-ta__check tr { display: block; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+  .sg-ta__check th, .sg-ta__check td { display: block; width: auto !important; padding: 3px 0; border: 0; }
+}

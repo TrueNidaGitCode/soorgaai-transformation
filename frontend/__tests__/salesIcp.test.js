@@ -180,12 +180,14 @@ describe('one hypothesis, argued once', () => {
     // Since 10 October 2026. Thresholds to test in founder interviews, not
     // requirements -- the page says so, so nobody disqualifies on them alone.
     for (const c of ['Company size', 'Business model', 'Customer base', 'Customer retention problem', 'Data availability']) {
-      expect(view).toContain(`['${c}',`);
+      // The rows are shared with the Target Audience check, at module scope.
+      expect(js).toContain(`['${c}',`);
     }
     for (const v of ['10&ndash;50 employees', 'Recurring subscriptions', '100+ paying accounts', 'Visible churn or renewal risk', 'CRM + product or support data']) {
-      expect(view).toContain(v);
+      expect(js).toContain(v);
     }
-    expect(view).toContain('An initial screening threshold to test, not a strict requirement.');
+    expect(view).toContain('ICP_START.map(');
+    expect(js).toContain('An initial screening threshold to test, not a strict requirement.');
     expect(view).toContain('validated through founder interviews');
     // The old framing argued size was not part of the definition; it is now.
     expect(view).not.toMatch(/a size\s+band is not/);

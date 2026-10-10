@@ -165,7 +165,7 @@ describe('the verticals', () => {
     expect(js).toContain("let audienceVertical = 'saas';");
     expect(view).toContain("['B2B', 'B2B', 'where the effort goes now'],");
     expect(view).toContain("['B2C', 'Earlier hypotheses &mdash; B2C', 'consumer businesses'],");
-    expect(view).toContain('${segButtons(V.group)}');
+    expect(view).toContain("V.group === 'B2B' ? '' : segButtons(V.group)");
     expect(view).not.toContain('sg-seg__earlier');
     const wire = fn('wireAudience');
     expect(wire).toContain("e.target.closest('[data-group]')");

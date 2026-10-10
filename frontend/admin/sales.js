@@ -4273,7 +4273,9 @@ function renderAudience() {
   el.innerHTML = `
     <section class="sg-ta">
       ${tabsHtml}
-      ${segButtons(V.group)}
+      ${/* B2B is one segment to the reader -- B2B SaaS -- so no row of choices
+           (11 October 2026). B2C keeps its five categories to choose between. */
+        V.group === 'B2B' ? '' : segButtons(V.group)}
 
       <div class="sg-ta__lead">
         <p class="sg-ta__seg">${SEGMENT}<span>${done.length} of 5 interviewed</span>
